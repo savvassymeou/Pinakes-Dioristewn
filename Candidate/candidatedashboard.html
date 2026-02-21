@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Candidate Dashboard | Πίνακες Διοριστέων</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body class="theme-candidate">
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="../search/searchdashboard.html">
+        <span class="brand-mark" aria-hidden="true">EEY</span>
+        <span class="brand-text">Πίνακες Διοριστέων</span>
+      </a>
+
+      <nav class="top-nav" aria-label="Κύρια πλοήγηση">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="../search/searchdashboard.html">Search</a></li>
+          <li><a class="nav-link is-active" href="./candidatedashboard.html">Candidate</a></li>
+          <li><a class="nav-link" href="../admin/admindashboard.html">Admin</a></li>
+          <li><a class="nav-link" href="../api/api.php">API</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-ghost" type="button">Αλλαγή Κωδικού</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-hero" aria-labelledby="candTitle">
+      <div class="hero-text">
+        <h1 id="candTitle">Candidate Dashboard</h1>
+        <p class="muted">
+          Προβολή προφίλ, παρακολούθηση δικών μου αιτήσεων και άλλων υποψηφίων.
+        </p>
+      </div>
+
+      <div class="hero-badges">
+        <div class="badge">
+          <span class="badge-label">Κατάσταση</span>
+          <span class="badge-value">Συνδεδεμένος</span>
+        </div>
+        <div class="badge">
+          <span class="badge-label">Ειδικότητα</span>
+          <span class="badge-value">—</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Ενότητες Υποψηφίου">
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">🙍</div>
+        <h2>My Profile</h2>
+        <p>Επεξεργασία στοιχείων (όνομα, επίθετο, τηλέφωνο). Το email δεν αλλάζει.</p>
+        <div class="card-actions">
+          <a class="btn" href="#profile">Άνοιγμα</a>
+          <a class="btn btn-ghost" href="#notifications">Ειδοποιήσεις</a>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">🧭</div>
+        <h2>Track my applications</h2>
+        <p>Σύνδεση προφίλ με υποψήφιο στους πίνακες και προβολή εξέλιξης (timeline).</p>
+        <div class="card-actions">
+          <a class="btn" href="#track-me">Άνοιγμα</a>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">👀</div>
+        <h2>Track others</h2>
+        <p>Παρακολούθηση άλλων ατόμων στους πίνακες διοριστέων.</p>
+        <div class="card-actions">
+          <a class="btn" href="#track-others">Άνοιγμα</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="profile" aria-labelledby="profileTitle">
+      <div class="panel-head">
+        <h2 id="profileTitle">My Profile (UI)</h2>
+        <p class="muted">Mock φόρμα (HTML/CSS μόνο).</p>
+      </div>
+
+      <form class="form-grid" action="#" method="post">
+        <div class="form-group">
+          <label for="fn">Όνομα</label>
+          <input id="fn" name="first_name" type="text" placeholder="π.χ. Σάββας" />
+        </div>
+
+        <div class="form-group">
+          <label for="ln">Επίθετο</label>
+          <input id="ln" name="last_name" type="text" placeholder="π.χ. Συμεού" />
+        </div>
+
+        <div class="form-group">
+          <label for="tel">Τηλέφωνο</label>
+          <input id="tel" name="phone" type="tel" placeholder="π.χ. 99xxxxxx" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email (δεν αλλάζει)</label>
+          <input id="email" name="email" type="email" value="user@example.com" disabled />
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="submit">Αποθήκευση</button>
+          <button class="btn btn-ghost" type="button">Ακύρωση</button>
+        </div>
+      </form>
+
+      <div class="panel" id="notifications" aria-labelledby="notTitle">
+        <div class="panel-head">
+          <h2 id="notTitle">Ειδοποιήσεις (UI)</h2>
+          <p class="muted">Τι ενημερώσεις θέλω να λαμβάνω.</p>
+        </div>
+
+        <form class="form-grid" action="#" method="post">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" /> Φόρτωση νέας λίστας
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" /> Αλλαγή θέσης μου
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" /> Ενημέρωση στατιστικών ειδικότητας
+            </label>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel" id="track-me" aria-labelledby="trackMeTitle">
+      <div class="panel-head">
+        <h2 id="trackMeTitle">Track my applications (UI)</h2>
+        <p class="muted">Σύνδεση με υποψήφιο στους πίνακες (mock flow).</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-kpi">—</div>
+          <div class="stat-label">Τρέχουσα Θέση</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">—</div>
+          <div class="stat-label">Μεταβολή</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">—</div>
+          <div class="stat-label">Τελευταία ενημέρωση</div>
+        </div>
+      </div>
+
+      <div class="chart-mock" aria-label="Mock timeline">
+        <div class="bar" style="width: 80%"><span>1) Εντοπισμός υποψηφίου στους πίνακες</span></div>
+        <div class="bar" style="width: 65%"><span>2) Συσχέτιση με το προφίλ μου</span></div>
+        <div class="bar" style="width: 50%"><span>3) Παρακολούθηση αλλαγών θέσης</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
+      <div class="panel-head">
+        <h2 id="trackOthersTitle">Track others (UI)</h2>
+        <p class="muted">Mock αναζήτηση ατόμου για παρακολούθηση.</p>
+      </div>
+
+      <form class="form-grid" action="#" method="get">
+        <div class="form-group">
+          <label for="onoma">Ονοματεπώνυμο</label>
+          <input id="onoma" name="fullname" type="text" placeholder="π.χ. Παπαδόπουλος Γιώργος" />
+        </div>
+
+        <div class="form-group">
+          <label for="eid">Ειδικότητα</label>
+          <select id="eid" name="specialty">
+            <option value="">Επιλογή...</option>
+            <option>Πληροφορικής</option>
+            <option>Μαθηματικοί</option>
+            <option>Φιλόλογοι</option>
+          </select>
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="submit">Αναζήτηση</button>
+          <button class="btn btn-ghost" type="button">Παρακολούθηση</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <p>© 2026 Candidate Module — UI</p>
+      <a class="footer-link" href="../search/searchdashboard.html">Επιστροφή στο Search</a>
+    </div>
+  </footer>
+</body>
+</html>
