@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard | Πίνακες Διοριστέων</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body class="theme-admin">
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="../search/searchdashboard.html">
+        <span class="brand-mark" aria-hidden="true">EEY</span>
+        <span class="brand-text">Πίνακες Διοριστέων</span>
+      </a>
+
+      <nav class="top-nav" aria-label="Κύρια πλοήγηση">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="../search/searchdashboard.html">Search</a></li>
+          <li><a class="nav-link" href="../candidate/candidatedashboard.html">Candidate</a></li>
+          <li><a class="nav-link is-active" href="./admindashboard.html">Admin</a></li>
+          <li><a class="nav-link" href="../api/api.php">API</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-ghost" type="button">Αλλαγή Κωδικού</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-hero" aria-labelledby="pageTitle">
+      <div class="hero-text">
+        <h1 id="pageTitle">Admin Dashboard</h1>
+        <p class="muted">
+          Διαχείριση χρηστών, φόρτωση πινάκων ανά ειδικότητα και προβολή reports/στατιστικών.
+        </p>
+      </div>
+
+      <div class="hero-badges" aria-label="Γρήγορες πληροφορίες">
+        <div class="badge">
+          <span class="badge-label">Κατάσταση Server</span>
+          <span class="badge-value">UI Demo</span>
+        </div>
+        <div class="badge">
+          <span class="badge-label">Δεδομένα</span>
+          <span class="badge-value">Από EEY</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Ενότητες Διαχείρισης">
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">👥</div>
+        <h2>Manage Users</h2>
+        <p>Προβολή και διαχείριση εγγεγραμμένων χρηστών (add / update / remove).</p>
+        <div class="card-actions">
+          <a class="btn" href="#manage-users">Άνοιγμα</a>
+          <button class="btn btn-ghost" type="button">Προσθήκη</button>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">📋</div>
+        <h2>Manage Lists</h2>
+        <p>Επιλογή ειδικοτήτων και φόρτωση πινάκων διοριστέων από EEY.</p>
+        <div class="card-actions">
+          <a class="btn" href="#manage-lists">Άνοιγμα</a>
+          <button class="btn btn-ghost" type="button">Φόρτωση</button>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">📊</div>
+        <h2>Reports</h2>
+        <p>Στατιστικά ανά ειδικότητα (π.χ. πλήθος υποψηφίων, ηλικίες, νέοι ανά έτος).</p>
+        <div class="card-actions">
+          <a class="btn" href="#reports">Άνοιγμα</a>
+          <button class="btn btn-ghost" type="button">Εξαγωγή</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="manage-users" aria-labelledby="usersTitle">
+      <div class="panel-head">
+        <h2 id="usersTitle">Manage Users (UI)</h2>
+        <p class="muted">Προσωρινή mock λίστα (μόνο HTML/CSS για την εργασία 1).</p>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Πίνακας χρηστών">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Όνομα</th>
+              <th>Email</th>
+              <th>Ρόλος</th>
+              <th class="right">Ενέργειες</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Admin User</td>
+              <td>admin@example.com</td>
+              <td><span class="pill pill-admin">admin</span></td>
+              <td class="right">
+                <button class="btn btn-small" type="button">Edit</button>
+                <button class="btn btn-ghost btn-small" type="button">Remove</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Candidate One</td>
+              <td>candidate1@example.com</td>
+              <td><span class="pill pill-user">candidate</span></td>
+              <td class="right">
+                <button class="btn btn-small" type="button">Edit</button>
+                <button class="btn btn-ghost btn-small" type="button">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="manage-lists" aria-labelledby="listsTitle">
+      <div class="panel-head">
+        <h2 id="listsTitle">Manage Lists (UI)</h2>
+        <p class="muted">Επιλογή ειδικότητας και “φόρτωση” (UI mock).</p>
+      </div>
+
+      <form class="form-grid" action="#" method="get">
+        <div class="form-group">
+          <label for="specialty">Ειδικότητα</label>
+          <select id="specialty" name="specialty">
+            <option value="e1">Φιλόλογοι</option>
+            <option value="e2">Μαθηματικοί</option>
+            <option value="e3">Πληροφορικής</option>
+            <option value="e4">Δασκάλων</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="year">Έτος</label>
+          <select id="year" name="year">
+            <option>2026</option>
+            <option>2025</option>
+            <option>2024</option>
+          </select>
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="submit">Φόρτωση Πίνακα</button>
+          <button class="btn btn-ghost" type="button">Καθαρισμός</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="reports" aria-labelledby="reportsTitle">
+      <div class="panel-head">
+        <h2 id="reportsTitle">Reports (UI)</h2>
+        <p class="muted">Προβολή στατιστικών “σαν dashboard” (χωρίς JS/DB σε αυτή τη φάση).</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-kpi">1,248</div>
+          <div class="stat-label">Υποψήφιοι (σύνολο)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">36.4</div>
+          <div class="stat-label">Μ.Ο. ηλικίας</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">+92</div>
+          <div class="stat-label">Νέοι υποψήφιοι (φέτος)</div>
+        </div>
+      </div>
+
+      <div class="chart-mock" aria-label="Mock γράφημα">
+        <div class="bar" style="width: 72%"><span>Πληροφορικής</span></div>
+        <div class="bar" style="width: 58%"><span>Μαθηματικοί</span></div>
+        <div class="bar" style="width: 41%"><span>Φιλόλογοι</span></div>
+        <div class="bar" style="width: 33%"><span>Δάσκαλοι</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <p>© 2026 Παρακολούθηση Πινάκων Διοριστέων — UI Module</p>
+      <a class="footer-link" href="../search/searchdashboard.html">Επιστροφή στο Search</a>
+    </div>
+  </footer>
+</body>
+</html>
