@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Search Dashboard | Πίνακες Διοριστέων</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body class="theme-search">
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="./searchdashboard.html">
+        <span class="brand-mark" aria-hidden="true">EEY</span>
+        <span class="brand-text">Πίνακες Διοριστέων</span>
+      </a>
+
+      <nav class="top-nav" aria-label="Κύρια πλοήγηση">
+        <ul class="nav-list">
+          <li><a class="nav-link is-active" href="./searchdashboard.html">Search</a></li>
+          <li><a class="nav-link" href="../candidate/candidatedashboard.html">Candidate</a></li>
+          <li><a class="nav-link" href="../admin/admindashboard.html">Admin</a></li>
+          <li><a class="nav-link" href="../api/api.php">API</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn" type="button">Register</button>
+        <button class="btn btn-ghost" type="button">Login</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-hero" aria-labelledby="searchTitle">
+      <div class="hero-text">
+        <h1 id="searchTitle">Search Module</h1>
+        <p class="muted">
+          Αναζήτηση υποψηφίων με ονοματεπώνυμο και ειδικότητα. Προβολή πληροφοριών με κείμενο/“γραφικά”.
+        </p>
+      </div>
+
+      <div class="hero-badges">
+        <div class="badge">
+          <span class="badge-label">Πρόσβαση</span>
+          <span class="badge-value">Δημόσια</span>
+        </div>
+        <div class="badge">
+          <span class="badge-label">Λειτουργίες</span>
+          <span class="badge-value">Search / Register / Stats</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Ενότητες Search">
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">🔎</div>
+        <h2>Αναζήτηση</h2>
+        <p>Βρες υποψήφιο ανά ονοματεπώνυμο και ειδικότητα.</p>
+        <div class="card-actions">
+          <a class="btn" href="#search">Άνοιγμα</a>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">📝</div>
+        <h2>Εγγραφή</h2>
+        <p>Δημιούργησε λογαριασμό για να συνδεθείς με υποψήφιο στους πίνακες.</p>
+        <div class="card-actions">
+          <a class="btn" href="#register">Άνοιγμα</a>
+        </div>
+      </article>
+
+      <article class="card card-action">
+        <div class="card-icon" aria-hidden="true">📈</div>
+        <h2>Στατιστικά</h2>
+        <p>Δες συγκεντρωτικά στατιστικά ανά ειδικότητα, έτος, περίοδο.</p>
+        <div class="card-actions">
+          <a class="btn" href="#stats">Άνοιγμα</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="search" aria-labelledby="searchPanelTitle">
+      <div class="panel-head">
+        <h2 id="searchPanelTitle">Αναζήτηση (UI)</h2>
+        <p class="muted">Mock φίλτρα + λίστα αποτελεσμάτων.</p>
+      </div>
+
+      <form class="form-grid" action="#" method="get">
+        <div class="form-group">
+          <label for="qname">Ονοματεπώνυμο</label>
+          <input id="qname" name="name" type="text" placeholder="π.χ. Παπαδόπουλος Γιώργος" />
+        </div>
+
+        <div class="form-group">
+          <label for="qspecialty">Ειδικότητα</label>
+          <select id="qspecialty" name="specialty">
+            <option value="">Όλες</option>
+            <option>Πληροφορικής</option>
+            <option>Μαθηματικοί</option>
+            <option>Φιλόλογοι</option>
+            <option>Δάσκαλοι</option>
+          </select>
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="submit">Search</button>
+          <button class="btn btn-ghost" type="button">Filter</button>
+        </div>
+      </form>
+
+      <div class="table-wrap" role="region" aria-label="Αποτελέσματα αναζήτησης">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Θέση</th>
+              <th>Ονοματεπώνυμο</th>
+              <th>Ειδικότητα</th>
+              <th>Κατάσταση</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>152</td>
+              <td>ΠΑΡΑΔΕΙΓΜΑ ΥΠΟΨΗΦΙΟΥ</td>
+              <td>Πληροφορικής</td>
+              <td><span class="pill">Ενεργός</span></td>
+            </tr>
+            <tr>
+              <td>417</td>
+              <td>ΔΕΙΓΜΑ ΔΕΥΤΕΡΟΥ</td>
+              <td>Μαθηματικοί</td>
+              <td><span class="pill">Ενεργός</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="register" aria-labelledby="registerTitle">
+      <div class="panel-head">
+        <h2 id="registerTitle">Εγγραφή (UI)</h2>
+        <p class="muted">Mock φόρμα εγγραφής.</p>
+      </div>
+
+      <form class="form-grid" action="#" method="post">
+        <div class="form-group">
+          <label for="rfn">Όνομα</label>
+          <input id="rfn" name="first_name" type="text" />
+        </div>
+
+        <div class="form-group">
+          <label for="rln">Επίθετο</label>
+          <input id="rln" name="last_name" type="text" />
+        </div>
+
+        <div class="form-group">
+          <label for="remail">Email</label>
+          <input id="remail" name="email" type="email" placeholder="name@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="rpass">Κωδικός</label>
+          <input id="rpass" name="password" type="password" placeholder="••••••••" />
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="submit">Create account</button>
+          <button class="btn btn-ghost" type="button">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="stats" aria-labelledby="statsTitle">
+      <div class="panel-head">
+        <h2 id="statsTitle">Στατιστικά (UI)</h2>
+        <p class="muted">Mock dashboard ανά ειδικότητα.</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="stSpec">Ειδικότητα</label>
+          <select id="stSpec" name="stats_specialty">
+            <option>Πληροφορικής</option>
+            <option>Μαθηματικοί</option>
+            <option>Φιλόλογοι</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="stYear">Έτος</label>
+          <select id="stYear" name="stats_year">
+            <option>2026</option>
+            <option>2025</option>
+            <option>2024</option>
+          </select>
+        </div>
+
+        <div class="form-group form-actions">
+          <button class="btn" type="button">Προβολή</button>
+          <button class="btn btn-ghost" type="button">Order</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-kpi">384</div>
+          <div class="stat-label">Υποψήφιοι (ειδικότητα)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">35.8</div>
+          <div class="stat-label">Μ.Ο. ηλικίας</div>
+        </div>
+        <div class="stat">
+          <div class="stat-kpi">+28</div>
+          <div class="stat-label">Νέοι (έτος)</div>
+        </div>
+      </div>
+
+      <div class="chart-mock" aria-label="Mock γράφημα ειδικότητας">
+        <div class="bar" style="width: 68%"><span>2024</span></div>
+        <div class="bar" style="width: 74%"><span>2025</span></div>
+        <div class="bar" style="width: 81%"><span>2026</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <p>© 2026 Search Module — UI</p>
+      <a class="footer-link" href="../admin/admindashboard.html">Admin</a>
+    </div>
+  </footer>
+</body>
+</html>
