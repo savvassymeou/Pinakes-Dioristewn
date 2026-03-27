@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -13,7 +13,7 @@ function candidate_value(?string $value, string $fallback = '—'): string
     return $value !== '' ? $value : $fallback;
 }
 
-function load_candidate(mysqli $conn, int $userId): ?array
+function load_candidate(PdoConnectionAdapter $conn, int $userId): ?array
 {
     $stmt = $conn->prepare(
         'SELECT
@@ -428,7 +428,7 @@ require __DIR__ . '/../includes/header.php';
         <div class="hero-text">
             <span class="eyebrow-home">Candidate Workspace</span>
             <h1 id="candTitle">Καλώς ήρθες, <?php echo h($candidate['first_name']); ?></h1>
-            <p class="muted">Από εδώ διαχειρίζεσαι το προσωπικό σου προφίλ, τις ρυθμίσεις λογαριασμού και την παρακολούθηση της υποψηφιότητάς σου μέσα από ένα οργανωμένο περιβάλλον εργασίας.</p>
+            <p class="muted">Το Candidate Dashboard είναι ο ιδιωτικός χώρος του υποψηφίου. Από εδώ οδηγείσαι στις 3 βασικές ενότητες του module: My Profile, Track My Applications και Track Others.</p>
         </div>
 
         <div class="hero-badges">
@@ -469,30 +469,29 @@ require __DIR__ . '/../includes/header.php';
         <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
     <?php endif; ?>
 
+    <section class="section-head" aria-label="Candidate dashboard intro">
+        <h2>Dashboard Υποψηφίου</h2>
+        <p>Οι 3 βασικές ενότητες του Candidate Module είναι οι παρακάτω. Από εδώ ο υποψήφιος μεταβαίνει στο προφίλ του, στην πορεία της αίτησής του και στην παρακολούθηση άλλων υποψηφίων.</p>
+    </section>
+
     <section class="grid grid-admin" aria-label="Γρήγορες ενότητες υποψηφίου">
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">1</div>
             <h2>My Profile</h2>
-            <p>Ενημέρωσε τα προσωπικά σου στοιχεία, το τηλέφωνο και την ειδικότητά σου με έναν καθαρό και οργανωμένο τρόπο.</p>
+            <p>Δες και ενημέρωσε όνομα, επώνυμο και τηλέφωνο, ενώ το email παραμένει σταθερό ως στοιχείο επικοινωνίας.</p>
             <div class="card-actions"><a class="btn" href="#profile">Άνοιγμα</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">2</div>
             <h2>Track My Applications</h2>
-            <p>Δες την πρόοδο της υποψηφιότητάς σου, τα μόρια, τη θέση σου στον πίνακα και την τελευταία ενημέρωση.</p>
+            <p>Παρακολούθησε την κατάσταση της αίτησής σου, τα μόρια, τη θέση σου στον πίνακα και τη συνολική πρόοδο.</p>
             <div class="card-actions"><a class="btn" href="#track-my-applications">Άνοιγμα</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">3</div>
             <h2>Track Others</h2>
-            <p>Αναζήτησε άλλους υποψηφίους, σύγκρινε βασικά στοιχεία και πρόσθεσέ τους στη λίστα παρακολούθησής σου.</p>
+            <p>Επίλεξε άλλους υποψηφίους για παρακολούθηση και κράτησέ τους στη δική σου λίστα σύγκρισης.</p>
             <div class="card-actions"><a class="btn" href="#track-others">Άνοιγμα</a></div>
-        </article>
-        <article class="card card-action">
-            <div class="card-icon" aria-hidden="true">4</div>
-            <h2>Ασφάλεια Λογαριασμού</h2>
-            <p>Διαχειρίσου ειδοποιήσεις και άλλαξε τον κωδικό πρόσβασής σου από ένα ενιαίο σημείο.</p>
-            <div class="card-actions"><a class="btn" href="#candidate-password">Άνοιγμα</a></div>
         </article>
     </section>
 
@@ -561,7 +560,7 @@ require __DIR__ . '/../includes/header.php';
         <div class="panel panel-nested" id="notifications">
             <div class="panel-head">
                 <h3>Ειδοποιήσεις</h3>
-                <p class="muted">Επίλεξε για ποια γεγονότα θέλεις να ενημερώνεσαι.</p>
+                <p class="muted">Επίλεξε ποιες ειδοποιήσεις θέλεις να λαμβάνεις, όπως νέα λίστα ή αλλαγή θέσης.</p>
             </div>
             <form method="post" action="#notifications">
                 <input type="hidden" name="action" value="save_notifications">
@@ -586,7 +585,7 @@ require __DIR__ . '/../includes/header.php';
         <div class="panel panel-nested" id="candidate-password">
             <div class="panel-head">
                 <h3>Αλλαγή Κωδικού</h3>
-                <p class="muted">Χρησιμοποίησε έναν ισχυρό κωδικό με τουλάχιστον 8 χαρακτήρες.</p>
+                <p class="muted">Στο τέλος του candidate module μπορείς να αλλάξεις τον κωδικό πρόσβασής σου, όπως ζητά η εκφώνηση.</p>
             </div>
             <form method="post" action="#candidate-password">
                 <input type="hidden" name="action" value="change_password">

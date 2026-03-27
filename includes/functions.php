@@ -19,6 +19,45 @@ function current_user_role(): ?string
     return $_SESSION["role"] ?? null;
 }
 
+function current_user_full_name(): string
+{
+    $firstName = trim((string) ($_SESSION["first_name"] ?? ""));
+    $lastName = trim((string) ($_SESSION["last_name"] ?? ""));
+    $fullName = trim($firstName . " " . $lastName);
+
+    if ($fullName !== "") {
+        return $fullName;
+    }
+
+    return "Χρήστης";
+}
+
+function current_user_initials(): string
+{
+    $firstName = trim((string) ($_SESSION["first_name"] ?? ""));
+    $lastName = trim((string) ($_SESSION["last_name"] ?? ""));
+    $initials = "";
+
+    if ($firstName !== "") {
+        $initials .= mb_strtoupper(mb_substr($firstName, 0, 1, "UTF-8"), "UTF-8");
+    }
+
+    if ($lastName !== "") {
+        $initials .= mb_strtoupper(mb_substr($lastName, 0, 1, "UTF-8"), "UTF-8");
+    }
+
+    return $initials !== "" ? $initials : "ΧΡ";
+}
+
+function current_role_label(): ?string
+{
+    return match (current_user_role()) {
+        ROLE_ADMIN => "Διαχειριστής",
+        ROLE_CANDIDATE => "Υποψήφιος",
+        default => null,
+    };
+}
+
 function current_dashboard_item(): ?array
 {
     $role = current_user_role();
