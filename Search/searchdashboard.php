@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 require_once __DIR__ . "/../includes/db.php";
 require_once __DIR__ . "/../includes/functions.php";
@@ -187,72 +187,72 @@ require __DIR__ . "/../includes/header.php";
             <div class="hero-text">
                 <h1 id="searchTitle">Search Module</h1>
                 <p class="muted">
-                    Δημόσια αναζήτηση υποψηφίων ανά ονοματεπώνυμο και ειδικότητα, μαζί με βασικά στατιστικά
-                    για να μπορεί ο επισκέπτης να βρει χρήσιμες πληροφορίες.
+                    Î”Î·Î¼ÏŒÏƒÎ¹Î± Î±Î½Î±Î¶Î®Ï„Î·ÏƒÎ· Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½ Î±Î½Î¬ Î¿Î½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿ ÎºÎ±Î¹ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±, Î¼Î±Î¶Î¯ Î¼Îµ Î²Î±ÏƒÎ¹ÎºÎ¬ ÏƒÏ„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÎ¬
+                    Î³Î¹Î± Î½Î± Î¼Ï€Î¿ÏÎµÎ¯ Î¿ ÎµÏ€Î¹ÏƒÎºÎ­Ï€Ï„Î·Ï‚ Î½Î± Î²ÏÎµÎ¹ Ï‡ÏÎ®ÏƒÎ¹Î¼ÎµÏ‚ Ï€Î»Î·ÏÎ¿Ï†Î¿ÏÎ¯ÎµÏ‚.
                 </p>
                 <p class="muted">
-                    Οι πληροφορίες παρουσιάζονται με απλό κείμενο, πίνακες και γραφική απεικόνιση, ώστε ο χρήστης
-                    να καταλαβαίνει εύκολα τη θέση, την ειδικότητα και τη γενική εικόνα των πινάκων.
+                    ÎŸÎ¹ Ï€Î»Î·ÏÎ¿Ï†Î¿ÏÎ¯ÎµÏ‚ Ï€Î±ÏÎ¿Ï…ÏƒÎ¹Î¬Î¶Î¿Î½Ï„Î±Î¹ Î¼Îµ Î±Ï€Î»ÏŒ ÎºÎµÎ¯Î¼ÎµÎ½Î¿, Ï€Î¯Î½Î±ÎºÎµÏ‚ ÎºÎ±Î¹ Î³ÏÎ±Ï†Î¹ÎºÎ® Î±Ï€ÎµÎ¹ÎºÏŒÎ½Î¹ÏƒÎ·, ÏŽÏƒÏ„Îµ Î¿ Ï‡ÏÎ®ÏƒÏ„Î·Ï‚
+                    Î½Î± ÎºÎ±Ï„Î±Î»Î±Î²Î±Î¯Î½ÎµÎ¹ ÎµÏÎºÎ¿Î»Î± Ï„Î· Î¸Î­ÏƒÎ·, Ï„Î·Î½ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± ÎºÎ±Î¹ Ï„Î· Î³ÎµÎ½Î¹ÎºÎ® ÎµÎ¹ÎºÏŒÎ½Î± Ï„Ï‰Î½ Ï€Î¹Î½Î¬ÎºÏ‰Î½.
                 </p>
             </div>
 
             <div class="hero-badges">
                 <div class="badge">
-                    <span class="badge-label">Πρόσβαση</span>
-                    <span class="badge-value">Δημόσια</span>
+                    <span class="badge-label">Î ÏÏŒÏƒÎ²Î±ÏƒÎ·</span>
+                    <span class="badge-value">Î”Î·Î¼ÏŒÏƒÎ¹Î±</span>
                 </div>
                 <div class="badge">
-                    <span class="badge-label">Υποψήφιοι</span>
+                    <span class="badge-label">Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Î¹</span>
                     <span class="badge-value"><?php echo (int) $overview["total_candidates"]; ?></span>
                 </div>
             </div>
         </section>
 
-        <section class="grid" aria-label="Ενότητες Search">
+        <section class="grid" aria-label="Î•Î½ÏŒÏ„Î·Ï„ÎµÏ‚ Search">
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">1</div>
-                <h2>Αναζήτηση</h2>
-                <p>Βρες υποψηφίους από τη βάση ανά όνομα και ειδικότητα.</p>
+                <h2>Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ·</h2>
+                <p>Î’ÏÎµÏ‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚ Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ· Î±Î½Î¬ ÏŒÎ½Î¿Î¼Î± ÎºÎ±Î¹ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±.</p>
                 <div class="card-actions">
-                    <a class="btn" href="#search">Άνοιγμα</a>
+                    <a class="btn" href="#search">Î†Î½Î¿Î¹Î³Î¼Î±</a>
                 </div>
             </article>
 
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">2</div>
-                <h2>Εγγραφή</h2>
-                <p>Δημιούργησε λογαριασμό για να συνδεθείς ως candidate και να παρακολουθείς πίνακες.</p>
+                <h2>Î•Î³Î³ÏÎ±Ï†Î®</h2>
+                <p>Î”Î·Î¼Î¹Î¿ÏÏÎ³Î·ÏƒÎµ Î»Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼ÏŒ Î³Î¹Î± Î½Î± ÏƒÏ…Î½Î´ÎµÎ¸ÎµÎ¯Ï‚ Ï‰Ï‚ candidate ÎºÎ±Î¹ Î½Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿Ï…Î¸ÎµÎ¯Ï‚ Ï€Î¯Î½Î±ÎºÎµÏ‚.</p>
                 <div class="card-actions">
-                    <a class="btn" href="../register.php">Μετάβαση</a>
+                    <a class="btn" href="../auth/register.php">ÎœÎµÏ„Î¬Î²Î±ÏƒÎ·</a>
                 </div>
             </article>
 
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">3</div>
-                <h2>Στατιστικά</h2>
-                <p>Προβολή στατιστικών ανά ειδικότητα με συγκεντρωτική μορφή και απλό γράφημα.</p>
+                <h2>Î£Ï„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÎ¬</h2>
+                <p>Î ÏÎ¿Î²Î¿Î»Î® ÏƒÏ„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÏŽÎ½ Î±Î½Î¬ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± Î¼Îµ ÏƒÏ…Î³ÎºÎµÎ½Ï„ÏÏ‰Ï„Î¹ÎºÎ® Î¼Î¿ÏÏ†Î® ÎºÎ±Î¹ Î±Ï€Î»ÏŒ Î³ÏÎ¬Ï†Î·Î¼Î±.</p>
                 <div class="card-actions">
-                    <a class="btn" href="#stats">Άνοιγμα</a>
+                    <a class="btn" href="#stats">Î†Î½Î¿Î¹Î³Î¼Î±</a>
                 </div>
             </article>
         </section>
 
         <section class="panel" id="search" aria-labelledby="searchPanelTitle">
             <div class="panel-head">
-                <h2 id="searchPanelTitle">Αναζήτηση Υποψηφίων</h2>
-                <p class="muted">Επίλεξε φίλτρα και δες πραγματικά αποτελέσματα από τη βάση.</p>
+                <h2 id="searchPanelTitle">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ· Î¥Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½</h2>
+                <p class="muted">Î•Ï€Î¯Î»ÎµÎ¾Îµ Ï†Î¯Î»Ï„ÏÎ± ÎºÎ±Î¹ Î´ÎµÏ‚ Ï€ÏÎ±Î³Î¼Î±Ï„Î¹ÎºÎ¬ Î±Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ·.</p>
             </div>
 
             <form class="form-grid" method="get" action="#search">
                 <div class="form-group">
-                    <label for="name">Ονοματεπώνυμο</label>
-                    <input id="name" name="name" type="text" value="<?php echo h($searchName); ?>" placeholder="π.χ. Παπαδόπουλος Γιώργος">
+                    <label for="name">ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</label>
+                    <input id="name" name="name" type="text" value="<?php echo h($searchName); ?>" placeholder="Ï€.Ï‡. Î Î±Ï€Î±Î´ÏŒÏ€Î¿Ï…Î»Î¿Ï‚ Î“Î¹ÏŽÏÎ³Î¿Ï‚">
                 </div>
 
                 <div class="form-group">
-                    <label for="specialty_id">Ειδικότητα</label>
+                    <label for="specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
                     <select id="specialty_id" name="specialty_id">
-                        <option value="0">Όλες</option>
+                        <option value="0">ÎŒÎ»ÎµÏ‚</option>
                         <?php foreach ($specialties as $specialty): ?>
                             <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $searchSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
                                 <?php echo h($specialty["title"]); ?>
@@ -262,44 +262,44 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="form-group">
-                    <label for="order">Ταξινόμηση</label>
+                    <label for="order">Î¤Î±Î¾Î¹Î½ÏŒÎ¼Î·ÏƒÎ·</label>
                     <select id="order" name="order">
-                        <option value="rank_asc" <?php echo $searchOrder === "rank_asc" ? "selected" : ""; ?>>Θέση πίνακα</option>
-                        <option value="name_asc" <?php echo $searchOrder === "name_asc" ? "selected" : ""; ?>>Αλφαβητικά</option>
-                        <option value="points_desc" <?php echo $searchOrder === "points_desc" ? "selected" : ""; ?>>Μονάδες φθίνουσα</option>
+                        <option value="rank_asc" <?php echo $searchOrder === "rank_asc" ? "selected" : ""; ?>>Î˜Î­ÏƒÎ· Ï€Î¯Î½Î±ÎºÎ±</option>
+                        <option value="name_asc" <?php echo $searchOrder === "name_asc" ? "selected" : ""; ?>>Î‘Î»Ï†Î±Î²Î·Ï„Î¹ÎºÎ¬</option>
+                        <option value="points_desc" <?php echo $searchOrder === "points_desc" ? "selected" : ""; ?>>ÎœÎ¿Î½Î¬Î´ÎµÏ‚ Ï†Î¸Î¯Î½Î¿Ï…ÏƒÎ±</option>
                     </select>
                 </div>
 
                 <div class="form-group form-actions">
                     <button class="btn" type="submit">Search</button>
-                    <a class="btn btn-ghost" href="<?php echo $selfPath; ?>#search">Καθαρισμός</a>
+                    <a class="btn btn-ghost" href="<?php echo $selfPath; ?>#search">ÎšÎ±Î¸Î±ÏÎ¹ÏƒÎ¼ÏŒÏ‚</a>
                 </div>
             </form>
 
-            <div class="table-wrap" role="region" aria-label="Αποτελέσματα αναζήτησης">
+            <div class="table-wrap" role="region" aria-label="Î‘Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î±Î½Î±Î¶Î®Ï„Î·ÏƒÎ·Ï‚">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Θέση</th>
-                            <th>Ονοματεπώνυμο</th>
-                            <th>Ειδικότητα</th>
-                            <th>Μονάδες</th>
-                            <th>Κατάσταση</th>
+                            <th>Î˜Î­ÏƒÎ·</th>
+                            <th>ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</th>
+                            <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
+                            <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
+                            <th>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($searchResults === []): ?>
                             <tr>
-                                <td colspan="5" class="empty-cell">Δεν βρέθηκαν αποτελέσματα για τα φίλτρα που έβαλες.</td>
+                                <td colspan="5" class="empty-cell">Î”ÎµÎ½ Î²ÏÎ­Î¸Î·ÎºÎ±Î½ Î±Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î³Î¹Î± Ï„Î± Ï†Î¯Î»Ï„ÏÎ± Ï€Î¿Ï… Î­Î²Î±Î»ÎµÏ‚.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($searchResults as $row): ?>
                                 <tr>
-                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "—"; ?></td>
+                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "â€”"; ?></td>
                                     <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
-                                    <td><?php echo h($row["specialty_title"] ?? "—"); ?></td>
-                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "—"; ?></td>
-                                    <td><span class="pill"><?php echo h($row["application_status"] ?? "—"); ?></span></td>
+                                    <td><?php echo h($row["specialty_title"] ?? "â€”"); ?></td>
+                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "â€”"; ?></td>
+                                    <td><span class="pill"><?php echo h($row["application_status"] ?? "â€”"); ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -310,13 +310,13 @@ require __DIR__ . "/../includes/header.php";
 
         <section class="panel" id="stats" aria-labelledby="statsTitle">
             <div class="panel-head">
-                <h2 id="statsTitle">Στατιστικά Ανά Ειδικότητα</h2>
-                <p class="muted">Συγκεντρωτικά στοιχεία για την ειδικότητα που επιλέγεις.</p>
+                <h2 id="statsTitle">Î£Ï„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÎ¬ Î‘Î½Î¬ Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</h2>
+                <p class="muted">Î£Ï…Î³ÎºÎµÎ½Ï„ÏÏ‰Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î± Î³Î¹Î± Ï„Î·Î½ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± Ï€Î¿Ï… ÎµÏ€Î¹Î»Î­Î³ÎµÎ¹Ï‚.</p>
             </div>
 
             <form class="form-grid" method="get" action="#stats">
                 <div class="form-group">
-                    <label for="stats_specialty_id">Ειδικότητα</label>
+                    <label for="stats_specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
                     <select id="stats_specialty_id" name="stats_specialty_id">
                         <?php foreach ($specialties as $specialty): ?>
                             <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $statsSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
@@ -327,39 +327,39 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="form-group form-actions">
-                    <button class="btn" type="submit">Προβολή</button>
+                    <button class="btn" type="submit">Î ÏÎ¿Î²Î¿Î»Î®</button>
                 </div>
             </form>
 
             <div class="stats">
                 <div class="stat">
                     <div class="stat-kpi"><?php echo (int) ($specialtyOverview["candidate_count"] ?? 0); ?></div>
-                    <div class="stat-label">Υποψήφιοι (ειδικότητα)</div>
+                    <div class="stat-label">Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Î¹ (ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±)</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo $specialtyOverview["average_age"] !== null ? number_format((float) $specialtyOverview["average_age"], 1) : "—"; ?></div>
-                    <div class="stat-label">Μ.Ο. ηλικίας</div>
+                    <div class="stat-kpi"><?php echo $specialtyOverview["average_age"] !== null ? number_format((float) $specialtyOverview["average_age"], 1) : "â€”"; ?></div>
+                    <div class="stat-label">Îœ.ÎŸ. Î·Î»Î¹ÎºÎ¯Î±Ï‚</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo $specialtyOverview["average_points"] !== null ? number_format((float) $specialtyOverview["average_points"], 2) : "—"; ?></div>
-                    <div class="stat-label">Μ.Ο. μονάδων</div>
+                    <div class="stat-kpi"><?php echo $specialtyOverview["average_points"] !== null ? number_format((float) $specialtyOverview["average_points"], 2) : "â€”"; ?></div>
+                    <div class="stat-label">Îœ.ÎŸ. Î¼Î¿Î½Î¬Î´Ï‰Î½</div>
                 </div>
             </div>
 
             <div class="chart-card">
-                <h3><?php echo h($selectedSpecialtyStats["title"] ?? "Ειδικότητα"); ?> ανά έτος</h3>
+                <h3><?php echo h($selectedSpecialtyStats["title"] ?? "Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±"); ?> Î±Î½Î¬ Î­Ï„Î¿Ï‚</h3>
 
                 <?php if ($statsRows === []): ?>
-                    <p class="muted empty-copy">Δεν υπάρχουν ακόμη δεδομένα για αυτή την ειδικότητα.</p>
+                    <p class="muted empty-copy">Î”ÎµÎ½ Ï…Ï€Î¬ÏÏ‡Î¿Ï…Î½ Î±ÎºÏŒÎ¼Î· Î´ÎµÎ´Î¿Î¼Î­Î½Î± Î³Î¹Î± Î±Ï…Ï„Î® Ï„Î·Î½ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±.</p>
                 <?php else: ?>
-                    <div class="chart-mock" aria-label="Γράφημα υποψηφίων ανά έτος">
+                    <div class="chart-mock" aria-label="Î“ÏÎ¬Ï†Î·Î¼Î± Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½ Î±Î½Î¬ Î­Ï„Î¿Ï‚">
                         <?php foreach ($statsRows as $row): ?>
                             <?php
                             $count = (int) $row["candidate_count"];
                             $width = $maxYearlyCount > 0 ? max(16, (int) round(($count / $maxYearlyCount) * 100)) : 16;
                             ?>
                             <div class="bar" style="width: <?php echo $width; ?>%">
-                                <span><?php echo h((string) $row["report_year"]); ?> - <?php echo $count; ?> υποψήφιοι</span>
+                                <span><?php echo h((string) $row["report_year"]); ?> - <?php echo $count; ?> Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Î¹</span>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -368,20 +368,20 @@ require __DIR__ . "/../includes/header.php";
 
             <div class="reports-layout">
                 <div class="chart-card">
-                    <h3>Γενική εικόνα</h3>
+                    <h3>Î“ÎµÎ½Î¹ÎºÎ® ÎµÎ¹ÎºÏŒÎ½Î±</h3>
                     <div class="year-list">
-                        <div class="year-item"><span>Σύνολο υποψηφίων</span><strong><?php echo (int) $overview["total_candidates"]; ?></strong></div>
-                        <div class="year-item"><span>Μ.Ο. ηλικίας</span><strong><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : "—"; ?></strong></div>
-                        <div class="year-item"><span>Νέοι το <?php echo date("Y"); ?></span><strong><?php echo (int) $overview["new_candidates_year"]; ?></strong></div>
+                        <div class="year-item"><span>Î£ÏÎ½Î¿Î»Î¿ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½</span><strong><?php echo (int) $overview["total_candidates"]; ?></strong></div>
+                        <div class="year-item"><span>Îœ.ÎŸ. Î·Î»Î¹ÎºÎ¯Î±Ï‚</span><strong><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : "â€”"; ?></strong></div>
+                        <div class="year-item"><span>ÎÎ­Î¿Î¹ Ï„Î¿ <?php echo date("Y"); ?></span><strong><?php echo (int) $overview["new_candidates_year"]; ?></strong></div>
                     </div>
                 </div>
 
                 <div class="chart-card">
-                    <h3>Σύνδεσμοι συστήματος</h3>
+                    <h3>Î£ÏÎ½Î´ÎµÏƒÎ¼Î¿Î¹ ÏƒÏ…ÏƒÏ„Î®Î¼Î±Ï„Î¿Ï‚</h3>
                     <div class="year-list">
-                        <div class="year-item"><span>Login</span><strong><a href="../login.php">Άνοιγμα</a></strong></div>
-                        <div class="year-item"><span>Register</span><strong><a href="../register.php">Άνοιγμα</a></strong></div>
-                        <div class="year-item"><span>API</span><strong><a href="../API/api.php">Άνοιγμα</a></strong></div>
+                        <div class="year-item"><span>Login</span><strong><a href="../auth/login.php">Î†Î½Î¿Î¹Î³Î¼Î±</a></strong></div>
+                        <div class="year-item"><span>Register</span><strong><a href="../auth/register.php">Î†Î½Î¿Î¹Î³Î¼Î±</a></strong></div>
+                        <div class="year-item"><span>API</span><strong><a href="../API/api.php">Î†Î½Î¿Î¹Î³Î¼Î±</a></strong></div>
                     </div>
                 </div>
             </div>
@@ -389,5 +389,7 @@ require __DIR__ . "/../includes/header.php";
     </main>
 
 <?php require __DIR__ . "/../includes/footer.php"; ?>
+
+
 
 

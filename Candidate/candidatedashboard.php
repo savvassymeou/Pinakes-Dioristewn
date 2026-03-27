@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 session_start();
 
 if (!isset($_SESSION["user_id"]) || !isset($_SESSION["role"]) || $_SESSION["role"] !== "candidate") {
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
@@ -59,7 +59,7 @@ if ($candidateStmt) {
 
 if (!$candidate) {
     session_destroy();
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
@@ -113,9 +113,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $specialtyId = (int) ($_POST["specialty_id"] ?? 0);
 
         if ($firstName === "" || $lastName === "") {
-            $errorMessage = "Συμπλήρωσε τουλάχιστον όνομα και επώνυμο.";
+            $errorMessage = "Î£Ï…Î¼Ï€Î»Î®ÏÏ‰ÏƒÎµ Ï„Î¿Ï…Î»Î¬Ï‡Î¹ÏƒÏ„Î¿Î½ ÏŒÎ½Î¿Î¼Î± ÎºÎ±Î¹ ÎµÏ€ÏŽÎ½Ï…Î¼Î¿.";
         } elseif ($birthDate !== "" && strtotime($birthDate) === false) {
-            $errorMessage = "Η ημερομηνία γέννησης δεν είναι έγκυρη.";
+            $errorMessage = "Î— Î·Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î± Î³Î­Î½Î½Î·ÏƒÎ·Ï‚ Î´ÎµÎ½ ÎµÎ¯Î½Î±Î¹ Î­Î³ÎºÏ…ÏÎ·.";
         } else {
             $validSpecialty = 0;
 
@@ -132,13 +132,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $userUpdateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?");
 
                 if (!$userUpdateStmt) {
-                    throw new RuntimeException("Δεν ήταν δυνατή η ενημέρωση των βασικών στοιχείων.");
+                    throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ· Ï„Ï‰Î½ Î²Î±ÏƒÎ¹ÎºÏŽÎ½ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Ï‰Î½.");
                 }
 
                 $userUpdateStmt->bind_param("sssi", $firstName, $lastName, $phone, $_SESSION["user_id"]);
 
                 if (!$userUpdateStmt->execute()) {
-                    throw new RuntimeException("Αποτυχία ενημέρωσης χρήστη.");
+                    throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·Ï‚ Ï‡ÏÎ®ÏƒÏ„Î·.");
                 }
 
                 $userUpdateStmt->close();
@@ -151,7 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     ");
 
                     if (!$profileUpdateStmt) {
-                        throw new RuntimeException("Δεν ήταν δυνατή η ενημέρωση του candidate profile.");
+                        throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ· Ï„Î¿Ï… candidate profile.");
                     }
 
                     $birthDateValue = $birthDate !== "" ? $birthDate : null;
@@ -161,7 +161,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $profileUpdateStmt->bind_param("sssii", $fatherName, $motherName, $birthDateValue, $specialtyValue, $profileId);
 
                     if (!$profileUpdateStmt->execute()) {
-                        throw new RuntimeException("Αποτυχία ενημέρωσης candidate profile.");
+                        throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·Ï‚ candidate profile.");
                     }
 
                     $profileUpdateStmt->close();
@@ -169,11 +169,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $profileInsertStmt = $conn->prepare("
                         INSERT INTO candidate_profiles
                         (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points)
-                        VALUES (?, ?, ?, ?, ?, 'Προφίλ ενημερωμένο από τον χρήστη', NULL, NULL)
+                        VALUES (?, ?, ?, ?, ?, 'Î ÏÎ¿Ï†Î¯Î» ÎµÎ½Î·Î¼ÎµÏÏ‰Î¼Î­Î½Î¿ Î±Ï€ÏŒ Ï„Î¿Î½ Ï‡ÏÎ®ÏƒÏ„Î·', NULL, NULL)
                     ");
 
                     if (!$profileInsertStmt) {
-                        throw new RuntimeException("Δεν ήταν δυνατή η δημιουργία candidate profile.");
+                        throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î´Î·Î¼Î¹Î¿Ï…ÏÎ³Î¯Î± candidate profile.");
                     }
 
                     $birthDateValue = $birthDate !== "" ? $birthDate : null;
@@ -182,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $profileInsertStmt->bind_param("isssi", $_SESSION["user_id"], $fatherName, $motherName, $birthDateValue, $specialtyValue);
 
                     if (!$profileInsertStmt->execute()) {
-                        throw new RuntimeException("Αποτυχία δημιουργίας candidate profile.");
+                        throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± Î´Î·Î¼Î¹Î¿Ï…ÏÎ³Î¯Î±Ï‚ candidate profile.");
                     }
 
                     $profileInsertStmt->close();
@@ -191,7 +191,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $conn->commit();
                 $_SESSION["first_name"] = $firstName;
                 $_SESSION["last_name"] = $lastName;
-                $successMessage = "Το προφίλ σου ενημερώθηκε επιτυχώς.";
+                $successMessage = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» ÏƒÎ¿Ï… ÎµÎ½Î·Î¼ÎµÏÏŽÎ¸Î·ÎºÎµ ÎµÏ€Î¹Ï„Ï…Ï‡ÏŽÏ‚.";
             } catch (Throwable $exception) {
                 $conn->rollback();
                 $errorMessage = $exception->getMessage();
@@ -220,9 +220,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     "notify_rank_change" => $notifyRankChange,
                     "notify_specialty_stats" => $notifySpecialtyStats,
                 ];
-                $successMessage = "Οι ειδοποιήσεις σου ενημερώθηκαν.";
+                $successMessage = "ÎŸÎ¹ ÎµÎ¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÎ¹Ï‚ ÏƒÎ¿Ï… ÎµÎ½Î·Î¼ÎµÏÏŽÎ¸Î·ÎºÎ±Î½.";
             } else {
-                $errorMessage = "Δεν ήταν δυνατή η αποθήκευση των ειδοποιήσεων.";
+                $errorMessage = "Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Ï„Ï‰Î½ ÎµÎ¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÏ‰Î½.";
             }
 
             $notificationSaveStmt->close();
@@ -244,13 +244,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($currentPassword === "" || $newPassword === "" || $confirmPassword === "") {
-            $errorMessage = "Συμπλήρωσε όλα τα πεδία αλλαγής κωδικού.";
+            $errorMessage = "Î£Ï…Î¼Ï€Î»Î®ÏÏ‰ÏƒÎµ ÏŒÎ»Î± Ï„Î± Ï€ÎµÎ´Î¯Î± Î±Î»Î»Î±Î³Î®Ï‚ ÎºÏ‰Î´Î¹ÎºÎ¿Ï.";
         } elseif (!$passwordRow || !password_verify($currentPassword, $passwordRow["password"])) {
-            $errorMessage = "Ο τρέχων κωδικός δεν είναι σωστός.";
+            $errorMessage = "ÎŸ Ï„ÏÎ­Ï‡Ï‰Î½ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ Î´ÎµÎ½ ÎµÎ¯Î½Î±Î¹ ÏƒÏ‰ÏƒÏ„ÏŒÏ‚.";
         } elseif (strlen($newPassword) < 8) {
-            $errorMessage = "Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
+            $errorMessage = "ÎŸ Î½Î­Î¿Ï‚ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ Ï€ÏÎ­Ï€ÎµÎ¹ Î½Î± Î­Ï‡ÎµÎ¹ Ï„Î¿Ï…Î»Î¬Ï‡Î¹ÏƒÏ„Î¿Î½ 8 Ï‡Î±ÏÎ±ÎºÏ„Î®ÏÎµÏ‚.";
         } elseif ($newPassword !== $confirmPassword) {
-            $errorMessage = "Η επιβεβαίωση του νέου κωδικού δεν ταιριάζει.";
+            $errorMessage = "Î— ÎµÏ€Î¹Î²ÎµÎ²Î±Î¯Ï‰ÏƒÎ· Ï„Î¿Ï… Î½Î­Î¿Ï… ÎºÏ‰Î´Î¹ÎºÎ¿Ï Î´ÎµÎ½ Ï„Î±Î¹ÏÎ¹Î¬Î¶ÎµÎ¹.";
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
             $updatePasswordStmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
@@ -259,9 +259,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $updatePasswordStmt->bind_param("si", $hashedPassword, $_SESSION["user_id"]);
 
                 if ($updatePasswordStmt->execute()) {
-                    $successMessage = "Ο κωδικός σου άλλαξε επιτυχώς.";
+                    $successMessage = "ÎŸ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ ÏƒÎ¿Ï… Î¬Î»Î»Î±Î¾Îµ ÎµÏ€Î¹Ï„Ï…Ï‡ÏŽÏ‚.";
                 } else {
-                    $errorMessage = "Η αλλαγή κωδικού απέτυχε.";
+                    $errorMessage = "Î— Î±Î»Î»Î±Î³Î® ÎºÏ‰Î´Î¹ÎºÎ¿Ï Î±Ï€Î­Ï„Ï…Ï‡Îµ.";
                 }
 
                 $updatePasswordStmt->close();
@@ -271,7 +271,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $targetProfileId = (int) ($_POST["candidate_profile_id"] ?? 0);
 
         if ($targetProfileId <= 0) {
-            $errorMessage = "Επίλεξε έναν υποψήφιο για παρακολούθηση.";
+            $errorMessage = "Î•Ï€Î¯Î»ÎµÎ¾Îµ Î­Î½Î±Î½ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Î³Î¹Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·.";
         } else {
             $checkTrackStmt = $conn->prepare("
                 SELECT id
@@ -286,7 +286,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $trackResult = $checkTrackStmt->get_result();
 
                 if ($trackResult && $trackResult->num_rows > 0) {
-                    $errorMessage = "Ο υποψήφιος είναι ήδη στη λίστα παρακολούθησης.";
+                    $errorMessage = "ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ ÎµÎ¯Î½Î±Î¹ Î®Î´Î· ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.";
                 }
 
                 $checkTrackStmt->close();
@@ -299,9 +299,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $insertTrackStmt->bind_param("ii", $_SESSION["user_id"], $targetProfileId);
 
                     if ($insertTrackStmt->execute()) {
-                        $successMessage = "Ο υποψήφιος προστέθηκε στην παρακολούθησή σου.";
+                        $successMessage = "ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ Ï€ÏÎ¿ÏƒÏ„Î­Î¸Î·ÎºÎµ ÏƒÏ„Î·Î½ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ® ÏƒÎ¿Ï….";
                     } else {
-                        $errorMessage = "Δεν ήταν δυνατή η αποθήκευση της παρακολούθησης.";
+                        $errorMessage = "Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Ï„Î·Ï‚ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.";
                     }
 
                     $insertTrackStmt->close();
@@ -355,16 +355,16 @@ if (!empty($candidate["birth_date"])) {
     $candidateAge = (int) date_diff(date_create($candidate["birth_date"]), date_create("today"))->y;
 }
 
-$applicationStage = "Δεν έχει ολοκληρωθεί ακόμη σύνδεση με υποψήφιο πίνακα.";
+$applicationStage = "Î”ÎµÎ½ Î­Ï‡ÎµÎ¹ Î¿Î»Î¿ÎºÎ»Î·ÏÏ‰Î¸ÎµÎ¯ Î±ÎºÏŒÎ¼Î· ÏƒÏÎ½Î´ÎµÏƒÎ· Î¼Îµ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Ï€Î¯Î½Î±ÎºÎ±.";
 $applicationProgress = 20;
 
 if (!empty($candidate["profile_id"]) && !empty($candidate["specialty_title"])) {
-    $applicationStage = "Το προφίλ σου είναι συνδεδεμένο με ειδικότητα και μπορεί να παρακολουθεί την πορεία σου.";
+    $applicationStage = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» ÏƒÎ¿Ï… ÎµÎ¯Î½Î±Î¹ ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿ Î¼Îµ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± ÎºÎ±Î¹ Î¼Ï€Î¿ÏÎµÎ¯ Î½Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿Ï…Î¸ÎµÎ¯ Ï„Î·Î½ Ï€Î¿ÏÎµÎ¯Î± ÏƒÎ¿Ï….";
     $applicationProgress = 55;
 }
 
 if ($candidate["ranking_position"] !== null) {
-    $applicationStage = "Έχει εντοπιστεί θέση στον πίνακα και η παρακολούθηση της αίτησης είναι ενεργή.";
+    $applicationStage = "ÎˆÏ‡ÎµÎ¹ ÎµÎ½Ï„Î¿Ï€Î¹ÏƒÏ„ÎµÎ¯ Î¸Î­ÏƒÎ· ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ± ÎºÎ±Î¹ Î· Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Ï„Î·Ï‚ Î±Î¯Ï„Î·ÏƒÎ·Ï‚ ÎµÎ¯Î½Î±Î¹ ÎµÎ½ÎµÏÎ³Î®.";
     $applicationProgress = 82;
 }
 
@@ -462,7 +462,7 @@ $pageTitle = APP_NAME . " | Candidate Dashboard";
 $bodyClass = "theme-candidate";
 $currentPage = "candidate";
 $navBase = "../";
-$headerActionLabel = "Το προφίλ μου";
+$headerActionLabel = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» Î¼Î¿Ï…";
 $headerActionHref = "#profile";
 
 require __DIR__ . "/../includes/header.php";
@@ -471,21 +471,21 @@ require __DIR__ . "/../includes/header.php";
     <main class="container">
         <section class="page-hero" aria-labelledby="candTitle">
             <div class="hero-text">
-                <h1 id="candTitle">Καλώς ήρθες, <?php echo h($candidate["first_name"]); ?></h1>
+                <h1 id="candTitle">ÎšÎ±Î»ÏŽÏ‚ Î®ÏÎ¸ÎµÏ‚, <?php echo h($candidate["first_name"]); ?></h1>
                 <p class="muted">
-                    Είσαι συνδεδεμένος ως candidate και βλέπεις το προσωπικό σου dashboard με στοιχεία
-                    λογαριασμού, κατάσταση προφίλ και παρακολούθηση άλλων υποψηφίων.
+                    Î•Î¯ÏƒÎ±Î¹ ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï‚ Ï‰Ï‚ candidate ÎºÎ±Î¹ Î²Î»Î­Ï€ÎµÎ¹Ï‚ Ï„Î¿ Ï€ÏÎ¿ÏƒÏ‰Ï€Î¹ÎºÏŒ ÏƒÎ¿Ï… dashboard Î¼Îµ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î±
+                    Î»Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï, ÎºÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Ï€ÏÎ¿Ï†Î¯Î» ÎºÎ±Î¹ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Î¬Î»Î»Ï‰Î½ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½.
                 </p>
             </div>
 
             <div class="hero-badges">
                 <div class="badge">
-                    <span class="badge-label">Κατάσταση</span>
-                    <span class="badge-value">Συνδεδεμένος</span>
+                    <span class="badge-label">ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</span>
+                    <span class="badge-value">Î£Ï…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï‚</span>
                 </div>
                 <div class="badge">
-                    <span class="badge-label">Ειδικότητα</span>
-                    <span class="badge-value"><?php echo h($candidate["specialty_title"] ?? "Δεν ορίστηκε"); ?></span>
+                    <span class="badge-label">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</span>
+                    <span class="badge-value"><?php echo h($candidate["specialty_title"] ?? "Î”ÎµÎ½ Î¿ÏÎ¯ÏƒÏ„Î·ÎºÎµ"); ?></span>
                 </div>
             </div>
         </section>
@@ -498,56 +498,56 @@ require __DIR__ . "/../includes/header.php";
             <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
         <?php endif; ?>
 
-        <section class="grid grid-admin" aria-label="Ενότητες candidate">
+        <section class="grid grid-admin" aria-label="Î•Î½ÏŒÏ„Î·Ï„ÎµÏ‚ candidate">
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">1</div>
-                <h2>Το προφίλ μου</h2>
-                <p>Βλέπεις και ενημερώνεις τα πραγματικά στοιχεία του λογαριασμού σου από τη βάση.</p>
+                <h2>Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» Î¼Î¿Ï…</h2>
+                <p>Î’Î»Î­Ï€ÎµÎ¹Ï‚ ÎºÎ±Î¹ ÎµÎ½Î·Î¼ÎµÏÏŽÎ½ÎµÎ¹Ï‚ Ï„Î± Ï€ÏÎ±Î³Î¼Î±Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î± Ï„Î¿Ï… Î»Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï ÏƒÎ¿Ï… Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ·.</p>
                 <div class="card-actions">
-                    <a class="btn" href="#profile">Άνοιγμα</a>
+                    <a class="btn" href="#profile">Î†Î½Î¿Î¹Î³Î¼Î±</a>
                 </div>
             </article>
 
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">2</div>
                 <h2>Track my applications</h2>
-                <p>Βλέπεις την κατάσταση της αίτησής σου με κείμενο, δείκτες και απλό timeline format.</p>
+                <p>Î’Î»Î­Ï€ÎµÎ¹Ï‚ Ï„Î·Î½ ÎºÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Ï„Î·Ï‚ Î±Î¯Ï„Î·ÏƒÎ®Ï‚ ÏƒÎ¿Ï… Î¼Îµ ÎºÎµÎ¯Î¼ÎµÎ½Î¿, Î´ÎµÎ¯ÎºÏ„ÎµÏ‚ ÎºÎ±Î¹ Î±Ï€Î»ÏŒ timeline format.</p>
                 <div class="card-actions">
-                    <a class="btn" href="#track-my-applications">Άνοιγμα</a>
+                    <a class="btn" href="#track-my-applications">Î†Î½Î¿Î¹Î³Î¼Î±</a>
                 </div>
             </article>
 
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">3</div>
                 <h2>Track others</h2>
-                <p>Αναζητάς άλλους υποψηφίους από τη βάση και τους προσθέτεις στη λίστα παρακολούθησης.</p>
+                <p>Î‘Î½Î±Î¶Î·Ï„Î¬Ï‚ Î¬Î»Î»Î¿Ï…Ï‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚ Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ· ÎºÎ±Î¹ Ï„Î¿Ï…Ï‚ Ï€ÏÎ¿ÏƒÎ¸Î­Ï„ÎµÎ¹Ï‚ ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</p>
                 <div class="card-actions">
-                    <a class="btn" href="#track-others">Άνοιγμα</a>
+                    <a class="btn" href="#track-others">Î†Î½Î¿Î¹Î³Î¼Î±</a>
                 </div>
             </article>
         </section>
 
         <section class="panel" id="profile" aria-labelledby="profileTitle">
             <div class="panel-head">
-                <h2 id="profileTitle">Το Προφίλ Μου</h2>
-                <p class="muted">Εδώ φαίνονται τα πραγματικά στοιχεία του συνδεδεμένου χρήστη.</p>
+                <h2 id="profileTitle">Î¤Î¿ Î ÏÎ¿Ï†Î¯Î» ÎœÎ¿Ï…</h2>
+                <p class="muted">Î•Î´ÏŽ Ï†Î±Î¯Î½Î¿Î½Ï„Î±Î¹ Ï„Î± Ï€ÏÎ±Î³Î¼Î±Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î± Ï„Î¿Ï… ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï… Ï‡ÏÎ®ÏƒÏ„Î·.</p>
             </div>
 
             <form class="form-grid candidate-form" method="post" action="#profile">
                 <input type="hidden" name="action" value="update_profile">
 
                 <div class="form-group">
-                    <label for="first_name">Όνομα</label>
+                    <label for="first_name">ÎŒÎ½Î¿Î¼Î±</label>
                     <input id="first_name" name="first_name" type="text" value="<?php echo h($candidate["first_name"]); ?>" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="last_name">Επώνυμο</label>
+                    <label for="last_name">Î•Ï€ÏŽÎ½Ï…Î¼Î¿</label>
                     <input id="last_name" name="last_name" type="text" value="<?php echo h($candidate["last_name"]); ?>" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Τηλέφωνο</label>
+                    <label for="phone">Î¤Î·Î»Î­Ï†Ï‰Î½Î¿</label>
                     <input id="phone" name="phone" type="text" value="<?php echo h($candidate["phone"] ?? ""); ?>">
                 </div>
 
@@ -557,24 +557,24 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="form-group">
-                    <label for="father_name">Όνομα πατέρα</label>
+                    <label for="father_name">ÎŒÎ½Î¿Î¼Î± Ï€Î±Ï„Î­ÏÎ±</label>
                     <input id="father_name" name="father_name" type="text" value="<?php echo h($candidate["father_name"] ?? ""); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="mother_name">Όνομα μητέρας</label>
+                    <label for="mother_name">ÎŒÎ½Î¿Î¼Î± Î¼Î·Ï„Î­ÏÎ±Ï‚</label>
                     <input id="mother_name" name="mother_name" type="text" value="<?php echo h($candidate["mother_name"] ?? ""); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="birth_date">Ημερομηνία γέννησης</label>
+                    <label for="birth_date">Î—Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î± Î³Î­Î½Î½Î·ÏƒÎ·Ï‚</label>
                     <input id="birth_date" name="birth_date" type="date" value="<?php echo h($candidate["birth_date"] ?? ""); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="specialty_id">Ειδικότητα</label>
+                    <label for="specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
                     <select id="specialty_id" name="specialty_id">
-                        <option value="0">Επιλογή ειδικότητας</option>
+                        <option value="0">Î•Ï€Î¹Î»Î¿Î³Î® ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±Ï‚</option>
                         <?php foreach ($specialties as $specialty): ?>
                             <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo (int) ($candidate["specialty_id"] ?? 0) === (int) $specialty["id"] ? "selected" : ""; ?>>
                                 <?php echo h($specialty["title"]); ?>
@@ -584,14 +584,14 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="form-group form-actions">
-                    <button class="btn" type="submit">Αποθήκευση</button>
+                    <button class="btn" type="submit">Î‘Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ·</button>
                 </div>
             </form>
 
             <div class="panel panel-nested" id="notifications" aria-labelledby="notificationTitle">
                 <div class="panel-head">
-                    <h3 id="notificationTitle">Ειδοποιήσεις</h3>
-                    <p class="muted">Επίλεξε ποιες ενημερώσεις θέλεις να λαμβάνεις.</p>
+                    <h3 id="notificationTitle">Î•Î¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÎ¹Ï‚</h3>
+                    <p class="muted">Î•Ï€Î¯Î»ÎµÎ¾Îµ Ï€Î¿Î¹ÎµÏ‚ ÎµÎ½Î·Î¼ÎµÏÏŽÏƒÎµÎ¹Ï‚ Î¸Î­Î»ÎµÎ¹Ï‚ Î½Î± Î»Î±Î¼Î²Î¬Î½ÎµÎ¹Ï‚.</p>
                 </div>
 
                 <form method="post" action="#notifications">
@@ -600,28 +600,28 @@ require __DIR__ . "/../includes/header.php";
                     <div class="check-list">
                         <label class="check-item">
                             <input type="checkbox" name="notify_new_list" <?php echo (int) $notificationSettings["notify_new_list"] === 1 ? "checked" : ""; ?>>
-                            <span>Φόρτωση νέας λίστας</span>
+                            <span>Î¦ÏŒÏÏ„Ï‰ÏƒÎ· Î½Î­Î±Ï‚ Î»Î¯ÏƒÏ„Î±Ï‚</span>
                         </label>
 
                         <label class="check-item">
                             <input type="checkbox" name="notify_rank_change" <?php echo (int) $notificationSettings["notify_rank_change"] === 1 ? "checked" : ""; ?>>
-                            <span>Αλλαγή της θέσης μου</span>
+                            <span>Î‘Î»Î»Î±Î³Î® Ï„Î·Ï‚ Î¸Î­ÏƒÎ·Ï‚ Î¼Î¿Ï…</span>
                         </label>
 
                         <label class="check-item">
                             <input type="checkbox" name="notify_specialty_stats" <?php echo (int) $notificationSettings["notify_specialty_stats"] === 1 ? "checked" : ""; ?>>
-                            <span>Ενημέρωση στατιστικών ειδικότητας</span>
+                            <span>Î•Î½Î·Î¼Î­ÏÏ‰ÏƒÎ· ÏƒÏ„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÏŽÎ½ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±Ï‚</span>
                         </label>
                     </div>
 
-                    <button class="btn" type="submit">Αποθήκευση Ειδοποιήσεων</button>
+                    <button class="btn" type="submit">Î‘Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Î•Î¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÏ‰Î½</button>
                 </form>
             </div>
 
             <div class="panel panel-nested" id="candidate-password" aria-labelledby="candidatePasswordTitle">
                 <div class="panel-head">
-                    <h3 id="candidatePasswordTitle">Αλλαγή κωδικού</h3>
-                    <p class="muted">Ο υποψήφιος μπορεί να αλλάξει τον κωδικό πρόσβασής του μέσα από το profile.</p>
+                    <h3 id="candidatePasswordTitle">Î‘Î»Î»Î±Î³Î® ÎºÏ‰Î´Î¹ÎºÎ¿Ï</h3>
+                    <p class="muted">ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ Î¼Ï€Î¿ÏÎµÎ¯ Î½Î± Î±Î»Î»Î¬Î¾ÎµÎ¹ Ï„Î¿Î½ ÎºÏ‰Î´Î¹ÎºÏŒ Ï€ÏÏŒÏƒÎ²Î±ÏƒÎ®Ï‚ Ï„Î¿Ï… Î¼Î­ÏƒÎ± Î±Ï€ÏŒ Ï„Î¿ profile.</p>
                 </div>
 
                 <form method="post" action="#candidate-password">
@@ -629,22 +629,22 @@ require __DIR__ . "/../includes/header.php";
 
                     <div class="form-stack">
                         <div class="form-group">
-                            <label for="current_password">Τρέχων κωδικός</label>
+                            <label for="current_password">Î¤ÏÎ­Ï‡Ï‰Î½ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚</label>
                             <input id="current_password" name="current_password" type="password" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="new_password">Νέος κωδικός</label>
+                            <label for="new_password">ÎÎ­Î¿Ï‚ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚</label>
                             <input id="new_password" name="new_password" type="password" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="confirm_password">Επιβεβαίωση νέου κωδικού</label>
+                            <label for="confirm_password">Î•Ï€Î¹Î²ÎµÎ²Î±Î¯Ï‰ÏƒÎ· Î½Î­Î¿Ï… ÎºÏ‰Î´Î¹ÎºÎ¿Ï</label>
                             <input id="confirm_password" name="confirm_password" type="password" required>
                         </div>
                     </div>
 
-                    <button class="btn" type="submit">Αλλαγή Κωδικού</button>
+                    <button class="btn" type="submit">Î‘Î»Î»Î±Î³Î® ÎšÏ‰Î´Î¹ÎºÎ¿Ï</button>
                 </form>
             </div>
         </section>
@@ -652,76 +652,76 @@ require __DIR__ . "/../includes/header.php";
         <section class="panel" id="track-my-applications" aria-labelledby="statusTitle">
             <div class="panel-head">
                 <h2 id="statusTitle">Track My Applications</h2>
-                <p class="muted">Σύνδεση με τον υποψήφιο πίνακα και παρακολούθηση της πορείας σου.</p>
+                <p class="muted">Î£ÏÎ½Î´ÎµÏƒÎ· Î¼Îµ Ï„Î¿Î½ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Ï€Î¯Î½Î±ÎºÎ± ÎºÎ±Î¹ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Ï„Î·Ï‚ Ï€Î¿ÏÎµÎ¯Î±Ï‚ ÏƒÎ¿Ï….</p>
             </div>
 
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo h($candidate["specialty_title"] ?? "—"); ?></div>
-                    <div class="stat-label">Ειδικότητα</div>
+                    <div class="stat-kpi"><?php echo h($candidate["specialty_title"] ?? "â€”"); ?></div>
+                    <div class="stat-label">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo $candidate["ranking_position"] !== null ? (int) $candidate["ranking_position"] : "—"; ?></div>
-                    <div class="stat-label">Θέση στον πίνακα</div>
+                    <div class="stat-kpi"><?php echo $candidate["ranking_position"] !== null ? (int) $candidate["ranking_position"] : "â€”"; ?></div>
+                    <div class="stat-label">Î˜Î­ÏƒÎ· ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ±</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo $candidate["points"] !== null ? number_format((float) $candidate["points"], 2) : "—"; ?></div>
-                    <div class="stat-label">Μονάδες</div>
+                    <div class="stat-kpi"><?php echo $candidate["points"] !== null ? number_format((float) $candidate["points"], 2) : "â€”"; ?></div>
+                    <div class="stat-label">ÎœÎ¿Î½Î¬Î´ÎµÏ‚</div>
                 </div>
             </div>
 
             <div class="reports-layout">
                 <div class="chart-card">
-                    <h3>Στοιχεία αίτησης</h3>
+                    <h3>Î£Ï„Î¿Î¹Ï‡ÎµÎ¯Î± Î±Î¯Ï„Î·ÏƒÎ·Ï‚</h3>
                     <div class="year-list">
-                        <div class="year-item"><span>Ηλικία</span><strong><?php echo $candidateAge !== null ? $candidateAge . " ετών" : "Δεν ορίστηκε"; ?></strong></div>
-                        <div class="year-item"><span>Κατάσταση αίτησης</span><strong><?php echo h($candidate["application_status"] ?? "Δεν υπάρχει ακόμη"); ?></strong></div>
-                        <div class="year-item"><span>Τελευταία ενημέρωση</span><strong><?php echo !empty($candidate["updated_at"]) ? h(date("d/m/Y H:i", strtotime($candidate["updated_at"]))) : "Δεν υπάρχει"; ?></strong></div>
+                        <div class="year-item"><span>Î—Î»Î¹ÎºÎ¯Î±</span><strong><?php echo $candidateAge !== null ? $candidateAge . " ÎµÏ„ÏŽÎ½" : "Î”ÎµÎ½ Î¿ÏÎ¯ÏƒÏ„Î·ÎºÎµ"; ?></strong></div>
+                        <div class="year-item"><span>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Î±Î¯Ï„Î·ÏƒÎ·Ï‚</span><strong><?php echo h($candidate["application_status"] ?? "Î”ÎµÎ½ Ï…Ï€Î¬ÏÏ‡ÎµÎ¹ Î±ÎºÏŒÎ¼Î·"); ?></strong></div>
+                        <div class="year-item"><span>Î¤ÎµÎ»ÎµÏ…Ï„Î±Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·</span><strong><?php echo !empty($candidate["updated_at"]) ? h(date("d/m/Y H:i", strtotime($candidate["updated_at"]))) : "Î”ÎµÎ½ Ï…Ï€Î¬ÏÏ‡ÎµÎ¹"; ?></strong></div>
                     </div>
                 </div>
 
                 <div class="chart-card">
-                    <h3>Κείμενο και timeline</h3>
+                    <h3>ÎšÎµÎ¯Î¼ÎµÎ½Î¿ ÎºÎ±Î¹ timeline</h3>
                     <p class="muted"><?php echo h($applicationStage); ?></p>
-                    <div class="progress-track" aria-label="Πρόοδος αίτησης">
+                    <div class="progress-track" aria-label="Î ÏÏŒÎ¿Î´Î¿Ï‚ Î±Î¯Ï„Î·ÏƒÎ·Ï‚">
                         <div class="progress-value" style="width: <?php echo $applicationProgress; ?>%"></div>
                     </div>
                     <div class="year-list">
-                        <div class="year-item"><span>1. Προφίλ χρήστη</span><strong><?php echo !empty($candidate["first_name"]) ? "Ολοκληρώθηκε" : "Σε εκκρεμότητα"; ?></strong></div>
-                        <div class="year-item"><span>2. Σύνδεση με ειδικότητα</span><strong><?php echo !empty($candidate["specialty_title"]) ? "Ολοκληρώθηκε" : "Σε εκκρεμότητα"; ?></strong></div>
-                        <div class="year-item"><span>3. Εντοπισμός στον πίνακα</span><strong><?php echo $candidate["ranking_position"] !== null ? "Ολοκληρώθηκε" : "Σε εκκρεμότητα"; ?></strong></div>
+                        <div class="year-item"><span>1. Î ÏÎ¿Ï†Î¯Î» Ï‡ÏÎ®ÏƒÏ„Î·</span><strong><?php echo !empty($candidate["first_name"]) ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
+                        <div class="year-item"><span>2. Î£ÏÎ½Î´ÎµÏƒÎ· Î¼Îµ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</span><strong><?php echo !empty($candidate["specialty_title"]) ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
+                        <div class="year-item"><span>3. Î•Î½Ï„Î¿Ï€Î¹ÏƒÎ¼ÏŒÏ‚ ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ±</span><strong><?php echo $candidate["ranking_position"] !== null ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
                     </div>
                 </div>
             </div>
 
             <div class="panel panel-nested">
                 <div class="panel-head">
-                    <h3>Συγκριτικά στοιχεία</h3>
+                    <h3>Î£Ï…Î³ÎºÏÎ¹Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î±</h3>
                 </div>
                 <div class="year-list">
-                    <div class="year-item"><span>Ονοματεπώνυμο</span><strong><?php echo h($candidate["first_name"] . " " . $candidate["last_name"]); ?></strong></div>
+                    <div class="year-item"><span>ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</span><strong><?php echo h($candidate["first_name"] . " " . $candidate["last_name"]); ?></strong></div>
                     <div class="year-item"><span>Email</span><strong><?php echo h($candidate["email"]); ?></strong></div>
-                    <div class="year-item"><span>Παρακολουθήσεις άλλων</span><strong><?php echo $myTrackCount; ?></strong></div>
+                    <div class="year-item"><span>Î Î±ÏÎ±ÎºÎ¿Î»Î¿Ï…Î¸Î®ÏƒÎµÎ¹Ï‚ Î¬Î»Î»Ï‰Î½</span><strong><?php echo $myTrackCount; ?></strong></div>
                 </div>
             </div>
         </section>
 
         <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
             <div class="panel-head">
-                <h2 id="trackOthersTitle">Παρακολούθηση Άλλων Υποψηφίων</h2>
-                <p class="muted">Αναζήτηση άλλων υποψηφίων και αποθήκευση στη δική σου λίστα παρακολούθησης.</p>
+                <h2 id="trackOthersTitle">Î Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Î†Î»Î»Ï‰Î½ Î¥Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½</h2>
+                <p class="muted">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ· Î¬Î»Î»Ï‰Î½ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½ ÎºÎ±Î¹ Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· ÏƒÏ„Î· Î´Î¹ÎºÎ® ÏƒÎ¿Ï… Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</p>
             </div>
 
             <form class="form-grid" method="get" action="#track-others">
                 <div class="form-group">
-                    <label for="search_name">Ονοματεπώνυμο</label>
-                    <input id="search_name" name="search_name" type="text" value="<?php echo h($searchName); ?>" placeholder="π.χ. Παπαδόπουλος Γιώργος">
+                    <label for="search_name">ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</label>
+                    <input id="search_name" name="search_name" type="text" value="<?php echo h($searchName); ?>" placeholder="Ï€.Ï‡. Î Î±Ï€Î±Î´ÏŒÏ€Î¿Ï…Î»Î¿Ï‚ Î“Î¹ÏŽÏÎ³Î¿Ï‚">
                 </div>
 
                 <div class="form-group">
-                    <label for="search_specialty_id">Ειδικότητα</label>
+                    <label for="search_specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
                     <select id="search_specialty_id" name="search_specialty_id">
-                        <option value="0">Όλες οι ειδικότητες</option>
+                        <option value="0">ÎŒÎ»ÎµÏ‚ Î¿Î¹ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„ÎµÏ‚</option>
                         <?php foreach ($specialties as $specialty): ?>
                             <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $searchSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
                                 <?php echo h($specialty["title"]); ?>
@@ -731,40 +731,40 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="form-group form-actions">
-                    <button class="btn" type="submit">Αναζήτηση</button>
+                    <button class="btn" type="submit">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ·</button>
                 </div>
             </form>
 
-            <div class="table-wrap" role="region" aria-label="Αποτελέσματα αναζήτησης υποψηφίων">
+            <div class="table-wrap" role="region" aria-label="Î‘Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î±Î½Î±Î¶Î®Ï„Î·ÏƒÎ·Ï‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Υποψήφιος</th>
-                            <th>Ειδικότητα</th>
-                            <th>Θέση</th>
-                            <th>Μονάδες</th>
-                            <th>Κατάσταση</th>
-                            <th class="right">Ενέργεια</th>
+                            <th>Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚</th>
+                            <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
+                            <th>Î˜Î­ÏƒÎ·</th>
+                            <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
+                            <th>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</th>
+                            <th class="right">Î•Î½Î­ÏÎ³ÎµÎ¹Î±</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($searchResults === []): ?>
                             <tr>
-                                <td colspan="6" class="empty-cell">Δεν βρέθηκαν άλλοι υποψήφιοι με αυτά τα κριτήρια.</td>
+                                <td colspan="6" class="empty-cell">Î”ÎµÎ½ Î²ÏÎ­Î¸Î·ÎºÎ±Î½ Î¬Î»Î»Î¿Î¹ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Î¹ Î¼Îµ Î±Ï…Ï„Î¬ Ï„Î± ÎºÏÎ¹Ï„Î®ÏÎ¹Î±.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($searchResults as $row): ?>
                                 <tr>
                                     <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
-                                    <td><?php echo h($row["specialty_title"] ?? "—"); ?></td>
-                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "—"; ?></td>
-                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "—"; ?></td>
-                                    <td><?php echo h($row["application_status"] ?? "—"); ?></td>
+                                    <td><?php echo h($row["specialty_title"] ?? "â€”"); ?></td>
+                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "â€”"; ?></td>
+                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "â€”"; ?></td>
+                                    <td><?php echo h($row["application_status"] ?? "â€”"); ?></td>
                                     <td class="right">
                                         <form method="post" action="#track-others">
                                             <input type="hidden" name="action" value="track_candidate">
                                             <input type="hidden" name="candidate_profile_id" value="<?php echo (int) $row["profile_id"]; ?>">
-                                            <button class="btn btn-small" type="submit">Παρακολούθηση</button>
+                                            <button class="btn btn-small" type="submit">Î Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -776,32 +776,32 @@ require __DIR__ . "/../includes/header.php";
 
             <div class="panel panel-nested">
                 <div class="panel-head">
-                    <h3>Η λίστα παρακολούθησής μου</h3>
+                    <h3>Î— Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ®Ï‚ Î¼Î¿Ï…</h3>
                 </div>
 
-                <div class="table-wrap" role="region" aria-label="Λίστα παρακολούθησης">
+                <div class="table-wrap" role="region" aria-label="Î›Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Υποψήφιος</th>
-                                <th>Ειδικότητα</th>
-                                <th>Θέση</th>
-                                <th>Μονάδες</th>
-                                <th>Ημερομηνία</th>
+                                <th>Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚</th>
+                                <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
+                                <th>Î˜Î­ÏƒÎ·</th>
+                                <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
+                                <th>Î—Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î±</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if ($trackedRows === []): ?>
                                 <tr>
-                                    <td colspan="5" class="empty-cell">Δεν έχεις προσθέσει ακόμη υποψηφίους στη λίστα παρακολούθησης.</td>
+                                    <td colspan="5" class="empty-cell">Î”ÎµÎ½ Î­Ï‡ÎµÎ¹Ï‚ Ï€ÏÎ¿ÏƒÎ¸Î­ÏƒÎµÎ¹ Î±ÎºÏŒÎ¼Î· Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚ ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($trackedRows as $row): ?>
                                     <tr>
                                         <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
-                                        <td><?php echo h($row["specialty_title"] ?? "—"); ?></td>
-                                        <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "—"; ?></td>
-                                        <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "—"; ?></td>
+                                        <td><?php echo h($row["specialty_title"] ?? "â€”"); ?></td>
+                                        <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "â€”"; ?></td>
+                                        <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "â€”"; ?></td>
                                         <td><?php echo h(date("d/m/Y H:i", strtotime($row["created_at"]))); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -814,3 +814,4 @@ require __DIR__ . "/../includes/header.php";
     </main>
 
 <?php require __DIR__ . "/../includes/footer.php"; ?>
+

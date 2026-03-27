@@ -38,7 +38,7 @@ function nav_items(string $currentPage): array
     $items[] = ["key" => "api", "label" => "API", "href" => "API/api.php"];
 
     if ($role !== null) {
-        $items[] = ["key" => "logout", "label" => "Logout", "href" => "logout.php"];
+        $items[] = ["key" => "logout", "label" => "Logout", "href" => "auth/logout.php"];
     }
 
     foreach ($items as &$item) {
@@ -57,3 +57,4 @@ function path_from_root(string $target): string
 }
 
 ?>
+
