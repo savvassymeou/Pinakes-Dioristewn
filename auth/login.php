@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = $_POST["password"] ?? "";
 
     if ($email === "" || $password === "") {
-        $error_message = "Συμπλήρωσε email και password.";
+        $error_message = "Συμπλήρωσε email και κωδικό πρόσβασης.";
     } else {
         $stmt = $conn->prepare("SELECT id, first_name, last_name, email, password, role FROM users WHERE email = ? LIMIT 1");
 
@@ -23,7 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($result && $result->num_rows === 1) {
                 $user = $result->fetch_assoc();
 
-                if (password_verify($password, $user["password"])) {
+                if (password_verify($password, $user['password'])) {
+                    session_regenerate_id(true);
                     $_SESSION["user_id"] = $user["id"];
                     $_SESSION["first_name"] = $user["first_name"];
                     $_SESSION["last_name"] = $user["last_name"];
@@ -39,9 +40,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     exit;
                 }
 
-                $error_message = "Λάθος email ή password.";
+                $error_message = "Λάθος email ή κωδικός πρόσβασης.";
             } else {
-                $error_message = "Λάθος email ή password.";
+                $error_message = "Λάθος email ή κωδικός πρόσβασης.";
             }
 
             $stmt->close();
@@ -63,20 +64,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-1: #07111f;
-            --bg-2: #132743;
-            --panel: rgba(8, 17, 31, 0.8);
-            --panel-soft: rgba(255, 255, 255, 0.05);
-            --panel-border: rgba(255, 255, 255, 0.11);
-            --text: #eef4ff;
-            --muted: #a7b6cc;
-            --accent: #d8a13f;
-            --accent-2: #f2ca75;
-            --field: rgba(255, 255, 255, 0.08);
-            --field-border: rgba(255, 255, 255, 0.15);
-            --danger-bg: rgba(173, 58, 58, 0.2);
-            --danger-border: rgba(245, 138, 138, 0.2);
-            --shadow: 0 32px 70px rgba(0, 0, 0, 0.35);
+            --bg: #eef3f8;
+            --bg-accent: #dce7f5;
+            --panel: rgba(255, 255, 255, 0.96);
+            --panel-border: rgba(21, 55, 92, 0.12);
+            --text: #14263d;
+            --muted: #5d7088;
+            --accent: #b8862f;
+            --accent-2: #d9ab55;
+            --accent-dark: #7a5720;
+            --field: #f7f9fc;
+            --field-border: #cfdae8;
+            --danger-bg: #fff1f1;
+            --danger-border: #efc2c2;
+            --danger-text: #8e2f2f;
+            --shadow: 0 24px 60px rgba(17, 39, 68, 0.14);
         }
 
         * {
@@ -86,52 +88,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         body {
             margin: 0;
             min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(185, 134, 47, 0.16), transparent 22%),
+                radial-gradient(circle at left, rgba(52, 103, 168, 0.10), transparent 26%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-accent) 100%);
+        }
+
+        .page {
+            min-height: 100vh;
             display: grid;
             place-items: center;
-            padding: 24px;
-            color: var(--text);
-            font-family: "Manrope", sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(216, 161, 63, 0.24), transparent 24%),
-                radial-gradient(circle at 85% 15%, rgba(92, 145, 255, 0.18), transparent 20%),
-                linear-gradient(135deg, var(--bg-1) 0%, #102038 45%, var(--bg-2) 100%);
+            padding: 32px 18px;
         }
 
-        .shell {
-            width: min(1080px, 100%);
-            display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
+        .login-card {
+            width: min(100%, 480px);
+            padding: 34px 32px;
             border-radius: 28px;
-            overflow: hidden;
-            background: rgba(4, 10, 20, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
             box-shadow: var(--shadow);
-            backdrop-filter: blur(14px);
-        }
-
-        .hero {
-            position: relative;
-            padding: 54px 48px;
-            background:
-                linear-gradient(180deg, rgba(18, 35, 60, 0.96), rgba(8, 17, 31, 0.98));
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            inset: 24px;
-            border-radius: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            pointer-events: none;
+            backdrop-filter: blur(12px);
         }
 
         .brand {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 56px;
+            margin-bottom: 28px;
             font-weight: 800;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.01em;
         }
 
         .brand-mark {
@@ -141,85 +129,57 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             place-items: center;
             border-radius: 14px;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #17253c;
+            color: #fff;
             font-family: "Space Grotesk", sans-serif;
-            box-shadow: 0 14px 28px rgba(216, 161, 63, 0.2);
+            box-shadow: 0 14px 28px rgba(184, 134, 47, 0.22);
         }
 
-        .hero h1 {
-            margin: 0 0 16px;
-            max-width: 8ch;
-            font-family: "Space Grotesk", sans-serif;
-            font-size: clamp(2.4rem, 5vw, 4.2rem);
-            line-height: 0.96;
+        .brand-copy strong {
+            display: block;
+            font-size: 1rem;
         }
 
-        .hero p {
-            max-width: 46ch;
-            margin: 0 0 34px;
+        .brand-copy span {
+            display: block;
+            margin-top: 2px;
             color: var(--muted);
-            line-height: 1.7;
-            font-size: 1.02rem;
-        }
-
-        .hero-points {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 14px;
-        }
-
-        .hero-points li {
-            padding: 15px 16px;
-            border-radius: 16px;
-            background: var(--panel-soft);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .panel {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 56px 42px;
-            background: var(--panel);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 420px;
+            font-size: 0.92rem;
+            font-weight: 600;
         }
 
         .eyebrow {
-            display: inline-block;
-            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 16px;
             padding: 7px 12px;
             border-radius: 999px;
-            background: rgba(216, 161, 63, 0.14);
-            color: #f3cf87;
-            font-size: 0.82rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
+            background: rgba(184, 134, 47, 0.12);
+            color: var(--accent-dark);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
         }
 
-        .panel h2 {
-            margin: 0 0 8px;
+        h1 {
+            margin: 0 0 10px;
             font-family: "Space Grotesk", sans-serif;
-            font-size: 2.2rem;
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            line-height: 1.02;
         }
 
-        .panel-copy {
+        .intro {
             margin: 0 0 28px;
             color: var(--muted);
-            line-height: 1.7;
+            line-height: 1.65;
+            font-size: 0.98rem;
         }
 
         label {
             display: block;
             margin: 16px 0 8px;
-            color: #dbe6f7;
-            font-weight: 700;
+            color: var(--text);
+            font-weight: 800;
         }
 
         input {
@@ -234,34 +194,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         input::placeholder {
-            color: #8ea1bc;
+            color: #8b9cb0;
         }
 
         input:focus {
             outline: none;
-            border-color: rgba(216, 161, 63, 0.8);
-            box-shadow: 0 0 0 4px rgba(216, 161, 63, 0.14);
+            border-color: rgba(184, 134, 47, 0.72);
+            box-shadow: 0 0 0 4px rgba(184, 134, 47, 0.12);
             transform: translateY(-1px);
         }
 
         button {
             width: 100%;
-            margin-top: 24px;
+            margin-top: 26px;
             padding: 15px;
             border: none;
             border-radius: 16px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 800;
-            color: #12243c;
+            color: #fff;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            box-shadow: 0 18px 32px rgba(184, 124, 34, 0.28);
+            box-shadow: 0 18px 32px rgba(184, 134, 47, 0.24);
             transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 20px 36px rgba(184, 124, 34, 0.34);
+            box-shadow: 0 20px 36px rgba(184, 134, 47, 0.3);
             filter: brightness(1.03);
         }
 
@@ -271,19 +231,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-radius: 14px;
             background: var(--danger-bg);
             border: 1px solid var(--danger-border);
-            color: #ffd8d8;
+            color: var(--danger-text);
             line-height: 1.55;
         }
 
         .helper-links {
-            margin-top: 18px;
+            margin-top: 20px;
             text-align: center;
             color: var(--muted);
             font-size: 0.95rem;
         }
 
         .helper-links a {
-            color: #f3cf87;
+            color: var(--accent-dark);
+            font-weight: 800;
             text-decoration: none;
         }
 
@@ -291,96 +252,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-decoration: underline;
         }
 
-        @media (max-width: 920px) {
-            .shell {
-                grid-template-columns: 1fr;
-            }
-
-            .hero {
-                padding: 40px 28px 28px;
-            }
-
-            .panel {
-                padding: 34px 24px 40px;
-            }
-
-            .brand {
-                margin-bottom: 30px;
-            }
-        }
-
         @media (max-width: 560px) {
-            body {
-                padding: 14px;
+            .page {
+                padding: 18px 12px;
             }
 
-            .hero h1,
-            .panel h2 {
-                font-size: 1.95rem;
+            .login-card {
+                padding: 24px 18px;
+                border-radius: 22px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="shell">
-        <section class="hero">
+    <main class="page">
+        <section class="login-card">
             <div class="brand">
                 <span class="brand-mark">EEY</span>
-                <span>Πίνακες Διοριστέων</span>
-            </div>
-
-            <h1>Σύγχρονη πρόσβαση για admin και candidate.</h1>
-            <p>
-                Η πλατφόρμα σου αποκτά πιο προσεγμένη πρώτη εικόνα, με καθαρή δομή,
-                επαγγελματική χρωματική παλέτα και καλύτερη παρουσίαση για την εργασία.
-            </p>
-
-            <ul class="hero-points">
-                <li>Είσοδος για dashboard διαχείρισης και υποψηφίους</li>
-                <li>Καλύτερη οπτική ιεραρχία και πιο premium εμφάνιση</li>
-                <li>Responsive layout που φαίνεται σωστά και σε μικρότερες οθόνες</li>
-            </ul>
-        </section>
-
-        <section class="panel">
-            <div class="container">
-                <span class="eyebrow">Secure Login</span>
-                <h2>Σύνδεση Χρήστη</h2>
-                <p class="panel-copy">Συμπλήρωσε το email και τον κωδικό σου για να μπεις στην εφαρμογή.</p>
-
-                <?php if ($error_message !== ""): ?>
-                    <div class="message"><?php echo htmlspecialchars($error_message, ENT_QUOTES, "UTF-8"); ?></div>
-                <?php endif; ?>
-
-                <form action="" method="POST">
-                    <label for="email">Email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="admin@example.com"
-                        value="<?php echo htmlspecialchars($_POST["email"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                        required
-                    >
-
-                    <label for="password">Κωδικός</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Εισαγωγή κωδικού"
-                        required
-                    >
-
-                    <button type="submit">Είσοδος στην πλατφόρμα</button>
-                </form>
-
-                <div class="helper-links">
-                    Δεν έχεις λογαριασμό; <a href="register.php">Εγγραφή</a>
+                <div class="brand-copy">
+                    <strong>Πίνακες Διοριστέων</strong>
+                    <span>Σύστημα πρόσβασης χρηστών</span>
                 </div>
             </div>
+
+            <span class="eyebrow">Secure Login</span>
+            <h1>Σύνδεση Χρήστη</h1>
+            <p class="intro">
+                Συμπλήρωσε το email και τον κωδικό πρόσβασής σου για να συνδεθείς στην εφαρμογή.
+            </p>
+
+            <?php if ($error_message !== ""): ?>
+                <div class="message"><?php echo htmlspecialchars($error_message, ENT_QUOTES, "UTF-8"); ?></div>
+            <?php endif; ?>
+
+            <form action="" method="POST">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="name@example.com"
+                    value="<?php echo htmlspecialchars($_POST["email"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
+                    required
+                >
+
+                <label for="password">Κωδικός πρόσβασης</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Εισαγωγή κωδικού"
+                    required
+                >
+
+                <button type="submit">Σύνδεση</button>
+            </form>
+
+            <div class="helper-links">
+                Δεν έχεις λογαριασμό; <a href="register.php">Εγγραφή</a>
+            </div>
         </section>
-    </div>
+    </main>
 </body>
 </html>
-

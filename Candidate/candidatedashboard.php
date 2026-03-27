@@ -1,317 +1,22 @@
 ﻿<?php
-
 session_start();
 
-if (!isset($_SESSION["user_id"]) || !isset($_SESSION["role"]) || $_SESSION["role"] !== "candidate") {
-    header("Location: ../auth/login.php");
-    exit;
+require_once __DIR__ . '/../includes/auth.php';
+require_role('candidate', '../auth/login.php', '../Admin/admindashboard.php', '../Candidate/candidatedashboard.php');
+
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+function candidate_value(?string $value, string $fallback = '—'): string
+{
+    $value = trim((string) $value);
+    return $value !== '' ? $value : $fallback;
 }
 
-require_once __DIR__ . "/../includes/db.php";
-require_once __DIR__ . "/../includes/functions.php";
-
-$successMessage = "";
-$errorMessage = "";
-
-$specialties = [];
-$specialtiesResult = $conn->query("SELECT id, title FROM specialties ORDER BY title ASC");
-
-if ($specialtiesResult instanceof mysqli_result) {
-    while ($row = $specialtiesResult->fetch_assoc()) {
-        $specialties[] = $row;
-    }
-}
-
-$candidateStmt = $conn->prepare("
-    SELECT
-        u.id,
-        u.first_name,
-        u.last_name,
-        u.email,
-        u.phone,
-        u.created_at,
-        cp.id AS profile_id,
-        cp.father_name,
-        cp.mother_name,
-        cp.birth_date,
-        cp.specialty_id,
-        cp.application_status,
-        cp.ranking_position,
-        cp.points,
-        cp.updated_at,
-        s.title AS specialty_title
-    FROM users u
-    LEFT JOIN candidate_profiles cp ON cp.user_id = u.id
-    LEFT JOIN specialties s ON s.id = cp.specialty_id
-    WHERE u.id = ?
-    LIMIT 1
-");
-
-$candidate = null;
-
-if ($candidateStmt) {
-    $candidateStmt->bind_param("i", $_SESSION["user_id"]);
-    $candidateStmt->execute();
-    $candidateResult = $candidateStmt->get_result();
-    $candidate = $candidateResult ? $candidateResult->fetch_assoc() : null;
-    $candidateStmt->close();
-}
-
-if (!$candidate) {
-    session_destroy();
-    header("Location: ../auth/login.php");
-    exit;
-}
-
-$notificationSettings = [
-    "notify_new_list" => 1,
-    "notify_rank_change" => 1,
-    "notify_specialty_stats" => 0,
-];
-
-$notificationStmt = $conn->prepare("
-    SELECT notify_new_list, notify_rank_change, notify_specialty_stats
-    FROM candidate_notification_settings
-    WHERE user_id = ?
-    LIMIT 1
-");
-
-if ($notificationStmt) {
-    $notificationStmt->bind_param("i", $_SESSION["user_id"]);
-    $notificationStmt->execute();
-    $notificationResult = $notificationStmt->get_result();
-    $notificationRow = $notificationResult ? $notificationResult->fetch_assoc() : null;
-
-    if ($notificationRow) {
-        $notificationSettings = $notificationRow;
-    } else {
-        $insertDefaultNotificationStmt = $conn->prepare("
-            INSERT INTO candidate_notification_settings (user_id, notify_new_list, notify_rank_change, notify_specialty_stats)
-            VALUES (?, 1, 1, 0)
-        ");
-
-        if ($insertDefaultNotificationStmt) {
-            $insertDefaultNotificationStmt->bind_param("i", $_SESSION["user_id"]);
-            $insertDefaultNotificationStmt->execute();
-            $insertDefaultNotificationStmt->close();
-        }
-    }
-
-    $notificationStmt->close();
-}
-
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $action = $_POST["action"] ?? "";
-
-    if ($action === "update_profile") {
-        $firstName = trim($_POST["first_name"] ?? "");
-        $lastName = trim($_POST["last_name"] ?? "");
-        $phone = trim($_POST["phone"] ?? "");
-        $fatherName = trim($_POST["father_name"] ?? "");
-        $motherName = trim($_POST["mother_name"] ?? "");
-        $birthDate = trim($_POST["birth_date"] ?? "");
-        $specialtyId = (int) ($_POST["specialty_id"] ?? 0);
-
-        if ($firstName === "" || $lastName === "") {
-            $errorMessage = "Î£Ï…Î¼Ï€Î»Î®ÏÏ‰ÏƒÎµ Ï„Î¿Ï…Î»Î¬Ï‡Î¹ÏƒÏ„Î¿Î½ ÏŒÎ½Î¿Î¼Î± ÎºÎ±Î¹ ÎµÏ€ÏŽÎ½Ï…Î¼Î¿.";
-        } elseif ($birthDate !== "" && strtotime($birthDate) === false) {
-            $errorMessage = "Î— Î·Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î± Î³Î­Î½Î½Î·ÏƒÎ·Ï‚ Î´ÎµÎ½ ÎµÎ¯Î½Î±Î¹ Î­Î³ÎºÏ…ÏÎ·.";
-        } else {
-            $validSpecialty = 0;
-
-            foreach ($specialties as $specialty) {
-                if ((int) $specialty["id"] === $specialtyId) {
-                    $validSpecialty = $specialtyId;
-                    break;
-                }
-            }
-
-            $conn->begin_transaction();
-
-            try {
-                $userUpdateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?");
-
-                if (!$userUpdateStmt) {
-                    throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ· Ï„Ï‰Î½ Î²Î±ÏƒÎ¹ÎºÏŽÎ½ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Ï‰Î½.");
-                }
-
-                $userUpdateStmt->bind_param("sssi", $firstName, $lastName, $phone, $_SESSION["user_id"]);
-
-                if (!$userUpdateStmt->execute()) {
-                    throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·Ï‚ Ï‡ÏÎ®ÏƒÏ„Î·.");
-                }
-
-                $userUpdateStmt->close();
-
-                if ($candidate["profile_id"]) {
-                    $profileUpdateStmt = $conn->prepare("
-                        UPDATE candidate_profiles
-                        SET father_name = ?, mother_name = ?, birth_date = ?, specialty_id = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    ");
-
-                    if (!$profileUpdateStmt) {
-                        throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ· Ï„Î¿Ï… candidate profile.");
-                    }
-
-                    $birthDateValue = $birthDate !== "" ? $birthDate : null;
-                    $specialtyValue = $validSpecialty > 0 ? $validSpecialty : null;
-                    $profileId = (int) $candidate["profile_id"];
-
-                    $profileUpdateStmt->bind_param("sssii", $fatherName, $motherName, $birthDateValue, $specialtyValue, $profileId);
-
-                    if (!$profileUpdateStmt->execute()) {
-                        throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·Ï‚ candidate profile.");
-                    }
-
-                    $profileUpdateStmt->close();
-                } else {
-                    $profileInsertStmt = $conn->prepare("
-                        INSERT INTO candidate_profiles
-                        (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points)
-                        VALUES (?, ?, ?, ?, ?, 'Î ÏÎ¿Ï†Î¯Î» ÎµÎ½Î·Î¼ÎµÏÏ‰Î¼Î­Î½Î¿ Î±Ï€ÏŒ Ï„Î¿Î½ Ï‡ÏÎ®ÏƒÏ„Î·', NULL, NULL)
-                    ");
-
-                    if (!$profileInsertStmt) {
-                        throw new RuntimeException("Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î´Î·Î¼Î¹Î¿Ï…ÏÎ³Î¯Î± candidate profile.");
-                    }
-
-                    $birthDateValue = $birthDate !== "" ? $birthDate : null;
-                    $specialtyValue = $validSpecialty > 0 ? $validSpecialty : null;
-
-                    $profileInsertStmt->bind_param("isssi", $_SESSION["user_id"], $fatherName, $motherName, $birthDateValue, $specialtyValue);
-
-                    if (!$profileInsertStmt->execute()) {
-                        throw new RuntimeException("Î‘Ï€Î¿Ï„Ï…Ï‡Î¯Î± Î´Î·Î¼Î¹Î¿Ï…ÏÎ³Î¯Î±Ï‚ candidate profile.");
-                    }
-
-                    $profileInsertStmt->close();
-                }
-
-                $conn->commit();
-                $_SESSION["first_name"] = $firstName;
-                $_SESSION["last_name"] = $lastName;
-                $successMessage = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» ÏƒÎ¿Ï… ÎµÎ½Î·Î¼ÎµÏÏŽÎ¸Î·ÎºÎµ ÎµÏ€Î¹Ï„Ï…Ï‡ÏŽÏ‚.";
-            } catch (Throwable $exception) {
-                $conn->rollback();
-                $errorMessage = $exception->getMessage();
-            }
-        }
-    } elseif ($action === "save_notifications") {
-        $notifyNewList = isset($_POST["notify_new_list"]) ? 1 : 0;
-        $notifyRankChange = isset($_POST["notify_rank_change"]) ? 1 : 0;
-        $notifySpecialtyStats = isset($_POST["notify_specialty_stats"]) ? 1 : 0;
-
-        $notificationSaveStmt = $conn->prepare("
-            INSERT INTO candidate_notification_settings (user_id, notify_new_list, notify_rank_change, notify_specialty_stats)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                notify_new_list = VALUES(notify_new_list),
-                notify_rank_change = VALUES(notify_rank_change),
-                notify_specialty_stats = VALUES(notify_specialty_stats)
-        ");
-
-        if ($notificationSaveStmt) {
-            $notificationSaveStmt->bind_param("iiii", $_SESSION["user_id"], $notifyNewList, $notifyRankChange, $notifySpecialtyStats);
-
-            if ($notificationSaveStmt->execute()) {
-                $notificationSettings = [
-                    "notify_new_list" => $notifyNewList,
-                    "notify_rank_change" => $notifyRankChange,
-                    "notify_specialty_stats" => $notifySpecialtyStats,
-                ];
-                $successMessage = "ÎŸÎ¹ ÎµÎ¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÎ¹Ï‚ ÏƒÎ¿Ï… ÎµÎ½Î·Î¼ÎµÏÏŽÎ¸Î·ÎºÎ±Î½.";
-            } else {
-                $errorMessage = "Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Ï„Ï‰Î½ ÎµÎ¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÏ‰Î½.";
-            }
-
-            $notificationSaveStmt->close();
-        }
-    } elseif ($action === "change_password") {
-        $currentPassword = $_POST["current_password"] ?? "";
-        $newPassword = $_POST["new_password"] ?? "";
-        $confirmPassword = $_POST["confirm_password"] ?? "";
-
-        $passwordStmt = $conn->prepare("SELECT password FROM users WHERE id = ? LIMIT 1");
-        $passwordRow = null;
-
-        if ($passwordStmt) {
-            $passwordStmt->bind_param("i", $_SESSION["user_id"]);
-            $passwordStmt->execute();
-            $passwordResult = $passwordStmt->get_result();
-            $passwordRow = $passwordResult ? $passwordResult->fetch_assoc() : null;
-            $passwordStmt->close();
-        }
-
-        if ($currentPassword === "" || $newPassword === "" || $confirmPassword === "") {
-            $errorMessage = "Î£Ï…Î¼Ï€Î»Î®ÏÏ‰ÏƒÎµ ÏŒÎ»Î± Ï„Î± Ï€ÎµÎ´Î¯Î± Î±Î»Î»Î±Î³Î®Ï‚ ÎºÏ‰Î´Î¹ÎºÎ¿Ï.";
-        } elseif (!$passwordRow || !password_verify($currentPassword, $passwordRow["password"])) {
-            $errorMessage = "ÎŸ Ï„ÏÎ­Ï‡Ï‰Î½ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ Î´ÎµÎ½ ÎµÎ¯Î½Î±Î¹ ÏƒÏ‰ÏƒÏ„ÏŒÏ‚.";
-        } elseif (strlen($newPassword) < 8) {
-            $errorMessage = "ÎŸ Î½Î­Î¿Ï‚ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ Ï€ÏÎ­Ï€ÎµÎ¹ Î½Î± Î­Ï‡ÎµÎ¹ Ï„Î¿Ï…Î»Î¬Ï‡Î¹ÏƒÏ„Î¿Î½ 8 Ï‡Î±ÏÎ±ÎºÏ„Î®ÏÎµÏ‚.";
-        } elseif ($newPassword !== $confirmPassword) {
-            $errorMessage = "Î— ÎµÏ€Î¹Î²ÎµÎ²Î±Î¯Ï‰ÏƒÎ· Ï„Î¿Ï… Î½Î­Î¿Ï… ÎºÏ‰Î´Î¹ÎºÎ¿Ï Î´ÎµÎ½ Ï„Î±Î¹ÏÎ¹Î¬Î¶ÎµÎ¹.";
-        } else {
-            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $updatePasswordStmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-
-            if ($updatePasswordStmt) {
-                $updatePasswordStmt->bind_param("si", $hashedPassword, $_SESSION["user_id"]);
-
-                if ($updatePasswordStmt->execute()) {
-                    $successMessage = "ÎŸ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚ ÏƒÎ¿Ï… Î¬Î»Î»Î±Î¾Îµ ÎµÏ€Î¹Ï„Ï…Ï‡ÏŽÏ‚.";
-                } else {
-                    $errorMessage = "Î— Î±Î»Î»Î±Î³Î® ÎºÏ‰Î´Î¹ÎºÎ¿Ï Î±Ï€Î­Ï„Ï…Ï‡Îµ.";
-                }
-
-                $updatePasswordStmt->close();
-            }
-        }
-    } elseif ($action === "track_candidate") {
-        $targetProfileId = (int) ($_POST["candidate_profile_id"] ?? 0);
-
-        if ($targetProfileId <= 0) {
-            $errorMessage = "Î•Ï€Î¯Î»ÎµÎ¾Îµ Î­Î½Î±Î½ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Î³Î¹Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·.";
-        } else {
-            $checkTrackStmt = $conn->prepare("
-                SELECT id
-                FROM tracked_candidates
-                WHERE user_id = ? AND candidate_profile_id = ?
-                LIMIT 1
-            ");
-
-            if ($checkTrackStmt) {
-                $checkTrackStmt->bind_param("ii", $_SESSION["user_id"], $targetProfileId);
-                $checkTrackStmt->execute();
-                $trackResult = $checkTrackStmt->get_result();
-
-                if ($trackResult && $trackResult->num_rows > 0) {
-                    $errorMessage = "ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ ÎµÎ¯Î½Î±Î¹ Î®Î´Î· ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.";
-                }
-
-                $checkTrackStmt->close();
-            }
-
-            if ($errorMessage === "") {
-                $insertTrackStmt = $conn->prepare("INSERT INTO tracked_candidates (user_id, candidate_profile_id) VALUES (?, ?)");
-
-                if ($insertTrackStmt) {
-                    $insertTrackStmt->bind_param("ii", $_SESSION["user_id"], $targetProfileId);
-
-                    if ($insertTrackStmt->execute()) {
-                        $successMessage = "ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ Ï€ÏÎ¿ÏƒÏ„Î­Î¸Î·ÎºÎµ ÏƒÏ„Î·Î½ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ® ÏƒÎ¿Ï….";
-                    } else {
-                        $errorMessage = "Î”ÎµÎ½ Î®Ï„Î±Î½ Î´Ï…Î½Î±Ï„Î® Î· Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Ï„Î·Ï‚ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.";
-                    }
-
-                    $insertTrackStmt->close();
-                }
-            }
-        }
-    }
-
-    $refreshStmt = $conn->prepare("
-        SELECT
+function load_candidate(mysqli $conn, int $userId): ?array
+{
+    $stmt = $conn->prepare(
+        'SELECT
             u.id,
             u.first_name,
             u.last_name,
@@ -326,492 +31,728 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             cp.application_status,
             cp.ranking_position,
             cp.points,
-            cp.updated_at,
+            cp.created_at AS profile_created_at,
             s.title AS specialty_title
         FROM users u
         LEFT JOIN candidate_profiles cp ON cp.user_id = u.id
         LEFT JOIN specialties s ON s.id = cp.specialty_id
         WHERE u.id = ?
-        LIMIT 1
-    ");
+        LIMIT 1'
+    );
 
-    if ($refreshStmt) {
-        $refreshStmt->bind_param("i", $_SESSION["user_id"]);
-        $refreshStmt->execute();
-        $refreshResult = $refreshStmt->get_result();
-        $updatedCandidate = $refreshResult ? $refreshResult->fetch_assoc() : null;
+    if (!$stmt) {
+        return null;
+    }
 
-        if ($updatedCandidate) {
-            $candidate = $updatedCandidate;
-        }
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $candidate = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
 
-        $refreshStmt->close();
+    return $candidate ?: null;
+}
+
+$userId = (int) ($_SESSION['user_id'] ?? 0);
+$successMessage = '';
+$errorMessage = '';
+
+$specialties = [];
+$specialtiesResult = $conn->query('SELECT id, title FROM specialties ORDER BY title ASC');
+if ($specialtiesResult) {
+    while ($row = $specialtiesResult->fetch_assoc()) {
+        $specialties[] = $row;
     }
 }
 
-$candidateAge = null;
-
-if (!empty($candidate["birth_date"])) {
-    $candidateAge = (int) date_diff(date_create($candidate["birth_date"]), date_create("today"))->y;
+$candidate = load_candidate($conn, $userId);
+if (!$candidate) {
+    session_destroy();
+    header('Location: ../auth/login.php');
+    exit;
 }
 
-$applicationStage = "Î”ÎµÎ½ Î­Ï‡ÎµÎ¹ Î¿Î»Î¿ÎºÎ»Î·ÏÏ‰Î¸ÎµÎ¯ Î±ÎºÏŒÎ¼Î· ÏƒÏÎ½Î´ÎµÏƒÎ· Î¼Îµ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Ï€Î¯Î½Î±ÎºÎ±.";
+$notificationSettings = [
+    'notify_new_list' => 1,
+    'notify_rank_change' => 1,
+    'notify_specialty_stats' => 0,
+];
+
+$notificationStmt = $conn->prepare(
+    'SELECT notify_new_list, notify_rank_change, notify_specialty_stats
+     FROM candidate_notification_settings
+     WHERE user_id = ?
+     LIMIT 1'
+);
+
+if ($notificationStmt) {
+    $notificationStmt->bind_param('i', $userId);
+    $notificationStmt->execute();
+    $notificationResult = $notificationStmt->get_result();
+    $notificationRow = $notificationResult ? $notificationResult->fetch_assoc() : null;
+    $notificationStmt->close();
+
+    if ($notificationRow) {
+        $notificationSettings = $notificationRow;
+    } else {
+        $insertNotificationStmt = $conn->prepare(
+            'INSERT INTO candidate_notification_settings (user_id, notify_new_list, notify_rank_change, notify_specialty_stats)
+             VALUES (?, 1, 1, 0)'
+        );
+
+        if ($insertNotificationStmt) {
+            $insertNotificationStmt->bind_param('i', $userId);
+            $insertNotificationStmt->execute();
+            $insertNotificationStmt->close();
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'update_profile') {
+        $firstName = trim($_POST['first_name'] ?? '');
+        $lastName = trim($_POST['last_name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $fatherName = trim($_POST['father_name'] ?? '');
+        $motherName = trim($_POST['mother_name'] ?? '');
+        $birthDate = trim($_POST['birth_date'] ?? '');
+        $specialtyId = (int) ($_POST['specialty_id'] ?? 0);
+
+        if ($firstName === '' || $lastName === '') {
+            $errorMessage = 'Συμπλήρωσε υποχρεωτικά όνομα και επώνυμο.';
+        } elseif ($birthDate !== '' && strtotime($birthDate) === false) {
+            $errorMessage = 'Η ημερομηνία γέννησης δεν είναι έγκυρη.';
+        } else {
+            $validSpecialty = null;
+            foreach ($specialties as $specialty) {
+                if ((int) $specialty['id'] === $specialtyId) {
+                    $validSpecialty = $specialtyId;
+                    break;
+                }
+            }
+
+            $birthDateValue = $birthDate !== '' ? $birthDate : null;
+            $phoneValue = $phone !== '' ? $phone : null;
+            $fatherNameValue = $fatherName !== '' ? $fatherName : null;
+            $motherNameValue = $motherName !== '' ? $motherName : null;
+
+            $conn->begin_transaction();
+
+            try {
+                $userUpdateStmt = $conn->prepare('UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?');
+                if (!$userUpdateStmt) {
+                    throw new RuntimeException('Δεν ήταν δυνατή η ενημέρωση των βασικών στοιχείων.');
+                }
+
+                $userUpdateStmt->bind_param('sssi', $firstName, $lastName, $phoneValue, $userId);
+                if (!$userUpdateStmt->execute()) {
+                    throw new RuntimeException('Προέκυψε σφάλμα κατά την αποθήκευση των στοιχείων σου.');
+                }
+                $userUpdateStmt->close();
+
+                if (!empty($candidate['profile_id'])) {
+                    $profileUpdateStmt = $conn->prepare(
+                        'UPDATE candidate_profiles
+                         SET father_name = ?, mother_name = ?, birth_date = ?, specialty_id = ?
+                         WHERE id = ?'
+                    );
+
+                    if (!$profileUpdateStmt) {
+                        throw new RuntimeException('Δεν ήταν δυνατή η ενημέρωση του προφίλ υποψηφίου.');
+                    }
+
+                    $profileId = (int) $candidate['profile_id'];
+                    $profileUpdateStmt->bind_param('sssii', $fatherNameValue, $motherNameValue, $birthDateValue, $validSpecialty, $profileId);
+
+                    if (!$profileUpdateStmt->execute()) {
+                        throw new RuntimeException('Προέκυψε σφάλμα κατά την αποθήκευση του προφίλ υποψηφίου.');
+                    }
+                    $profileUpdateStmt->close();
+                } else {
+                    $profileInsertStmt = $conn->prepare(
+                        'INSERT INTO candidate_profiles
+                         (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points)
+                         VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)'
+                    );
+
+                    if (!$profileInsertStmt) {
+                        throw new RuntimeException('Δεν ήταν δυνατή η δημιουργία προφίλ υποψηφίου.');
+                    }
+
+                    $defaultStatus = 'Νέα εγγραφή υποψηφίου';
+                    $profileInsertStmt->bind_param('isssis', $userId, $fatherNameValue, $motherNameValue, $birthDateValue, $validSpecialty, $defaultStatus);
+
+                    if (!$profileInsertStmt->execute()) {
+                        throw new RuntimeException('Προέκυψε σφάλμα κατά τη δημιουργία του προφίλ υποψηφίου.');
+                    }
+                    $profileInsertStmt->close();
+                }
+
+                $conn->commit();
+                $_SESSION['first_name'] = $firstName;
+                $_SESSION['last_name'] = $lastName;
+                $successMessage = 'Το προφίλ σου ενημερώθηκε επιτυχώς.';
+            } catch (Throwable $exception) {
+                $conn->rollback();
+                $errorMessage = $exception->getMessage();
+            }
+        }
+    }
+
+    if ($action === 'save_notifications') {
+        $notifyNewList = isset($_POST['notify_new_list']) ? 1 : 0;
+        $notifyRankChange = isset($_POST['notify_rank_change']) ? 1 : 0;
+        $notifySpecialtyStats = isset($_POST['notify_specialty_stats']) ? 1 : 0;
+
+        $saveNotificationStmt = $conn->prepare(
+            'INSERT INTO candidate_notification_settings (user_id, notify_new_list, notify_rank_change, notify_specialty_stats)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                notify_new_list = VALUES(notify_new_list),
+                notify_rank_change = VALUES(notify_rank_change),
+                notify_specialty_stats = VALUES(notify_specialty_stats)'
+        );
+
+        if ($saveNotificationStmt) {
+            $saveNotificationStmt->bind_param('iiii', $userId, $notifyNewList, $notifyRankChange, $notifySpecialtyStats);
+            if ($saveNotificationStmt->execute()) {
+                $notificationSettings = [
+                    'notify_new_list' => $notifyNewList,
+                    'notify_rank_change' => $notifyRankChange,
+                    'notify_specialty_stats' => $notifySpecialtyStats,
+                ];
+                $successMessage = 'Οι ρυθμίσεις ειδοποιήσεων αποθηκεύτηκαν επιτυχώς.';
+            } else {
+                $errorMessage = 'Δεν ήταν δυνατή η αποθήκευση των ρυθμίσεων ειδοποιήσεων.';
+            }
+            $saveNotificationStmt->close();
+        }
+    }
+    if ($action === 'change_password') {
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        $passwordStmt = $conn->prepare('SELECT password FROM users WHERE id = ? LIMIT 1');
+        $passwordRow = null;
+        if ($passwordStmt) {
+            $passwordStmt->bind_param('i', $userId);
+            $passwordStmt->execute();
+            $passwordResult = $passwordStmt->get_result();
+            $passwordRow = $passwordResult ? $passwordResult->fetch_assoc() : null;
+            $passwordStmt->close();
+        }
+
+        if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
+            $errorMessage = 'Συμπλήρωσε και τα τρία πεδία αλλαγής κωδικού.';
+        } elseif (!$passwordRow || !password_verify($currentPassword, $passwordRow['password'])) {
+            $errorMessage = 'Ο τρέχων κωδικός πρόσβασης δεν είναι σωστός.';
+        } elseif (strlen($newPassword) < 8) {
+            $errorMessage = 'Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.';
+        } elseif ($newPassword !== $confirmPassword) {
+            $errorMessage = 'Η επιβεβαίωση του νέου κωδικού δεν ταιριάζει.';
+        } else {
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updatePasswordStmt = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
+
+            if ($updatePasswordStmt) {
+                $updatePasswordStmt->bind_param('si', $hashedPassword, $userId);
+                if ($updatePasswordStmt->execute()) {
+                    $successMessage = 'Ο κωδικός σου άλλαξε επιτυχώς.';
+                } else {
+                    $errorMessage = 'Η αλλαγή κωδικού απέτυχε.';
+                }
+                $updatePasswordStmt->close();
+            }
+        }
+    }
+
+    if ($action === 'track_candidate') {
+        $targetProfileId = (int) ($_POST['candidate_profile_id'] ?? 0);
+
+        if ($targetProfileId <= 0) {
+            $errorMessage = 'Επίλεξε έναν υποψήφιο για παρακολούθηση.';
+        } else {
+            $checkTrackStmt = $conn->prepare(
+                'SELECT id FROM tracked_candidates WHERE user_id = ? AND candidate_profile_id = ? LIMIT 1'
+            );
+
+            if ($checkTrackStmt) {
+                $checkTrackStmt->bind_param('ii', $userId, $targetProfileId);
+                $checkTrackStmt->execute();
+                $trackResult = $checkTrackStmt->get_result();
+                if ($trackResult && $trackResult->num_rows > 0) {
+                    $errorMessage = 'Ο υποψήφιος υπάρχει ήδη στη λίστα παρακολούθησής σου.';
+                }
+                $checkTrackStmt->close();
+            }
+
+            if ($errorMessage === '') {
+                $insertTrackStmt = $conn->prepare('INSERT INTO tracked_candidates (user_id, candidate_profile_id) VALUES (?, ?)');
+                if ($insertTrackStmt) {
+                    $insertTrackStmt->bind_param('ii', $userId, $targetProfileId);
+                    if ($insertTrackStmt->execute()) {
+                        $successMessage = 'Ο υποψήφιος προστέθηκε στη λίστα παρακολούθησής σου.';
+                    } else {
+                        $errorMessage = 'Δεν ήταν δυνατή η προσθήκη του υποψηφίου στη λίστα παρακολούθησης.';
+                    }
+                    $insertTrackStmt->close();
+                }
+            }
+        }
+    }
+
+    $candidate = load_candidate($conn, $userId) ?: $candidate;
+}
+
+$candidateAge = null;
+if (!empty($candidate['birth_date'])) {
+    $candidateAge = (int) date_diff(date_create($candidate['birth_date']), date_create('today'))->y;
+}
+
+$applicationStage = 'Δεν έχει ολοκληρωθεί ακόμη η σύνδεση του προφίλ σου με υποψήφιο πίνακα.';
 $applicationProgress = 20;
 
-if (!empty($candidate["profile_id"]) && !empty($candidate["specialty_title"])) {
-    $applicationStage = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» ÏƒÎ¿Ï… ÎµÎ¯Î½Î±Î¹ ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿ Î¼Îµ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± ÎºÎ±Î¹ Î¼Ï€Î¿ÏÎµÎ¯ Î½Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿Ï…Î¸ÎµÎ¯ Ï„Î·Î½ Ï€Î¿ÏÎµÎ¯Î± ÏƒÎ¿Ï….";
+if (!empty($candidate['profile_id']) && !empty($candidate['specialty_title'])) {
+    $applicationStage = 'Το προφίλ σου είναι συνδεδεμένο με ειδικότητα και μπορεί να παρακολουθεί την πορεία σου.';
     $applicationProgress = 55;
 }
 
-if ($candidate["ranking_position"] !== null) {
-    $applicationStage = "ÎˆÏ‡ÎµÎ¹ ÎµÎ½Ï„Î¿Ï€Î¹ÏƒÏ„ÎµÎ¯ Î¸Î­ÏƒÎ· ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ± ÎºÎ±Î¹ Î· Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Ï„Î·Ï‚ Î±Î¯Ï„Î·ÏƒÎ·Ï‚ ÎµÎ¯Î½Î±Î¹ ÎµÎ½ÎµÏÎ³Î®.";
+if ($candidate['ranking_position'] !== null) {
+    $applicationStage = 'Έχει εντοπιστεί θέση στον πίνακα και η παρακολούθηση της αίτησής σου είναι ενεργή.';
     $applicationProgress = 82;
 }
 
 $myTrackCount = 0;
-$myTrackCountResult = $conn->query("SELECT COUNT(*) AS total FROM tracked_candidates WHERE user_id = " . (int) $_SESSION["user_id"]);
-
-if ($myTrackCountResult instanceof mysqli_result) {
-    $myTrackCountRow = $myTrackCountResult->fetch_assoc();
-    $myTrackCount = (int) ($myTrackCountRow["total"] ?? 0);
+$trackCountStmt = $conn->prepare('SELECT COUNT(*) AS total FROM tracked_candidates WHERE user_id = ?');
+if ($trackCountStmt) {
+    $trackCountStmt->bind_param('i', $userId);
+    $trackCountStmt->execute();
+    $trackCountResult = $trackCountStmt->get_result();
+    $trackCountRow = $trackCountResult ? $trackCountResult->fetch_assoc() : null;
+    $myTrackCount = (int) ($trackCountRow['total'] ?? 0);
+    $trackCountStmt->close();
 }
 
-$searchName = trim($_GET["search_name"] ?? "");
-$searchSpecialtyId = (int) ($_GET["search_specialty_id"] ?? 0);
+$searchName = trim($_GET['search_name'] ?? '');
+$searchSpecialtyId = (int) ($_GET['search_specialty_id'] ?? 0);
 $searchResults = [];
 
-$searchSql = "
-    SELECT
-        cp.id AS profile_id,
-        u.first_name,
-        u.last_name,
-        s.title AS specialty_title,
-        cp.ranking_position,
-        cp.points,
-        cp.application_status
-    FROM candidate_profiles cp
-    INNER JOIN users u ON u.id = cp.user_id
-    LEFT JOIN specialties s ON s.id = cp.specialty_id
-    WHERE u.id <> ?
-";
+$searchSql = 'SELECT
+    cp.id AS profile_id,
+    u.first_name,
+    u.last_name,
+    s.title AS specialty_title,
+    cp.ranking_position,
+    cp.points,
+    cp.application_status
+FROM candidate_profiles cp
+INNER JOIN users u ON u.id = cp.user_id
+LEFT JOIN specialties s ON s.id = cp.specialty_id
+WHERE u.id <> ?';
 
-$searchParams = [$_SESSION["user_id"]];
-$searchTypes = "i";
+$searchTypes = 'i';
+$searchParams = [$userId];
 
-if ($searchName !== "") {
-    $searchSql .= " AND CONCAT(u.first_name, ' ', u.last_name) LIKE ?";
-    $searchParams[] = "%" . $searchName . "%";
-    $searchTypes .= "s";
+if ($searchName !== '') {
+    $searchSql .= ' AND (u.first_name LIKE ? OR u.last_name LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ?)';
+    $searchWildcard = '%' . $searchName . '%';
+    $searchParams[] = $searchWildcard;
+    $searchParams[] = $searchWildcard;
+    $searchParams[] = $searchWildcard;
+    $searchTypes .= 'sss';
 }
 
 if ($searchSpecialtyId > 0) {
-    $searchSql .= " AND cp.specialty_id = ?";
+    $searchSql .= ' AND cp.specialty_id = ?';
     $searchParams[] = $searchSpecialtyId;
-    $searchTypes .= "i";
+    $searchTypes .= 'i';
 }
 
-$searchSql .= " ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, u.last_name ASC LIMIT 12";
-
+$searchSql .= ' ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, u.last_name ASC LIMIT 12';
 $searchStmt = $conn->prepare($searchSql);
 
 if ($searchStmt) {
     $searchStmt->bind_param($searchTypes, ...$searchParams);
     $searchStmt->execute();
     $searchResult = $searchStmt->get_result();
-
-    if ($searchResult instanceof mysqli_result) {
+    if ($searchResult) {
         while ($row = $searchResult->fetch_assoc()) {
             $searchResults[] = $row;
         }
     }
-
     $searchStmt->close();
 }
-
 $trackedRows = [];
-$trackedStmt = $conn->prepare("
-    SELECT
+$trackedStmt = $conn->prepare(
+    'SELECT
         tc.created_at,
         u.first_name,
         u.last_name,
         s.title AS specialty_title,
         cp.ranking_position,
         cp.points
-    FROM tracked_candidates tc
-    INNER JOIN candidate_profiles cp ON cp.id = tc.candidate_profile_id
-    INNER JOIN users u ON u.id = cp.user_id
-    LEFT JOIN specialties s ON s.id = cp.specialty_id
-    WHERE tc.user_id = ?
-    ORDER BY tc.created_at DESC
-");
+     FROM tracked_candidates tc
+     INNER JOIN candidate_profiles cp ON cp.id = tc.candidate_profile_id
+     INNER JOIN users u ON u.id = cp.user_id
+     LEFT JOIN specialties s ON s.id = cp.specialty_id
+     WHERE tc.user_id = ?
+     ORDER BY tc.created_at DESC'
+);
 
 if ($trackedStmt) {
-    $trackedStmt->bind_param("i", $_SESSION["user_id"]);
+    $trackedStmt->bind_param('i', $userId);
     $trackedStmt->execute();
     $trackedResult = $trackedStmt->get_result();
-
-    if ($trackedResult instanceof mysqli_result) {
+    if ($trackedResult) {
         while ($row = $trackedResult->fetch_assoc()) {
             $trackedRows[] = $row;
         }
     }
-
     $trackedStmt->close();
 }
-$pageTitle = APP_NAME . " | Candidate Dashboard";
-$bodyClass = "theme-candidate";
-$currentPage = "candidate";
-$navBase = "../";
-$headerActionLabel = "Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» Î¼Î¿Ï…";
-$headerActionHref = "#profile";
 
-require __DIR__ . "/../includes/header.php";
+$pageTitle = APP_NAME . ' | Candidate Dashboard';
+$bodyClass = 'theme-candidate';
+$currentPage = 'candidate';
+$navBase = '../';
+$headerActionLabel = 'Επεξεργασία Προφίλ';
+$headerActionHref = '#profile';
 
+require __DIR__ . '/../includes/header.php';
 ?>
-    <main class="container">
-        <section class="page-hero" aria-labelledby="candTitle">
-            <div class="hero-text">
-                <h1 id="candTitle">ÎšÎ±Î»ÏŽÏ‚ Î®ÏÎ¸ÎµÏ‚, <?php echo h($candidate["first_name"]); ?></h1>
-                <p class="muted">
-                    Î•Î¯ÏƒÎ±Î¹ ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï‚ Ï‰Ï‚ candidate ÎºÎ±Î¹ Î²Î»Î­Ï€ÎµÎ¹Ï‚ Ï„Î¿ Ï€ÏÎ¿ÏƒÏ‰Ï€Î¹ÎºÏŒ ÏƒÎ¿Ï… dashboard Î¼Îµ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î±
-                    Î»Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï, ÎºÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Ï€ÏÎ¿Ï†Î¯Î» ÎºÎ±Î¹ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Î¬Î»Î»Ï‰Î½ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½.
-                </p>
+<main class="container">
+    <section class="page-hero" aria-labelledby="candTitle">
+        <div class="hero-text">
+            <span class="eyebrow-home">Candidate Workspace</span>
+            <h1 id="candTitle">Καλώς ήρθες, <?php echo h($candidate['first_name']); ?></h1>
+            <p class="muted">Από εδώ διαχειρίζεσαι το προσωπικό σου προφίλ, τις ρυθμίσεις λογαριασμού και την παρακολούθηση της υποψηφιότητάς σου μέσα από ένα οργανωμένο περιβάλλον εργασίας.</p>
+        </div>
+
+        <div class="hero-badges">
+            <div class="badge">
+                <span class="badge-label">Ρόλος</span>
+                <span class="badge-value">Υποψήφιος</span>
+            </div>
+            <div class="badge">
+                <span class="badge-label">Ειδικότητα</span>
+                <span class="badge-value"><?php echo h(candidate_value($candidate['specialty_title'] ?? null, 'Δεν έχει οριστεί')); ?></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="hero-metrics" aria-label="Σύνοψη υποψηφίου">
+        <article class="metric-card">
+            <span class="metric-label">Κατάσταση αίτησης</span>
+            <span class="metric-value"><?php echo h(candidate_value($candidate['application_status'] ?? null, 'Σε επεξεργασία')); ?></span>
+            <p class="metric-note">Συνοπτική εικόνα της τρέχουσας πορείας της αίτησής σου.</p>
+        </article>
+        <article class="metric-card">
+            <span class="metric-label">Θέση πίνακα</span>
+            <span class="metric-value"><?php echo $candidate['ranking_position'] !== null ? (int) $candidate['ranking_position'] : '—'; ?></span>
+            <p class="metric-note">Εμφανίζεται όταν είναι διαθέσιμη επίσημη κατάταξη.</p>
+        </article>
+        <article class="metric-card">
+            <span class="metric-label">Παρακολουθήσεις</span>
+            <span class="metric-value"><?php echo $myTrackCount; ?></span>
+            <p class="metric-note">Υποψήφιοι που έχεις προσθέσει στη λίστα σύγκρισης.</p>
+        </article>
+    </section>
+
+    <?php if ($successMessage !== ''): ?>
+        <div class="alert alert-success"><?php echo h($successMessage); ?></div>
+    <?php endif; ?>
+
+    <?php if ($errorMessage !== ''): ?>
+        <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
+    <?php endif; ?>
+
+    <section class="grid grid-admin" aria-label="Γρήγορες ενότητες υποψηφίου">
+        <article class="card card-action">
+            <div class="card-icon" aria-hidden="true">1</div>
+            <h2>My Profile</h2>
+            <p>Ενημέρωσε τα προσωπικά σου στοιχεία, το τηλέφωνο και την ειδικότητά σου με έναν καθαρό και οργανωμένο τρόπο.</p>
+            <div class="card-actions"><a class="btn" href="#profile">Άνοιγμα</a></div>
+        </article>
+        <article class="card card-action">
+            <div class="card-icon" aria-hidden="true">2</div>
+            <h2>Track My Applications</h2>
+            <p>Δες την πρόοδο της υποψηφιότητάς σου, τα μόρια, τη θέση σου στον πίνακα και την τελευταία ενημέρωση.</p>
+            <div class="card-actions"><a class="btn" href="#track-my-applications">Άνοιγμα</a></div>
+        </article>
+        <article class="card card-action">
+            <div class="card-icon" aria-hidden="true">3</div>
+            <h2>Track Others</h2>
+            <p>Αναζήτησε άλλους υποψηφίους, σύγκρινε βασικά στοιχεία και πρόσθεσέ τους στη λίστα παρακολούθησής σου.</p>
+            <div class="card-actions"><a class="btn" href="#track-others">Άνοιγμα</a></div>
+        </article>
+        <article class="card card-action">
+            <div class="card-icon" aria-hidden="true">4</div>
+            <h2>Ασφάλεια Λογαριασμού</h2>
+            <p>Διαχειρίσου ειδοποιήσεις και άλλαξε τον κωδικό πρόσβασής σου από ένα ενιαίο σημείο.</p>
+            <div class="card-actions"><a class="btn" href="#candidate-password">Άνοιγμα</a></div>
+        </article>
+    </section>
+
+    <section class="panel" id="profile" aria-labelledby="profileTitle">
+        <div class="panel-head">
+            <h2 id="profileTitle">My Profile</h2>
+            <p class="muted">Συμπλήρωσε και ενημέρωσε το προσωπικό σου προφίλ όπως πρέπει να εμφανίζεται στην εφαρμογή.</p>
+        </div>
+
+        <form class="form-grid candidate-form" method="post" action="#profile">
+            <input type="hidden" name="action" value="update_profile">
+
+            <div class="form-group">
+                <label for="first_name">Όνομα</label>
+                <input id="first_name" name="first_name" type="text" value="<?php echo h($candidate['first_name']); ?>" required>
             </div>
 
-            <div class="hero-badges">
-                <div class="badge">
-                    <span class="badge-label">ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</span>
-                    <span class="badge-value">Î£Ï…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï‚</span>
-                </div>
-                <div class="badge">
-                    <span class="badge-label">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</span>
-                    <span class="badge-value"><?php echo h($candidate["specialty_title"] ?? "Î”ÎµÎ½ Î¿ÏÎ¯ÏƒÏ„Î·ÎºÎµ"); ?></span>
-                </div>
+            <div class="form-group">
+                <label for="last_name">Επώνυμο</label>
+                <input id="last_name" name="last_name" type="text" value="<?php echo h($candidate['last_name']); ?>" required>
             </div>
-        </section>
 
-        <?php if ($successMessage !== ""): ?>
-            <div class="alert alert-success"><?php echo h($successMessage); ?></div>
-        <?php endif; ?>
+            <div class="form-group">
+                <label for="phone">Τηλέφωνο</label>
+                <input id="phone" name="phone" type="text" value="<?php echo h($candidate['phone'] ?? ''); ?>">
+            </div>
 
-        <?php if ($errorMessage !== ""): ?>
-            <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
-        <?php endif; ?>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" value="<?php echo h($candidate['email']); ?>" disabled>
+            </div>
 
-        <section class="grid grid-admin" aria-label="Î•Î½ÏŒÏ„Î·Ï„ÎµÏ‚ candidate">
-            <article class="card card-action">
-                <div class="card-icon" aria-hidden="true">1</div>
-                <h2>Î¤Î¿ Ï€ÏÎ¿Ï†Î¯Î» Î¼Î¿Ï…</h2>
-                <p>Î’Î»Î­Ï€ÎµÎ¹Ï‚ ÎºÎ±Î¹ ÎµÎ½Î·Î¼ÎµÏÏŽÎ½ÎµÎ¹Ï‚ Ï„Î± Ï€ÏÎ±Î³Î¼Î±Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î± Ï„Î¿Ï… Î»Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï ÏƒÎ¿Ï… Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ·.</p>
-                <div class="card-actions">
-                    <a class="btn" href="#profile">Î†Î½Î¿Î¹Î³Î¼Î±</a>
-                </div>
-            </article>
+            <div class="form-group">
+                <label for="father_name">Όνομα πατέρα</label>
+                <input id="father_name" name="father_name" type="text" value="<?php echo h($candidate['father_name'] ?? ''); ?>">
+            </div>
 
-            <article class="card card-action">
-                <div class="card-icon" aria-hidden="true">2</div>
-                <h2>Track my applications</h2>
-                <p>Î’Î»Î­Ï€ÎµÎ¹Ï‚ Ï„Î·Î½ ÎºÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Ï„Î·Ï‚ Î±Î¯Ï„Î·ÏƒÎ®Ï‚ ÏƒÎ¿Ï… Î¼Îµ ÎºÎµÎ¯Î¼ÎµÎ½Î¿, Î´ÎµÎ¯ÎºÏ„ÎµÏ‚ ÎºÎ±Î¹ Î±Ï€Î»ÏŒ timeline format.</p>
-                <div class="card-actions">
-                    <a class="btn" href="#track-my-applications">Î†Î½Î¿Î¹Î³Î¼Î±</a>
-                </div>
-            </article>
+            <div class="form-group">
+                <label for="mother_name">Όνομα μητέρας</label>
+                <input id="mother_name" name="mother_name" type="text" value="<?php echo h($candidate['mother_name'] ?? ''); ?>">
+            </div>
 
-            <article class="card card-action">
-                <div class="card-icon" aria-hidden="true">3</div>
-                <h2>Track others</h2>
-                <p>Î‘Î½Î±Î¶Î·Ï„Î¬Ï‚ Î¬Î»Î»Î¿Ï…Ï‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚ Î±Ï€ÏŒ Ï„Î· Î²Î¬ÏƒÎ· ÎºÎ±Î¹ Ï„Î¿Ï…Ï‚ Ï€ÏÎ¿ÏƒÎ¸Î­Ï„ÎµÎ¹Ï‚ ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</p>
-                <div class="card-actions">
-                    <a class="btn" href="#track-others">Î†Î½Î¿Î¹Î³Î¼Î±</a>
-                </div>
-            </article>
-        </section>
+            <div class="form-group">
+                <label for="birth_date">Ημερομηνία γέννησης</label>
+                <input id="birth_date" name="birth_date" type="date" value="<?php echo h($candidate['birth_date'] ?? ''); ?>">
+            </div>
 
-        <section class="panel" id="profile" aria-labelledby="profileTitle">
+            <div class="form-group">
+                <label for="specialty_id">Ειδικότητα</label>
+                <select id="specialty_id" name="specialty_id">
+                    <option value="0">Επιλογή ειδικότητας</option>
+                    <?php foreach ($specialties as $specialty): ?>
+                        <option value="<?php echo (int) $specialty['id']; ?>" <?php echo (int) ($candidate['specialty_id'] ?? 0) === (int) $specialty['id'] ? 'selected' : ''; ?>>
+                            <?php echo h($specialty['title']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group form-actions">
+                <button class="btn btn-primary" type="submit">Αποθήκευση Στοιχείων</button>
+            </div>
+        </form>
+    </section>
+    <section class="split-panel" aria-label="Ρυθμίσεις λογαριασμού υποψηφίου">
+        <div class="panel panel-nested" id="notifications">
             <div class="panel-head">
-                <h2 id="profileTitle">Î¤Î¿ Î ÏÎ¿Ï†Î¯Î» ÎœÎ¿Ï…</h2>
-                <p class="muted">Î•Î´ÏŽ Ï†Î±Î¯Î½Î¿Î½Ï„Î±Î¹ Ï„Î± Ï€ÏÎ±Î³Î¼Î±Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î± Ï„Î¿Ï… ÏƒÏ…Î½Î´ÎµÎ´ÎµÎ¼Î­Î½Î¿Ï… Ï‡ÏÎ®ÏƒÏ„Î·.</p>
+                <h3>Ειδοποιήσεις</h3>
+                <p class="muted">Επίλεξε για ποια γεγονότα θέλεις να ενημερώνεσαι.</p>
             </div>
-
-            <form class="form-grid candidate-form" method="post" action="#profile">
-                <input type="hidden" name="action" value="update_profile">
-
-                <div class="form-group">
-                    <label for="first_name">ÎŒÎ½Î¿Î¼Î±</label>
-                    <input id="first_name" name="first_name" type="text" value="<?php echo h($candidate["first_name"]); ?>" required>
+            <form method="post" action="#notifications">
+                <input type="hidden" name="action" value="save_notifications">
+                <div class="check-list">
+                    <label class="check-item">
+                        <input type="checkbox" name="notify_new_list" <?php echo (int) $notificationSettings['notify_new_list'] === 1 ? 'checked' : ''; ?>>
+                        <span>Ενημέρωση για νέες λίστες</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" name="notify_rank_change" <?php echo (int) $notificationSettings['notify_rank_change'] === 1 ? 'checked' : ''; ?>>
+                        <span>Ενημέρωση για αλλαγή θέσης</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" name="notify_specialty_stats" <?php echo (int) $notificationSettings['notify_specialty_stats'] === 1 ? 'checked' : ''; ?>>
+                        <span>Στατιστικά ειδικότητας</span>
+                    </label>
                 </div>
-
-                <div class="form-group">
-                    <label for="last_name">Î•Ï€ÏŽÎ½Ï…Î¼Î¿</label>
-                    <input id="last_name" name="last_name" type="text" value="<?php echo h($candidate["last_name"]); ?>" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Î¤Î·Î»Î­Ï†Ï‰Î½Î¿</label>
-                    <input id="phone" name="phone" type="text" value="<?php echo h($candidate["phone"] ?? ""); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input id="email" type="email" value="<?php echo h($candidate["email"]); ?>" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label for="father_name">ÎŒÎ½Î¿Î¼Î± Ï€Î±Ï„Î­ÏÎ±</label>
-                    <input id="father_name" name="father_name" type="text" value="<?php echo h($candidate["father_name"] ?? ""); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="mother_name">ÎŒÎ½Î¿Î¼Î± Î¼Î·Ï„Î­ÏÎ±Ï‚</label>
-                    <input id="mother_name" name="mother_name" type="text" value="<?php echo h($candidate["mother_name"] ?? ""); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="birth_date">Î—Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î± Î³Î­Î½Î½Î·ÏƒÎ·Ï‚</label>
-                    <input id="birth_date" name="birth_date" type="date" value="<?php echo h($candidate["birth_date"] ?? ""); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
-                    <select id="specialty_id" name="specialty_id">
-                        <option value="0">Î•Ï€Î¹Î»Î¿Î³Î® ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±Ï‚</option>
-                        <?php foreach ($specialties as $specialty): ?>
-                            <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo (int) ($candidate["specialty_id"] ?? 0) === (int) $specialty["id"] ? "selected" : ""; ?>>
-                                <?php echo h($specialty["title"]); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group form-actions">
-                    <button class="btn" type="submit">Î‘Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ·</button>
-                </div>
+                <button class="btn btn-primary" type="submit">Αποθήκευση Ρυθμίσεων</button>
             </form>
+        </div>
 
-            <div class="panel panel-nested" id="notifications" aria-labelledby="notificationTitle">
-                <div class="panel-head">
-                    <h3 id="notificationTitle">Î•Î¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÎ¹Ï‚</h3>
-                    <p class="muted">Î•Ï€Î¯Î»ÎµÎ¾Îµ Ï€Î¿Î¹ÎµÏ‚ ÎµÎ½Î·Î¼ÎµÏÏŽÏƒÎµÎ¹Ï‚ Î¸Î­Î»ÎµÎ¹Ï‚ Î½Î± Î»Î±Î¼Î²Î¬Î½ÎµÎ¹Ï‚.</p>
-                </div>
-
-                <form method="post" action="#notifications">
-                    <input type="hidden" name="action" value="save_notifications">
-
-                    <div class="check-list">
-                        <label class="check-item">
-                            <input type="checkbox" name="notify_new_list" <?php echo (int) $notificationSettings["notify_new_list"] === 1 ? "checked" : ""; ?>>
-                            <span>Î¦ÏŒÏÏ„Ï‰ÏƒÎ· Î½Î­Î±Ï‚ Î»Î¯ÏƒÏ„Î±Ï‚</span>
-                        </label>
-
-                        <label class="check-item">
-                            <input type="checkbox" name="notify_rank_change" <?php echo (int) $notificationSettings["notify_rank_change"] === 1 ? "checked" : ""; ?>>
-                            <span>Î‘Î»Î»Î±Î³Î® Ï„Î·Ï‚ Î¸Î­ÏƒÎ·Ï‚ Î¼Î¿Ï…</span>
-                        </label>
-
-                        <label class="check-item">
-                            <input type="checkbox" name="notify_specialty_stats" <?php echo (int) $notificationSettings["notify_specialty_stats"] === 1 ? "checked" : ""; ?>>
-                            <span>Î•Î½Î·Î¼Î­ÏÏ‰ÏƒÎ· ÏƒÏ„Î±Ï„Î¹ÏƒÏ„Î¹ÎºÏŽÎ½ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±Ï‚</span>
-                        </label>
-                    </div>
-
-                    <button class="btn" type="submit">Î‘Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· Î•Î¹Î´Î¿Ï€Î¿Î¹Î®ÏƒÎµÏ‰Î½</button>
-                </form>
-            </div>
-
-            <div class="panel panel-nested" id="candidate-password" aria-labelledby="candidatePasswordTitle">
-                <div class="panel-head">
-                    <h3 id="candidatePasswordTitle">Î‘Î»Î»Î±Î³Î® ÎºÏ‰Î´Î¹ÎºÎ¿Ï</h3>
-                    <p class="muted">ÎŸ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚ Î¼Ï€Î¿ÏÎµÎ¯ Î½Î± Î±Î»Î»Î¬Î¾ÎµÎ¹ Ï„Î¿Î½ ÎºÏ‰Î´Î¹ÎºÏŒ Ï€ÏÏŒÏƒÎ²Î±ÏƒÎ®Ï‚ Ï„Î¿Ï… Î¼Î­ÏƒÎ± Î±Ï€ÏŒ Ï„Î¿ profile.</p>
-                </div>
-
-                <form method="post" action="#candidate-password">
-                    <input type="hidden" name="action" value="change_password">
-
-                    <div class="form-stack">
-                        <div class="form-group">
-                            <label for="current_password">Î¤ÏÎ­Ï‡Ï‰Î½ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚</label>
-                            <input id="current_password" name="current_password" type="password" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="new_password">ÎÎ­Î¿Ï‚ ÎºÏ‰Î´Î¹ÎºÏŒÏ‚</label>
-                            <input id="new_password" name="new_password" type="password" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm_password">Î•Ï€Î¹Î²ÎµÎ²Î±Î¯Ï‰ÏƒÎ· Î½Î­Î¿Ï… ÎºÏ‰Î´Î¹ÎºÎ¿Ï</label>
-                            <input id="confirm_password" name="confirm_password" type="password" required>
-                        </div>
-                    </div>
-
-                    <button class="btn" type="submit">Î‘Î»Î»Î±Î³Î® ÎšÏ‰Î´Î¹ÎºÎ¿Ï</button>
-                </form>
-            </div>
-        </section>
-
-        <section class="panel" id="track-my-applications" aria-labelledby="statusTitle">
+        <div class="panel panel-nested" id="candidate-password">
             <div class="panel-head">
-                <h2 id="statusTitle">Track My Applications</h2>
-                <p class="muted">Î£ÏÎ½Î´ÎµÏƒÎ· Î¼Îµ Ï„Î¿Î½ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿ Ï€Î¯Î½Î±ÎºÎ± ÎºÎ±Î¹ Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Ï„Î·Ï‚ Ï€Î¿ÏÎµÎ¯Î±Ï‚ ÏƒÎ¿Ï….</p>
+                <h3>Αλλαγή Κωδικού</h3>
+                <p class="muted">Χρησιμοποίησε έναν ισχυρό κωδικό με τουλάχιστον 8 χαρακτήρες.</p>
             </div>
-
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-kpi"><?php echo h($candidate["specialty_title"] ?? "â€”"); ?></div>
-                    <div class="stat-label">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-kpi"><?php echo $candidate["ranking_position"] !== null ? (int) $candidate["ranking_position"] : "â€”"; ?></div>
-                    <div class="stat-label">Î˜Î­ÏƒÎ· ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ±</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-kpi"><?php echo $candidate["points"] !== null ? number_format((float) $candidate["points"], 2) : "â€”"; ?></div>
-                    <div class="stat-label">ÎœÎ¿Î½Î¬Î´ÎµÏ‚</div>
-                </div>
-            </div>
-
-            <div class="reports-layout">
-                <div class="chart-card">
-                    <h3>Î£Ï„Î¿Î¹Ï‡ÎµÎ¯Î± Î±Î¯Ï„Î·ÏƒÎ·Ï‚</h3>
-                    <div class="year-list">
-                        <div class="year-item"><span>Î—Î»Î¹ÎºÎ¯Î±</span><strong><?php echo $candidateAge !== null ? $candidateAge . " ÎµÏ„ÏŽÎ½" : "Î”ÎµÎ½ Î¿ÏÎ¯ÏƒÏ„Î·ÎºÎµ"; ?></strong></div>
-                        <div class="year-item"><span>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Î±Î¯Ï„Î·ÏƒÎ·Ï‚</span><strong><?php echo h($candidate["application_status"] ?? "Î”ÎµÎ½ Ï…Ï€Î¬ÏÏ‡ÎµÎ¹ Î±ÎºÏŒÎ¼Î·"); ?></strong></div>
-                        <div class="year-item"><span>Î¤ÎµÎ»ÎµÏ…Ï„Î±Î¯Î± ÎµÎ½Î·Î¼Î­ÏÏ‰ÏƒÎ·</span><strong><?php echo !empty($candidate["updated_at"]) ? h(date("d/m/Y H:i", strtotime($candidate["updated_at"]))) : "Î”ÎµÎ½ Ï…Ï€Î¬ÏÏ‡ÎµÎ¹"; ?></strong></div>
+            <form method="post" action="#candidate-password">
+                <input type="hidden" name="action" value="change_password">
+                <div class="form-stack">
+                    <div class="form-group">
+                        <label for="current_password">Τρέχων κωδικός</label>
+                        <input id="current_password" name="current_password" type="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">Νέος κωδικός</label>
+                        <input id="new_password" name="new_password" type="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Επιβεβαίωση νέου κωδικού</label>
+                        <input id="confirm_password" name="confirm_password" type="password" required>
                     </div>
                 </div>
+                <button class="btn btn-primary" type="submit">Αλλαγή Κωδικού</button>
+            </form>
+        </div>
+    </section>
 
-                <div class="chart-card">
-                    <h3>ÎšÎµÎ¯Î¼ÎµÎ½Î¿ ÎºÎ±Î¹ timeline</h3>
-                    <p class="muted"><?php echo h($applicationStage); ?></p>
-                    <div class="progress-track" aria-label="Î ÏÏŒÎ¿Î´Î¿Ï‚ Î±Î¯Ï„Î·ÏƒÎ·Ï‚">
-                        <div class="progress-value" style="width: <?php echo $applicationProgress; ?>%"></div>
-                    </div>
-                    <div class="year-list">
-                        <div class="year-item"><span>1. Î ÏÎ¿Ï†Î¯Î» Ï‡ÏÎ®ÏƒÏ„Î·</span><strong><?php echo !empty($candidate["first_name"]) ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
-                        <div class="year-item"><span>2. Î£ÏÎ½Î´ÎµÏƒÎ· Î¼Îµ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</span><strong><?php echo !empty($candidate["specialty_title"]) ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
-                        <div class="year-item"><span>3. Î•Î½Ï„Î¿Ï€Î¹ÏƒÎ¼ÏŒÏ‚ ÏƒÏ„Î¿Î½ Ï€Î¯Î½Î±ÎºÎ±</span><strong><?php echo $candidate["ranking_position"] !== null ? "ÎŸÎ»Î¿ÎºÎ»Î·ÏÏŽÎ¸Î·ÎºÎµ" : "Î£Îµ ÎµÎºÎºÏÎµÎ¼ÏŒÏ„Î·Ï„Î±"; ?></strong></div>
-                    </div>
-                </div>
-            </div>
+    <section class="panel" id="track-my-applications" aria-labelledby="statusTitle">
+        <div class="panel-head">
+            <h2 id="statusTitle">Track My Applications</h2>
+            <p class="muted">Συγκεντρωτική εικόνα της πορείας σου με πρόοδο, βασικά στοιχεία και τελευταία ενημέρωση.</p>
+        </div>
 
-            <div class="panel panel-nested">
-                <div class="panel-head">
-                    <h3>Î£Ï…Î³ÎºÏÎ¹Ï„Î¹ÎºÎ¬ ÏƒÏ„Î¿Î¹Ï‡ÎµÎ¯Î±</h3>
+        <div class="dashboard-columns">
+            <div class="chart-card">
+                <h3>Στάδιο Υποψηφιότητας</h3>
+                <p class="muted"><?php echo h($applicationStage); ?></p>
+                <div class="progress-track" aria-label="Πρόοδος αίτησης">
+                    <div class="progress-value" style="width: <?php echo $applicationProgress; ?>%"></div>
                 </div>
                 <div class="year-list">
-                    <div class="year-item"><span>ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</span><strong><?php echo h($candidate["first_name"] . " " . $candidate["last_name"]); ?></strong></div>
-                    <div class="year-item"><span>Email</span><strong><?php echo h($candidate["email"]); ?></strong></div>
-                    <div class="year-item"><span>Î Î±ÏÎ±ÎºÎ¿Î»Î¿Ï…Î¸Î®ÏƒÎµÎ¹Ï‚ Î¬Î»Î»Ï‰Î½</span><strong><?php echo $myTrackCount; ?></strong></div>
+                    <div class="year-item"><span>Προφίλ</span><strong><?php echo !empty($candidate['profile_id']) ? 'Ολοκληρωμένο' : 'Εκκρεμεί'; ?></strong></div>
+                    <div class="year-item"><span>Ειδικότητα</span><strong><?php echo !empty($candidate['specialty_title']) ? 'Συνδεδεμένη' : 'Εκκρεμεί'; ?></strong></div>
+                    <div class="year-item"><span>Θέση πίνακα</span><strong><?php echo $candidate['ranking_position'] !== null ? 'Διαθέσιμη' : 'Σε αναμονή'; ?></strong></div>
                 </div>
             </div>
-        </section>
 
-        <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
-            <div class="panel-head">
-                <h2 id="trackOthersTitle">Î Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ· Î†Î»Î»Ï‰Î½ Î¥Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½</h2>
-                <p class="muted">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ· Î¬Î»Î»Ï‰Î½ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½ ÎºÎ±Î¹ Î±Ï€Î¿Î¸Î®ÎºÎµÏ…ÏƒÎ· ÏƒÏ„Î· Î´Î¹ÎºÎ® ÏƒÎ¿Ï… Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</p>
-            </div>
-
-            <form class="form-grid" method="get" action="#track-others">
-                <div class="form-group">
-                    <label for="search_name">ÎŸÎ½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿</label>
-                    <input id="search_name" name="search_name" type="text" value="<?php echo h($searchName); ?>" placeholder="Ï€.Ï‡. Î Î±Ï€Î±Î´ÏŒÏ€Î¿Ï…Î»Î¿Ï‚ Î“Î¹ÏŽÏÎ³Î¿Ï‚">
+            <div class="section-stack">
+                <div class="chart-card">
+                    <h3>Βασικά Στοιχεία</h3>
+                    <div class="info-list">
+                        <div class="info-row"><span>Ονοματεπώνυμο</span><strong><?php echo h($candidate['first_name'] . ' ' . $candidate['last_name']); ?></strong></div>
+                        <div class="info-row"><span>Email</span><strong><?php echo h($candidate['email']); ?></strong></div>
+                        <div class="info-row"><span>Ηλικία</span><strong><?php echo $candidateAge !== null ? $candidateAge . ' ετών' : '—'; ?></strong></div>
+                        <div class="info-row"><span>Μόρια</span><strong><?php echo $candidate['points'] !== null ? number_format((float) $candidate['points'], 2) : '—'; ?></strong></div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="search_specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
-                    <select id="search_specialty_id" name="search_specialty_id">
-                        <option value="0">ÎŒÎ»ÎµÏ‚ Î¿Î¹ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„ÎµÏ‚</option>
-                        <?php foreach ($specialties as $specialty): ?>
-                            <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $searchSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
-                                <?php echo h($specialty["title"]); ?>
-                            </option>
+                <div class="chart-card">
+                    <h3>Τελευταία Ενημέρωση</h3>
+                    <div class="info-list">
+                        <div class="info-row"><span>Κατάσταση</span><strong><?php echo h(candidate_value($candidate['application_status'] ?? null, 'Δεν υπάρχει ακόμη ενημέρωση')); ?></strong></div>
+                        <div class="info-row"><span>Ημερομηνία προφίλ</span><strong><?php echo !empty($candidate['profile_created_at']) ? h(date('d/m/Y H:i', strtotime($candidate['profile_created_at']))) : 'Δεν υπάρχει'; ?></strong></div>
+                        <div class="info-row"><span>Παρακολουθήσεις</span><strong><?php echo $myTrackCount; ?></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
+        <div class="panel-head">
+            <h2 id="trackOthersTitle">Track Others</h2>
+            <p class="muted">Αναζήτησε άλλους υποψηφίους, σύγκρινε βασικά στοιχεία και πρόσθεσέ τους στη λίστα παρακολούθησής σου.</p>
+        </div>
+
+        <form class="form-grid" method="get" action="#track-others">
+            <div class="form-group">
+                <label for="search_name">Ονοματεπώνυμο</label>
+                <input id="search_name" name="search_name" type="text" value="<?php echo h($searchName); ?>" placeholder="π.χ. Μαρία Παπαδοπούλου">
+            </div>
+            <div class="form-group">
+                <label for="search_specialty_id">Ειδικότητα</label>
+                <select id="search_specialty_id" name="search_specialty_id">
+                    <option value="0">Όλες οι ειδικότητες</option>
+                    <?php foreach ($specialties as $specialty): ?>
+                        <option value="<?php echo (int) $specialty['id']; ?>" <?php echo $searchSpecialtyId === (int) $specialty['id'] ? 'selected' : ''; ?>>
+                            <?php echo h($specialty['title']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group form-actions">
+                <button class="btn btn-primary" type="submit">Αναζήτηση</button>
+                <a class="btn btn-secondary" href="candidatedashboard.php#track-others">Καθαρισμός</a>
+            </div>
+        </form>
+
+        <div class="table-titlebar">
+            <h3>Αποτελέσματα Αναζήτησης</h3>
+            <p class="panel-subtitle"><?php echo count($searchResults); ?> εγγραφές</p>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Αποτελέσματα αναζήτησης υποψηφίων">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Υποψήφιος</th>
+                        <th>Ειδικότητα</th>
+                        <th>Θέση</th>
+                        <th>Μόρια</th>
+                        <th>Κατάσταση</th>
+                        <th class="right">Ενέργεια</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($searchResults === []): ?>
+                        <tr><td colspan="6" class="empty-cell">Δεν βρέθηκαν υποψήφιοι με αυτά τα κριτήρια.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($searchResults as $row): ?>
+                            <tr>
+                                <td><?php echo h($row['first_name'] . ' ' . $row['last_name']); ?></td>
+                                <td><?php echo h(candidate_value($row['specialty_title'] ?? null)); ?></td>
+                                <td><?php echo $row['ranking_position'] !== null ? (int) $row['ranking_position'] : '—'; ?></td>
+                                <td><?php echo $row['points'] !== null ? number_format((float) $row['points'], 2) : '—'; ?></td>
+                                <td><?php echo h(candidate_value($row['application_status'] ?? null)); ?></td>
+                                <td class="right">
+                                    <form method="post" action="#track-others">
+                                        <input type="hidden" name="action" value="track_candidate">
+                                        <input type="hidden" name="candidate_profile_id" value="<?php echo (int) $row['profile_id']; ?>">
+                                        <button class="btn btn-small" type="submit">Παρακολούθηση</button>
+                                    </form>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
-                    </select>
-                </div>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
 
-                <div class="form-group form-actions">
-                    <button class="btn" type="submit">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ·</button>
-                </div>
-            </form>
-
-            <div class="table-wrap" role="region" aria-label="Î‘Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î±Î½Î±Î¶Î®Ï„Î·ÏƒÎ·Ï‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚</th>
-                            <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
-                            <th>Î˜Î­ÏƒÎ·</th>
-                            <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
-                            <th>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</th>
-                            <th class="right">Î•Î½Î­ÏÎ³ÎµÎ¹Î±</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($searchResults === []): ?>
+        <div class="table-titlebar">
+            <h3>Η Λίστα Παρακολούθησής Μου</h3>
+            <p class="panel-subtitle">Σύνολο: <?php echo count($trackedRows); ?></p>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Λίστα παρακολούθησης">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Υποψήφιος</th>
+                        <th>Ειδικότητα</th>
+                        <th>Θέση</th>
+                        <th>Μόρια</th>
+                        <th>Ημερομηνία προσθήκης</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($trackedRows === []): ?>
+                        <tr><td colspan="5" class="empty-cell">Δεν έχεις προσθέσει ακόμη κανέναν υποψήφιο στη λίστα παρακολούθησης.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($trackedRows as $row): ?>
                             <tr>
-                                <td colspan="6" class="empty-cell">Î”ÎµÎ½ Î²ÏÎ­Î¸Î·ÎºÎ±Î½ Î¬Î»Î»Î¿Î¹ Ï…Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Î¹ Î¼Îµ Î±Ï…Ï„Î¬ Ï„Î± ÎºÏÎ¹Ï„Î®ÏÎ¹Î±.</td>
+                                <td><?php echo h($row['first_name'] . ' ' . $row['last_name']); ?></td>
+                                <td><?php echo h(candidate_value($row['specialty_title'] ?? null)); ?></td>
+                                <td><?php echo $row['ranking_position'] !== null ? (int) $row['ranking_position'] : '—'; ?></td>
+                                <td><?php echo $row['points'] !== null ? number_format((float) $row['points'], 2) : '—'; ?></td>
+                                <td><?php echo h(date('d/m/Y H:i', strtotime($row['created_at']))); ?></td>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($searchResults as $row): ?>
-                                <tr>
-                                    <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
-                                    <td><?php echo h($row["specialty_title"] ?? "â€”"); ?></td>
-                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "â€”"; ?></td>
-                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "â€”"; ?></td>
-                                    <td><?php echo h($row["application_status"] ?? "â€”"); ?></td>
-                                    <td class="right">
-                                        <form method="post" action="#track-others">
-                                            <input type="hidden" name="action" value="track_candidate">
-                                            <input type="hidden" name="candidate_profile_id" value="<?php echo (int) $row["profile_id"]; ?>">
-                                            <button class="btn btn-small" type="submit">Î Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="panel panel-nested">
-                <div class="panel-head">
-                    <h3>Î— Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ®Ï‚ Î¼Î¿Ï…</h3>
-                </div>
-
-                <div class="table-wrap" role="region" aria-label="Î›Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚</th>
-                                <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
-                                <th>Î˜Î­ÏƒÎ·</th>
-                                <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
-                                <th>Î—Î¼ÎµÏÎ¿Î¼Î·Î½Î¯Î±</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($trackedRows === []): ?>
-                                <tr>
-                                    <td colspan="5" class="empty-cell">Î”ÎµÎ½ Î­Ï‡ÎµÎ¹Ï‚ Ï€ÏÎ¿ÏƒÎ¸Î­ÏƒÎµÎ¹ Î±ÎºÏŒÎ¼Î· Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚ ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î± Ï€Î±ÏÎ±ÎºÎ¿Î»Î¿ÏÎ¸Î·ÏƒÎ·Ï‚.</td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($trackedRows as $row): ?>
-                                    <tr>
-                                        <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
-                                        <td><?php echo h($row["specialty_title"] ?? "â€”"); ?></td>
-                                        <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "â€”"; ?></td>
-                                        <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "â€”"; ?></td>
-                                        <td><?php echo h(date("d/m/Y H:i", strtotime($row["created_at"]))); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-
-<?php require __DIR__ . "/../includes/footer.php"; ?>
-
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

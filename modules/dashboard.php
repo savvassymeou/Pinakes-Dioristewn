@@ -1,16 +1,7 @@
 <?php
 
 session_start();
+require_once __DIR__ . "/../includes/auth.php";
 
-if (!isset($_SESSION["user_id"])) {
-    header("Location: ../auth/login.php");
-    exit;
-}
-
-if (($_SESSION["role"] ?? "") === "admin") {
-    header("Location: ../Admin/admindashboard.php");
-    exit;
-}
-
-header("Location: ../Candidate/candidatedashboard.php");
-exit;
+require_login("../auth/login.php");
+redirect_to_dashboard_by_role("../Admin/admindashboard.php", "../Candidate/candidatedashboard.php", "../auth/login.php");

@@ -1,3 +1,3 @@
 <?php
 
-require __DIR__ . "/../Search/searchdashboard.php";
+require __DIR__ . "/../list.php";

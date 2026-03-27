@@ -1,6 +1,6 @@
 <?php
 
-mysqli_report(MYSQLI_REPORT_OFF);
+declare(strict_types=1);
 
 $db_host = "localhost";
 $db_name = "pinakes_dioristewn";
@@ -8,11 +8,183 @@ $db_user = "root";
 $db_pass = "";
 $db_port = 3306;
 
+final class PdoResultAdapter
+{
+    /** @var array<int, array<string, mixed>> */
+    private array $rows;
+    private int $position = 0;
+    public int $num_rows = 0;
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    public function __construct(array $rows)
+    {
+        $this->rows = array_values($rows);
+        $this->num_rows = count($this->rows);
+    }
+
+    public function fetch_assoc(): ?array
+    {
+        if ($this->position >= $this->num_rows) {
+            return null;
+        }
+
+        return $this->rows[$this->position++];
+    }
+}
+
+final class PdoStatementAdapter
+{
+    private PdoConnectionAdapter $connection;
+    private PDOStatement $statement;
+    /** @var array<int, mixed> */
+    private array $boundValues = [];
+    private ?PdoResultAdapter $result = null;
+    public int $num_rows = 0;
+    public string $error = "";
+
+    public function __construct(PdoConnectionAdapter $connection, PDOStatement $statement)
+    {
+        $this->connection = $connection;
+        $this->statement = $statement;
+    }
+
+    public function bind_param(string $types, &...$vars): bool
+    {
+        $this->boundValues = [];
+
+        foreach ($vars as &$value) {
+            $this->boundValues[] = $value;
+        }
+
+        return true;
+    }
+
+    public function execute(): bool
+    {
+        try {
+            $this->statement->execute($this->boundValues);
+            $this->connection->syncLastInsertId();
+
+            if ($this->statement->columnCount() > 0) {
+                $rows = $this->statement->fetchAll(PDO::FETCH_ASSOC);
+                $this->result = new PdoResultAdapter($rows);
+                $this->num_rows = $this->result->num_rows;
+            } else {
+                $this->result = null;
+                $this->num_rows = $this->statement->rowCount();
+            }
+
+            $this->error = "";
+            $this->connection->error = "";
+            return true;
+        } catch (PDOException $exception) {
+            $this->error = $exception->getMessage();
+            $this->connection->error = $this->error;
+            $this->result = null;
+            $this->num_rows = 0;
+            return false;
+        }
+    }
+
+    public function get_result(): ?PdoResultAdapter
+    {
+        return $this->result;
+    }
+
+    public function store_result(): bool
+    {
+        if ($this->result === null && $this->statement->columnCount() > 0) {
+            $rows = $this->statement->fetchAll(PDO::FETCH_ASSOC);
+            $this->result = new PdoResultAdapter($rows);
+        }
+
+        $this->num_rows = $this->result?->num_rows ?? 0;
+        return true;
+    }
+
+    public function close(): void
+    {
+        $this->result = null;
+        $this->statement->closeCursor();
+    }
+}
+
+final class PdoConnectionAdapter
+{
+    private PDO $pdo;
+    public string $error = "";
+    public int $insert_id = 0;
+
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    public function query(string $sql): PdoResultAdapter|false
+    {
+        try {
+            $statement = $this->pdo->query($sql);
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            $this->error = "";
+            return new PdoResultAdapter($rows);
+        } catch (PDOException $exception) {
+            $this->error = $exception->getMessage();
+            return false;
+        }
+    }
+
+    public function prepare(string $sql): PdoStatementAdapter|false
+    {
+        try {
+            $statement = $this->pdo->prepare($sql);
+
+            if ($statement === false) {
+                $this->error = "Failed to prepare SQL statement.";
+                return false;
+            }
+
+            $this->error = "";
+            return new PdoStatementAdapter($this, $statement);
+        } catch (PDOException $exception) {
+            $this->error = $exception->getMessage();
+            return false;
+        }
+    }
+
+    public function begin_transaction(): bool
+    {
+        return $this->pdo->beginTransaction();
+    }
+
+    public function commit(): bool
+    {
+        return $this->pdo->commit();
+    }
+
+    public function rollback(): bool
+    {
+        return $this->pdo->rollBack();
+    }
+
+    public function syncLastInsertId(): void
+    {
+        $this->insert_id = (int) $this->pdo->lastInsertId();
+    }
+
+    public function getPdo(): PDO
+    {
+        return $this->pdo;
+    }
+}
+
 try {
     $dsn = "mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4";
     $pdo = new PDO($dsn, $db_user, $db_pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
     ]);
 } catch (PDOException $exception) {
     http_response_code(500);
@@ -22,7 +194,7 @@ try {
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Sf??�a s??des?? �?s??</title>
+            <title>Σφάλμα σύνδεσης βάσης</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -57,20 +229,13 @@ try {
         </head>
         <body>
             <div class='error-box'>
-                <h1>?e? ?p???e? s??des? �e t? �?s? ded?�????</h1>
-                <p>? efa?�??? de? �p??e? ?a s??de?e? st? MySQL. ??e??e a? t???e? ? �?s? ap? t? XAMPP.</p>
-                <p>?????e t? <code>XAMPP Control Panel</code> ?a? p?t?se <code>Start</code> st? <code>MySQL</code>.</p>
+                <h1>Δεν υπάρχει σύνδεση με τη βάση δεδομένων</h1>
+                <p>Η εφαρμογή δεν μπόρεσε να συνδεθεί στη MySQL. Έλεγξε αν τρέχει η βάση από το XAMPP.</p>
+                <p>Άνοιξε το <code>XAMPP Control Panel</code> και πάτησε <code>Start</code> στο <code>MySQL</code>.</p>
             </div>
         </body>
         </html>"
     );
 }
 
-$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    die("? mysqli s??des? ap?t??e: " . htmlspecialchars($conn->connect_error, ENT_QUOTES, "UTF-8"));
-}
-
-$conn->set_charset("utf8mb4");
+$conn = new PdoConnectionAdapter($pdo);
