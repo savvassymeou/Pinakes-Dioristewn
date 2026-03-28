@@ -7,13 +7,13 @@ INSERT INTO specialties (title, description) VALUES
 ('ΠΕ03 Μαθηματικοί', 'Ενδεικτική ειδικότητα για υποψηφίους μαθηματικών.'),
 ('ΠΕ86 Πληροφορικής', 'Ενδεικτική ειδικότητα για υποψηφίους πληροφορικής.');
 
-INSERT INTO users (first_name, last_name, email, phone, password, role) VALUES
-('Admin', 'User', 'admin@example.com', '99111111', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'admin'),
-('Maria', 'Papadopoulou', 'maria@example.com', '99222222', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('Giorgos', 'Ioannou', 'giorgos@example.com', '99333333', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('Eleni', 'Nikolaou', 'eleni@example.com', '99444444', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('Petros', 'Stavrou', 'petros@example.com', '99555555', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('Sofia', 'Maniati', 'sofia@example.com', '99666666', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate');
+INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role) VALUES
+('admin', 'Admin', 'User', 'admin@example.com', '99111111', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'admin'),
+('maria', 'Maria', 'Papadopoulou', 'maria@example.com', '99222222', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('giorgos', 'Giorgos', 'Ioannou', 'giorgos@example.com', '99333333', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('eleni', 'Eleni', 'Nikolaou', 'eleni@example.com', '99444444', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('petros', 'Petros', 'Stavrou', 'petros@example.com', '99555555', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('sofia', 'Sofia', 'Maniati', 'sofia@example.com', '99666666', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate');
 
 INSERT INTO candidate_profiles (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points, created_at)
 SELECT u.id, 'Nikos', 'Eleni', '1992-05-14', 1, 'Ενεργή αίτηση', 12, 84.50, '2024-02-10 10:00:00'

@@ -14,6 +14,66 @@ function h(?string $value): string
     return e($value);
 }
 
+function normalize_username(string $value): string
+{
+    $value = strtolower(trim($value));
+    $value = preg_replace('/[^a-z0-9_]+/', '', $value) ?? '';
+
+    return $value;
+}
+
+function username_from_email(string $email): string
+{
+    $localPart = strstr($email, '@', true);
+    $base = normalize_username($localPart !== false ? $localPart : $email);
+
+    return $base !== '' ? $base : 'user';
+}
+
+function username_exists($conn, string $username, ?int $ignoreUserId = null): bool
+{
+    $sql = 'SELECT id FROM users WHERE username = ?';
+    if ($ignoreUserId !== null) {
+        $sql .= ' AND id <> ?';
+    }
+    $sql .= ' LIMIT 1';
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return false;
+    }
+
+    if ($ignoreUserId !== null) {
+        $stmt->bind_param('si', $username, $ignoreUserId);
+    } else {
+        $stmt->bind_param('s', $username);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $exists = $result && $result->num_rows > 0;
+    $stmt->close();
+
+    return $exists;
+}
+
+function generate_unique_username($conn, string $base, ?int $ignoreUserId = null): string
+{
+    $base = normalize_username($base);
+    if ($base === '') {
+        $base = 'user';
+    }
+
+    $candidate = $base;
+    $suffix = 1;
+
+    while (username_exists($conn, $candidate, $ignoreUserId)) {
+        $candidate = $base . $suffix;
+        $suffix++;
+    }
+
+    return $candidate;
+}
 function current_user_role(): ?string
 {
     return $_SESSION["role"] ?? null;

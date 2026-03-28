@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . "/../includes/db.php";
+require_once __DIR__ . "/../includes/functions.php";
 
 $success_message = "";
 $error_message = "";
@@ -14,6 +15,7 @@ if ($specialties_result) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $username = normalize_username($_POST["username"] ?? "");
     $first_name = trim($_POST["first_name"] ?? "");
     $last_name = trim($_POST["last_name"] ?? "");
     $email = trim($_POST["email"] ?? "");
@@ -24,29 +26,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $birth_date = trim($_POST["birth_date"] ?? "");
     $specialty_id = (int) ($_POST["specialty_id"] ?? 0);
 
-    if ($first_name === "" || $last_name === "" || $email === "" || $password === "") {
+    if ($username === "" || $first_name === "" || $last_name === "" || $email === "" || $password === "") {
         $error_message = "Συμπλήρωσε όλα τα υποχρεωτικά πεδία.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Το email δεν είναι έγκυρο.";
+    } elseif (strlen($username) < 3) {
+        $error_message = "Το username πρέπει να έχει τουλάχιστον 3 χαρακτήρες.";
     } elseif (strlen($password) < 8) {
         $error_message = "Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
     } elseif ($birth_date !== "" && strtotime($birth_date) === false) {
         $error_message = "Η ημερομηνία γέννησης δεν είναι έγκυρη.";
     } else {
-        $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1");
 
         if ($check_stmt) {
-            $check_stmt->bind_param("s", $email);
+            $check_stmt->bind_param("ss", $email, $username);
             $check_stmt->execute();
             $check_stmt->store_result();
 
             if ($check_stmt->num_rows > 0) {
-                $error_message = "Υπάρχει ήδη λογαριασμός με αυτό το email.";
+                $error_message = "Υπάρχει ήδη λογαριασμός με αυτό το email ή username.";
             }
 
             $check_stmt->close();
         } else {
-            $error_message = "Σφάλμα ελέγχου email: " . $conn->error;
+            $error_message = "Σφάλμα ελέγχου στοιχείων: " . $conn->error;
         }
 
         if ($error_message === "") {
@@ -63,13 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $conn->begin_transaction();
 
             try {
-                $insert_stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, phone, password) VALUES (?, ?, ?, ?, ?)");
+                $insert_stmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, phone, password_hash) VALUES (?, ?, ?, ?, ?, ?)");
 
                 if (!$insert_stmt) {
                     throw new RuntimeException("Σφάλμα προετοιμασίας εγγραφής: " . $conn->error);
                 }
 
-                $insert_stmt->bind_param("sssss", $first_name, $last_name, $email, $phone, $hashed_password);
+                $insert_stmt->bind_param("ssssss", $username, $first_name, $last_name, $email, $phone, $hashed_password);
 
                 if (!$insert_stmt->execute()) {
                     throw new RuntimeException("Σφάλμα κατά την εγγραφή: " . $insert_stmt->error);
@@ -79,11 +83,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $insert_stmt->close();
 
                 if ($valid_specialty_id !== null || $birth_date !== "" || $father_name !== "" || $mother_name !== "") {
-                    $profile_stmt = $conn->prepare("
-                        INSERT INTO candidate_profiles
+                    $profile_stmt = $conn->prepare(
+                        "INSERT INTO candidate_profiles
                         (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points)
-                        VALUES (?, ?, ?, ?, ?, 'Νέα εγγραφή υποψηφίου', NULL, NULL)
-                    ");
+                        VALUES (?, ?, ?, ?, ?, 'Νέα εγγραφή υποψηφίου', NULL, NULL)"
+                    );
 
                     if (!$profile_stmt) {
                         throw new RuntimeException("Σφάλμα προετοιμασίας candidate profile: " . $conn->error);
@@ -108,7 +112,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="el">
@@ -140,11 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             --success-text: #25613a;
             --shadow: 0 24px 60px rgba(17, 39, 68, 0.14);
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             min-height: 100vh;
@@ -155,14 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 radial-gradient(circle at left, rgba(52, 103, 168, 0.10), transparent 26%),
                 linear-gradient(180deg, var(--bg) 0%, var(--bg-accent) 100%);
         }
-
-        .page {
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 32px 18px;
-        }
-
+        .page { min-height: 100vh; display: grid; place-items: center; padding: 32px 18px; }
         .register-card {
             width: min(100%, 760px);
             padding: 34px 32px;
@@ -172,200 +164,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             box-shadow: var(--shadow);
             backdrop-filter: blur(12px);
         }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 28px;
-            font-weight: 800;
-            letter-spacing: 0.01em;
-        }
-
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; font-weight: 800; letter-spacing: 0.01em; }
         .brand-mark {
-            width: 44px;
-            height: 44px;
-            display: grid;
-            place-items: center;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #fff;
-            font-family: "Space Grotesk", sans-serif;
-            box-shadow: 0 14px 28px rgba(184, 134, 47, 0.22);
+            width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+            font-family: "Space Grotesk", sans-serif; box-shadow: 0 14px 28px rgba(184, 134, 47, 0.22);
         }
-
-        .brand-copy strong {
-            display: block;
-            font-size: 1rem;
-        }
-
-        .brand-copy span {
-            display: block;
-            margin-top: 2px;
-            color: var(--muted);
-            font-size: 0.92rem;
-            font-weight: 600;
-        }
-
+        .brand-copy strong { display: block; font-size: 1rem; }
+        .brand-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.92rem; font-weight: 600; }
         .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 16px;
-            padding: 7px 12px;
-            border-radius: 999px;
-            background: rgba(184, 134, 47, 0.12);
-            color: var(--accent-dark);
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
+            display: inline-flex; align-items: center; margin-bottom: 16px; padding: 7px 12px; border-radius: 999px;
+            background: rgba(184, 134, 47, 0.12); color: var(--accent-dark); font-size: 0.78rem; font-weight: 800;
+            letter-spacing: 0.06em; text-transform: uppercase;
         }
-
-        h1 {
-            margin: 0 0 10px;
-            font-family: "Space Grotesk", sans-serif;
-            font-size: clamp(2rem, 4vw, 2.6rem);
-            line-height: 1.02;
+        h1 { margin: 0 0 10px; font-family: "Space Grotesk", sans-serif; font-size: clamp(2rem, 4vw, 2.6rem); line-height: 1.02; }
+        .intro { margin: 0 0 28px; color: var(--muted); line-height: 1.65; font-size: 0.98rem; max-width: 60ch; }
+        .message { margin-bottom: 18px; padding: 14px 16px; border-radius: 14px; line-height: 1.55; border: 1px solid transparent; }
+        .message.success { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+        .message.error { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; }
+        .field-full { grid-column: 1 / -1; }
+        label { display: block; margin: 0 0 8px; color: var(--text); font-weight: 800; }
+        input, select {
+            width: 100%; padding: 15px 16px; border-radius: 16px; border: 1px solid var(--field-border);
+            background: var(--field); color: var(--text); font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; font-family: inherit;
         }
-
-        .intro {
-            margin: 0 0 28px;
-            color: var(--muted);
-            line-height: 1.65;
-            font-size: 0.98rem;
-            max-width: 60ch;
-        }
-
-        .message {
-            margin-bottom: 18px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            line-height: 1.55;
-            border: 1px solid transparent;
-        }
-
-        .message.success {
-            background: var(--success-bg);
-            border-color: var(--success-border);
-            color: var(--success-text);
-        }
-
-        .message.error {
-            background: var(--danger-bg);
-            border-color: var(--danger-border);
-            color: var(--danger-text);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px 20px;
-        }
-
-        .field-full {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            display: block;
-            margin: 0 0 8px;
-            color: var(--text);
-            font-weight: 800;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 15px 16px;
-            border-radius: 16px;
-            border: 1px solid var(--field-border);
-            background: var(--field);
-            color: var(--text);
-            font-size: 1rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-            font-family: inherit;
-        }
-
-        input::placeholder {
-            color: #8b9cb0;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: rgba(184, 134, 47, 0.72);
-            box-shadow: 0 0 0 4px rgba(184, 134, 47, 0.12);
+        input::placeholder { color: #8b9cb0; }
+        input:focus, select:focus {
+            outline: none; border-color: rgba(184, 134, 47, 0.72); box-shadow: 0 0 0 4px rgba(184, 134, 47, 0.12);
             transform: translateY(-1px);
         }
-
-        .field-hint {
-            margin-top: 7px;
-            color: var(--muted);
-            font-size: 0.86rem;
-            line-height: 1.45;
-        }
-
-        .actions {
-            margin-top: 26px;
-        }
-
+        .field-hint { margin-top: 7px; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+        .actions { margin-top: 26px; }
         button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 800;
-            color: #fff;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            width: 100%; padding: 15px; border: none; border-radius: 16px; cursor: pointer; font-size: 1rem;
+            font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2));
             box-shadow: 0 18px 32px rgba(184, 134, 47, 0.24);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 36px rgba(184, 134, 47, 0.3);
-            filter: brightness(1.03);
-        }
-
-        .helper-links {
-            margin-top: 20px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .helper-links a {
-            color: var(--accent-dark);
-            font-weight: 800;
-            text-decoration: none;
-        }
-
-        .helper-links a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 700px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .field-full {
-                grid-column: auto;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .page {
-                padding: 18px 12px;
-            }
-
-            .register-card {
-                padding: 24px 18px;
-                border-radius: 22px;
-            }
-        }
+        .helper-links { margin-top: 20px; text-align: center; color: var(--muted); font-size: 0.95rem; }
+        .helper-links a { color: var(--accent-dark); font-weight: 800; }
+        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .field-full { grid-column: auto; } }
+        @media (max-width: 560px) { .page { padding: 18px 12px; } .register-card { padding: 24px 18px; border-radius: 22px; } }
     </style>
 </head>
 <body>
@@ -378,135 +218,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <span>Δημιουργία νέου λογαριασμού</span>
                 </div>
             </div>
-
             <span class="eyebrow">Create Account</span>
             <h1>Εγγραφή Χρήστη</h1>
-            <p class="intro">
-                Συμπλήρωσε τα στοιχεία σου για να δημιουργήσεις νέο λογαριασμό και να αποκτήσεις πρόσβαση στην εφαρμογή.
-            </p>
-
-            <?php if ($success_message !== ""): ?>
-                <div class="message success"><?php echo htmlspecialchars($success_message, ENT_QUOTES, "UTF-8"); ?></div>
-            <?php endif; ?>
-
-            <?php if ($error_message !== ""): ?>
-                <div class="message error"><?php echo htmlspecialchars($error_message, ENT_QUOTES, "UTF-8"); ?></div>
-            <?php endif; ?>
-
+            <p class="intro">Συμπλήρωσε τα στοιχεία σου για να δημιουργήσεις νέο λογαριασμό και να αποκτήσεις πρόσβαση στην εφαρμογή.</p>
+            <?php if ($success_message !== ""): ?><div class="message success"><?php echo h($success_message); ?></div><?php endif; ?>
+            <?php if ($error_message !== ""): ?><div class="message error"><?php echo h($error_message); ?></div><?php endif; ?>
             <form action="" method="POST">
                 <div class="form-grid">
                     <div>
-                        <label for="first_name">Όνομα</label>
-                        <input
-                            type="text"
-                            id="first_name"
-                            name="first_name"
-                            placeholder="Εισαγωγή ονόματος"
-                            value="<?php echo htmlspecialchars($_POST["first_name"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                            required
-                        >
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Εισαγωγή username" value="<?php echo h($_POST['username'] ?? ''); ?>" required>
                     </div>
-
-                    <div>
-                        <label for="last_name">Επώνυμο</label>
-                        <input
-                            type="text"
-                            id="last_name"
-                            name="last_name"
-                            placeholder="Εισαγωγή επωνύμου"
-                            value="<?php echo htmlspecialchars($_POST["last_name"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                            required
-                        >
-                    </div>
-
                     <div>
                         <label for="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="name@example.com"
-                            value="<?php echo htmlspecialchars($_POST["email"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                            required
-                        >
+                        <input type="email" id="email" name="email" placeholder="name@example.com" value="<?php echo h($_POST['email'] ?? ''); ?>" required>
                     </div>
-
+                    <div>
+                        <label for="first_name">Όνομα</label>
+                        <input type="text" id="first_name" name="first_name" placeholder="Εισαγωγή ονόματος" value="<?php echo h($_POST['first_name'] ?? ''); ?>" required>
+                    </div>
+                    <div>
+                        <label for="last_name">Επώνυμο</label>
+                        <input type="text" id="last_name" name="last_name" placeholder="Εισαγωγή επωνύμου" value="<?php echo h($_POST['last_name'] ?? ''); ?>" required>
+                    </div>
                     <div>
                         <label for="phone">Τηλέφωνο</label>
-                        <input
-                            type="text"
-                            id="phone"
-                            name="phone"
-                            placeholder="99xxxxxx"
-                            value="<?php echo htmlspecialchars($_POST["phone"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                        >
+                        <input type="text" id="phone" name="phone" placeholder="99xxxxxx" value="<?php echo h($_POST['phone'] ?? ''); ?>">
                     </div>
-
-                    <div>
-                        <label for="father_name">Όνομα πατέρα</label>
-                        <input
-                            type="text"
-                            id="father_name"
-                            name="father_name"
-                            placeholder="Προαιρετικό"
-                            value="<?php echo htmlspecialchars($_POST["father_name"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                        >
-                    </div>
-
-                    <div>
-                        <label for="mother_name">Όνομα μητέρας</label>
-                        <input
-                            type="text"
-                            id="mother_name"
-                            name="mother_name"
-                            placeholder="Προαιρετικό"
-                            value="<?php echo htmlspecialchars($_POST["mother_name"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                        >
-                    </div>
-
-                    <div>
-                        <label for="birth_date">Ημερομηνία γέννησης</label>
-                        <input
-                            type="date"
-                            id="birth_date"
-                            name="birth_date"
-                            value="<?php echo htmlspecialchars($_POST["birth_date"] ?? "", ENT_QUOTES, "UTF-8"); ?>"
-                        >
-                    </div>
-
                     <div>
                         <label for="specialty_id">Ειδικότητα</label>
                         <select id="specialty_id" name="specialty_id">
                             <option value="0">Επιλογή ειδικότητας</option>
                             <?php foreach ($specialties as $specialty): ?>
-                                <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo (int) ($_POST["specialty_id"] ?? 0) === (int) $specialty["id"] ? "selected" : ""; ?>>
-                                    <?php echo htmlspecialchars($specialty["title"], ENT_QUOTES, "UTF-8"); ?>
-                                </option>
+                                <option value="<?php echo (int) $specialty['id']; ?>" <?php echo (int) ($_POST['specialty_id'] ?? 0) === (int) $specialty['id'] ? 'selected' : ''; ?>><?php echo h($specialty['title']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-
+                    <div>
+                        <label for="father_name">Όνομα πατέρα</label>
+                        <input type="text" id="father_name" name="father_name" placeholder="Προαιρετικό" value="<?php echo h($_POST['father_name'] ?? ''); ?>">
+                    </div>
+                    <div>
+                        <label for="mother_name">Όνομα μητέρας</label>
+                        <input type="text" id="mother_name" name="mother_name" placeholder="Προαιρετικό" value="<?php echo h($_POST['mother_name'] ?? ''); ?>">
+                    </div>
+                    <div>
+                        <label for="birth_date">Ημερομηνία γέννησης</label>
+                        <input type="date" id="birth_date" name="birth_date" value="<?php echo h($_POST['birth_date'] ?? ''); ?>">
+                    </div>
                     <div class="field-full">
                         <label for="password">Κωδικός πρόσβασης</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Δημιουργία κωδικού"
-                            required
-                        >
+                        <input type="password" id="password" name="password" placeholder="Δημιουργία κωδικού" required>
                         <div class="field-hint">Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 8 χαρακτήρες.</div>
                     </div>
                 </div>
-
-                <div class="actions">
-                    <button type="submit">Δημιουργία λογαριασμού</button>
-                </div>
+                <div class="actions"><button type="submit">Δημιουργία λογαριασμού</button></div>
             </form>
-
-            <div class="helper-links">
-                Έχεις ήδη λογαριασμό; <a href="login.php">Σύνδεση</a>
-            </div>
+            <div class="helper-links">Έχεις ήδη λογαριασμό; <a href="login.php">Σύνδεση</a></div>
         </section>
     </main>
 </body>

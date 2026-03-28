@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        $passwordStmt = $conn->prepare('SELECT password FROM users WHERE id = ? LIMIT 1');
+        $passwordStmt = $conn->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
         $passwordRow = null;
         if ($passwordStmt) {
             $passwordStmt->bind_param('i', $userId);
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
             $errorMessage = 'Συμπλήρωσε και τα τρία πεδία αλλαγής κωδικού.';
-        } elseif (!$passwordRow || !password_verify($currentPassword, $passwordRow['password'])) {
+        } elseif (!$passwordRow || !password_verify($currentPassword, $passwordRow['password_hash'])) {
             $errorMessage = 'Ο τρέχων κωδικός πρόσβασης δεν είναι σωστός.';
         } elseif (strlen($newPassword) < 8) {
             $errorMessage = 'Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.';
@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errorMessage = 'Η επιβεβαίωση του νέου κωδικού δεν ταιριάζει.';
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $updatePasswordStmt = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
+            $updatePasswordStmt = $conn->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
 
             if ($updatePasswordStmt) {
                 $updatePasswordStmt->bind_param('si', $hashedPassword, $userId);

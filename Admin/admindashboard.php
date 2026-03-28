@@ -49,7 +49,7 @@ if ($specialtiesResult) {
 }
 
 $adminUser = null;
-$adminStmt = $conn->prepare("SELECT id, first_name, last_name, email, phone, password, created_at FROM users WHERE id = ? LIMIT 1");
+$adminStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
 
 if ($adminStmt) {
     $adminStmt->bind_param("i", $_SESSION["user_id"]);
@@ -73,6 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $lastName = trim($_POST["new_last_name"] ?? "");
         $email = trim($_POST["new_email"] ?? "");
         $phone = trim($_POST["new_phone"] ?? "");
+        $username = generate_unique_username($conn, username_from_email($email));
         $role = $_POST["new_role"] ?? "candidate";
         $password = $_POST["new_password"] ?? "";
 
@@ -101,10 +102,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if ($errorMessage === "") {
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $createStmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)");
+                $createStmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
                 if ($createStmt) {
-                    $createStmt->bind_param("ssssss", $firstName, $lastName, $email, $phone, $hashedPassword, $role);
+                    $createStmt->bind_param("sssssss", $username, $firstName, $lastName, $email, $phone, $hashedPassword, $role);
 
                     if ($createStmt->execute()) {
                         $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â®ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
@@ -152,7 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ 8 ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡.";
                     } else {
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                        $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, role = ?, password = ? WHERE id = ?");
+                        $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, role = ?, password_hash = ? WHERE id = ?");
 
                         if ($updateStmt) {
                             $updateStmt->bind_param("ssssssi", $firstName, $lastName, $email, $phone, $role, $hashedPassword, $editUserId);
@@ -285,7 +286,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             try {
                 $userStmt = $conn->prepare(
-                    "INSERT INTO users (first_name, last_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, 'candidate')"
+                    "INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, 'candidate')"
                 );
                 $profileStmt = $conn->prepare(
                     "INSERT INTO candidate_profiles (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -305,8 +306,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $applicationStatus = $candidate["application_status"] . " (" . $loadYear . ")";
                     $email = $candidate["email"];
                     $phone = randomGreekPhone();
+                    $username = generate_unique_username($conn, username_from_email($email));
 
-                    $userStmt->bind_param("sssss", $firstName, $lastName, $email, $phone, $defaultPassword);
+                    $userStmt->bind_param("ssssss", $username, $firstName, $lastName, $email, $phone, $defaultPassword);
 
                     if (!$userStmt->execute()) {
                         throw new RuntimeException("ÃƒÅ½Ã¢â‚¬ËœÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡ demo ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ‹â€ ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦.");
@@ -392,7 +394,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($currentPassword === "" || $newPassword === "" || $confirmPassword === "") {
             $errorMessage = "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â.";
-        } elseif (!password_verify($currentPassword, $adminUser["password"])) {
+        } elseif (!password_verify($currentPassword, $adminUser["password_hash"])) {
             $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡.";
         } elseif (strlen($newPassword) < 8) {
             $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ 8 ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡.";
@@ -400,14 +402,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â¶ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹.";
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $passwordStmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $passwordStmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
 
             if ($passwordStmt) {
                 $passwordStmt->bind_param("si", $hashedPassword, $_SESSION["user_id"]);
 
                 if ($passwordStmt->execute()) {
                     $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¾ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
-                    $adminUser["password"] = $hashedPassword;
+                    $adminUser["password_hash"] = $hashedPassword;
                 } else {
                     $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â® ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Âµ.";
                 }
@@ -418,7 +420,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($successMessage !== "" || $errorMessage !== "") {
-        $refreshStmt = $conn->prepare("SELECT id, first_name, last_name, email, phone, password, created_at FROM users WHERE id = ? LIMIT 1");
+        $refreshStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
 
         if ($refreshStmt) {
             $refreshStmt->bind_param("i", $_SESSION["user_id"]);
