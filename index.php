@@ -9,6 +9,9 @@ $role = current_user_role();
 $isGuest = $role === null;
 $isAdmin = $role === ROLE_ADMIN;
 $isCandidate = $role === ROLE_CANDIDATE;
+$userFullName = current_user_full_name();
+$userInitials = current_user_initials();
+$userRoleLabel = current_role_label();
 
 $dashboardHref = $isAdmin ? 'Admin/admindashboard.php' : 'Candidate/candidatedashboard.php';
 $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
@@ -83,6 +86,19 @@ $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
         .nav { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; justify-content: flex-end; }
         .nav-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .nav-group.auth { padding-left: 28px; margin-left: 18px; border-left: 1px solid rgba(21,55,92,0.14); }
+        .user-chip {
+            display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 12px 6px 8px;
+            border-radius: 18px; background: rgba(255,255,255,0.92); border: 1px solid var(--field-border);
+            box-shadow: 0 12px 24px rgba(17,39,68,0.08);
+        }
+        .user-avatar {
+            width: 38px; height: 38px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #2f7f64, #4fa77e); color: #fff; font-weight: 800; letter-spacing: 0.05em;
+            box-shadow: 0 10px 20px rgba(47,127,100,0.22); flex-shrink: 0;
+        }
+        .user-meta { display: grid; gap: 2px; min-width: 0; }
+        .user-meta strong { font-size: 0.95rem; line-height: 1.1; }
+        .user-meta span { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
         .nav a {
             display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px;
             border-radius: 16px; border: 1px solid var(--field-border); background: rgba(255,255,255,0.86);
@@ -169,6 +185,13 @@ $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
                             <a class="auth-link primary" href="auth/register.php">&#917;&#947;&#947;&#961;&#945;&#966;&#942;</a>
                             <a class="auth-link" href="auth/login.php">&#931;&#973;&#957;&#948;&#949;&#963;&#951;</a>
                         <?php else: ?>
+                            <div class="user-chip" aria-label="<?php echo h($userFullName); ?>">
+                                <span class="user-avatar"><?php echo h($userInitials); ?></span>
+                                <span class="user-meta">
+                                    <strong><?php echo h($userFullName); ?></strong>
+                                    <span><?php echo h($userRoleLabel ?? 'Συνδεδεμένος χρήστης'); ?></span>
+                                </span>
+                            </div>
                             <a class="auth-link" href="auth/logout.php">&#913;&#960;&#959;&#963;&#973;&#957;&#948;&#949;&#963;&#951;</a>
                         <?php endif; ?>
                     </div>
