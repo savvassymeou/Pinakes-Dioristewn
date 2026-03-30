@@ -12,7 +12,7 @@ $keyword = trim($_GET["keyword"] ?? "");
 $specialtyId = (int) ($_GET["specialty_id"] ?? 0);
 $results = [];
 $totalResults = 0;
-$selectedSpecialtyLabel = "ÎŒÎ»ÎµÏ‚";
+$selectedSpecialtyLabel = "Όλες";
 
 $specialties = [];
 $specialtiesResult = $conn->query("SELECT id, title FROM specialties ORDER BY title ASC");
@@ -103,7 +103,7 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Î›Î¯ÏƒÏ„Î± Î¥Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½ | Î Î¯Î½Î±ÎºÎµÏ‚ Î”Î¹Î¿ÏÎ¹ÏƒÏ„Î­Ï‰Î½</title>
+    <title>Λίστα Υποψηφίων | Πίνακες Διοριστέων</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -496,14 +496,14 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
                 <div class="brand">
                     <span class="brand-mark">EEY</span>
                     <div class="brand-copy">
-                        <strong>Î Î¯Î½Î±ÎºÎµÏ‚ Î”Î¹Î¿ÏÎ¹ÏƒÏ„Î­Ï‰Î½</strong>
-                        <span>Admin ÎµÏÎ³Î±Î»ÎµÎ¯Î± Î´Î¹Î±Ï‡ÎµÎ¯ÏÎ¹ÏƒÎ·Ï‚ Î»Î¯ÏƒÏ„Î±Ï‚</span>
+                        <strong>Πίνακες Διοριστέων</strong>
+                        <span>Admin εργαλεία διαχείρισης λίστας</span>
                     </div>
                 </div>
 
                 <div class="top-actions">
-                    <a class="action-link" href="Admin/admindashboard.php">Î•Ï€Î¹ÏƒÏ„ÏÎ¿Ï†Î® ÏƒÏ„Î¿ Admin</a>
-                    <a class="action-link" href="auth/logout.php">Î‘Ï€Î¿ÏƒÏÎ½Î´ÎµÏƒÎ·</a>
+                    <a class="action-link" href="Admin/admindashboard.php">Επιστροφή στο Admin</a>
+                    <a class="action-link" href="auth/logout.php">Αποσύνδεση</a>
                 </div>
             </div>
 
@@ -511,55 +511,55 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
                 <div class="hero">
                     <div>
                         <span class="eyebrow">Admin List</span>
-                        <h1>Î›Î¯ÏƒÏ„Î± Î¥Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½</h1>
+                        <h1>Λίστα Υποψηφίων</h1>
                         <p class="intro">
-                            Î ÏÎ¿ÏƒÏ„Î±Ï„ÎµÏ…Î¼Î­Î½Î· ÏƒÎµÎ»Î¯Î´Î± Î´Î¹Î±Ï‡ÎµÎ¯ÏÎ¹ÏƒÎ·Ï‚ Î³Î¹Î± Ï„Î¿Î½ admin, Î¼Îµ keyword search ÏƒÎµ Î¿Î½Î¿Î¼Î±Ï„ÎµÏ€ÏŽÎ½Ï…Î¼Î¿, email, Ï„Î·Î»Î­Ï†Ï‰Î½Î¿, ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î± ÎºÎ±Î¹ ÎºÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ· Î±Î¯Ï„Î·ÏƒÎ·Ï‚.
+                            Προστατευμένη σελίδα διαχείρισης για τον admin, με keyword search σε ονοματεπώνυμο, email, τηλέφωνο, ειδικότητα και κατάσταση αίτησης.
                         </p>
                     </div>
 
                     <div class="hero-badges">
                         <div class="badge">
-                            <span class="badge-label">Î ÏÏŒÏƒÎ²Î±ÏƒÎ·</span>
-                            <span class="badge-value">ÎœÏŒÎ½Î¿ Admin</span>
+                            <span class="badge-label">Πρόσβαση</span>
+                            <span class="badge-value">Μόνο Admin</span>
                         </div>
                         <div class="badge">
-                            <span class="badge-label">Î‘Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î±</span>
+                            <span class="badge-label">Αποτελέσματα</span>
                             <span class="badge-value"><?php echo $totalResults; ?></span>
                         </div>
                     </div>
                 </div>
 
-                <section class="stats" aria-label="Î£ÏÎ½Î¿ÏˆÎ· Î»Î¯ÏƒÏ„Î±Ï‚">
+                <section class="stats" aria-label="Σύνοψη λίστας">
                     <div class="stat">
-                        <span class="stat-label">Î•Î³Î³ÏÎ±Ï†Î­Ï‚ Ï€Î¿Ï… ÎµÎ¼Ï†Î±Î½Î¯Î¶Î¿Î½Ï„Î±Î¹</span>
+                        <span class="stat-label">Εγγραφές που εμφανίζονται</span>
                         <span class="stat-kpi"><?php echo $totalResults; ?></span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Î¤ÏÎ­Ï‡Î¿Ï…ÏƒÎ± Î»Î­Î¾Î·-ÎºÎ»ÎµÎ¹Î´Î¯</span>
+                        <span class="stat-label">Τρέχουσα λέξη-κλειδί</span>
                         <span class="stat-kpi"><?php echo $keyword !== "" ? h($keyword) : "-"; ?></span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</span>
+                        <span class="stat-label">Ειδικότητα</span>
                         <span class="stat-kpi"><?php echo h($selectedSpecialtyLabel); ?></span>
                     </div>
                 </section>
 
                 <section class="filters" aria-labelledby="filterTitle">
                     <div class="section-head">
-                        <h2 id="filterTitle">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ· ÏƒÏ„Î· Î»Î¯ÏƒÏ„Î±</h2>
-                        <p>Î§ÏÎ·ÏƒÎ¹Î¼Î¿Ï€Î¿Î¯Î·ÏƒÎµ Ï†Î¯Î»Ï„ÏÎ± Î³Î¹Î± Î½Î± ÎµÎ½Ï„Î¿Ï€Î¯ÏƒÎµÎ¹Ï‚ Î³ÏÎ®Î³Î¿ÏÎ± ÏƒÏ…Î³ÎºÎµÎºÏÎ¹Î¼Î­Î½Î¿Ï…Ï‚ Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Î¿Ï…Ï‚.</p>
+                        <h2 id="filterTitle">Αναζήτηση στη λίστα</h2>
+                        <p>Χρησιμοποίησε φίλτρα για να εντοπίσεις γρήγορα συγκεκριμένους υποψηφίους.</p>
                     </div>
 
                     <form class="form-grid" method="get" action="list.php">
                         <div>
-                            <label for="keyword">Î›Î­Î¾Î·-ÎºÎ»ÎµÎ¹Î´Î¯</label>
-                            <input id="keyword" name="keyword" type="text" value="<?php echo h($keyword); ?>" placeholder="Ï€.Ï‡. Î Î±Ï€Î±Î´Î¿Ï€Î¿ÏÎ»Î¿Ï…, email, Ï„Î·Î»Î­Ï†Ï‰Î½Î¿">
+                            <label for="keyword">Λέξη-κλειδί</label>
+                            <input id="keyword" name="keyword" type="text" value="<?php echo h($keyword); ?>" placeholder="π.χ. Παπαδοπούλου, email, τηλέφωνο">
                         </div>
 
                         <div>
-                            <label for="specialty_id">Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</label>
+                            <label for="specialty_id">Ειδικότητα</label>
                             <select id="specialty_id" name="specialty_id">
-                                <option value="0">ÎŒÎ»ÎµÏ‚ Î¿Î¹ ÎµÎ¹Î´Î¹ÎºÏŒÏ„Î·Ï„ÎµÏ‚</option>
+                                <option value="0">Όλες οι ειδικότητες</option>
                                 <?php foreach ($specialties as $specialty): ?>
                                     <option value="<?php echo (int) $specialty['id']; ?>" <?php echo $specialtyId === (int) $specialty['id'] ? 'selected' : ''; ?>>
                                         <?php echo h($specialty['title']); ?>
@@ -569,41 +569,41 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
                         </div>
 
                         <div class="actions">
-                            <button class="btn btn-primary" type="submit">Î‘Î½Î±Î¶Î®Ï„Î·ÏƒÎ·</button>
-                            <a class="btn btn-secondary" href="list.php">ÎšÎ±Î¸Î±ÏÎ¹ÏƒÎ¼ÏŒÏ‚</a>
+                            <button class="btn btn-primary" type="submit">Αναζήτηση</button>
+                            <a class="btn btn-secondary" href="list.php">Καθαρισμός</a>
                         </div>
                     </form>
                 </section>
 
                 <section class="results" aria-labelledby="resultsTitle">
                     <div class="section-head">
-                        <h2 id="resultsTitle">Î‘Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î»Î¯ÏƒÏ„Î±Ï‚</h2>
+                        <h2 id="resultsTitle">Αποτελέσματα λίστας</h2>
                         <p>
                             <?php if ($hasFilters): ?>
-                                Î•Î¼Ï†Î±Î½Î¯Î¶Î¿Î½Ï„Î±Î¹ Î¿Î¹ ÎµÎ³Î³ÏÎ±Ï†Î­Ï‚ Ï€Î¿Ï… Ï„Î±Î¹ÏÎ¹Î¬Î¶Î¿Ï…Î½ ÏƒÏ„Î± Ï†Î¯Î»Ï„ÏÎ± Ï€Î¿Ï… ÎµÏ€Î­Î»ÎµÎ¾ÎµÏ‚.
+                                Εμφανίζονται οι εγγραφές που ταιριάζουν στα φίλτρα που επέλεξες.
                             <?php else: ?>
-                                Î•Î¼Ï†Î±Î½Î¯Î¶Î¿Î½Ï„Î±Î¹ Î­Ï‰Ï‚ 50 ÎµÎ³Î³ÏÎ±Ï†Î­Ï‚ Î±Ï€ÏŒ Ï„Î· Î»Î¯ÏƒÏ„Î± Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½.
+                                Εμφανίζονται έως 50 εγγραφές από τη λίστα υποψηφίων.
                             <?php endif; ?>
                         </p>
                     </div>
 
-                    <div class="table-wrap" role="region" aria-label="Î›Î¯ÏƒÏ„Î± Ï…Ï€Î¿ÏˆÎ·Ï†Î¯Ï‰Î½">
+                    <div class="table-wrap" role="region" aria-label="Λίστα υποψηφίων">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Î¥Ï€Î¿ÏˆÎ®Ï†Î¹Î¿Ï‚</th>
+                                    <th>Υποψήφιος</th>
                                     <th>Email</th>
-                                    <th>Î¤Î·Î»Î­Ï†Ï‰Î½Î¿</th>
-                                    <th>Î•Î¹Î´Î¹ÎºÏŒÏ„Î·Ï„Î±</th>
-                                    <th>ÎšÎ±Ï„Î¬ÏƒÏ„Î±ÏƒÎ·</th>
-                                    <th>Î˜Î­ÏƒÎ·</th>
-                                    <th>ÎœÎ¿Î½Î¬Î´ÎµÏ‚</th>
+                                    <th>Τηλέφωνο</th>
+                                    <th>Ειδικότητα</th>
+                                    <th>Κατάσταση</th>
+                                    <th>Θέση</th>
+                                    <th>Μονάδες</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if ($results === []): ?>
                                     <tr>
-                                        <td colspan="7" class="empty-state">Î”ÎµÎ½ Î²ÏÎ­Î¸Î·ÎºÎ±Î½ Î±Ï€Î¿Ï„ÎµÎ»Î­ÏƒÎ¼Î±Ï„Î± Î³Î¹Î± Ï„Î± ÎºÏÎ¹Ï„Î®ÏÎ¹Î± Ï€Î¿Ï… Î­Î´Ï‰ÏƒÎµÏ‚.</td>
+                                        <td colspan="7" class="empty-state">Δεν βρέθηκαν αποτελέσματα για τα κριτήρια που έδωσες.</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($results as $row): ?>
