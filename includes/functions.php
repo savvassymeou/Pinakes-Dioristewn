@@ -208,6 +208,30 @@ function username_validation_message(): string
     return "Το username πρέπει να περιέχει μόνο γράμματα και να έχει τουλάχιστον 3 χαρακτήρες.";
 }
 
+function normalize_identity_number(string $value): string
+{
+    $value = preg_replace('/\s+/u', '', trim($value));
+    $value = is_string($value) ? $value : '';
+
+    if (function_exists('mb_strtoupper')) {
+        return mb_strtoupper($value, 'UTF-8');
+    }
+
+    return strtoupper($value);
+}
+
+function is_valid_identity_number(string $value): bool
+{
+    $value = normalize_identity_number($value);
+
+    return $value !== "" && preg_match('/^[\p{L}\d]{5,20}$/u', $value) === 1;
+}
+
+function identity_number_validation_message(): string
+{
+    return "Ο αριθμός ταυτότητας πρέπει να περιέχει μόνο γράμματα και αριθμούς.";
+}
+
 function normalize_username(string $value): string
 {
     $value = strtolower(trim($value));
@@ -377,6 +401,39 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 SQL;
 
     return $conn->query($sql) !== false;
+}
+
+function ensure_identity_number_column($conn): bool
+{
+    $columnCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'identity_number'");
+
+    if ($columnCheck === false) {
+        return false;
+    }
+
+    if ($columnCheck->num_rows === 0) {
+        $added = $conn->query(
+            "ALTER TABLE users ADD COLUMN identity_number VARCHAR(30) DEFAULT NULL AFTER email"
+        ) !== false;
+
+        if (!$added) {
+            return false;
+        }
+    }
+
+    $indexCheck = $conn->query("SHOW INDEX FROM users WHERE Key_name = 'uniq_users_identity_number'");
+
+    if ($indexCheck === false) {
+        return false;
+    }
+
+    if ($indexCheck->num_rows === 0) {
+        return $conn->query(
+            "ALTER TABLE users ADD UNIQUE KEY uniq_users_identity_number (identity_number)"
+        ) !== false;
+    }
+
+    return true;
 }
 
 function create_password_reset_token($conn, int $userId): ?string

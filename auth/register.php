@@ -24,6 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $first_name = trim($_POST["first_name"] ?? "");
     $last_name = trim($_POST["last_name"] ?? "");
     $email = trim($_POST["email"] ?? "");
+    $identity_number = normalize_identity_number($_POST["identity_number"] ?? "");
     $phone = trim($_POST["phone"] ?? "");
     $password = $_POST["password"] ?? "";
     $father_name = trim($_POST["father_name"] ?? "");
@@ -31,10 +32,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $birth_date = trim($_POST["birth_date"] ?? "");
     $specialty_id = (int) ($_POST["specialty_id"] ?? 0);
 
-    if ($username === "" || $first_name === "" || $last_name === "" || $email === "" || $password === "") {
+    if (!ensure_identity_number_column($conn)) {
+        $error_message = "Δεν ήταν δυνατή η προετοιμασία του πεδίου αριθμού ταυτότητας.";
+    } elseif ($username === "" || $first_name === "" || $last_name === "" || $email === "" || $identity_number === "" || $password === "") {
         $error_message = "Συμπλήρωσε όλα τα υποχρεωτικά πεδία.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Το email δεν είναι έγκυρο.";
+    } elseif (!is_valid_identity_number($identity_number)) {
+        $error_message = identity_number_validation_message();
     } elseif (!is_valid_username_format($username)) {
         $error_message = username_validation_message();
     } elseif (strlen($password) < 8) {
@@ -42,15 +47,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif ($birth_date !== "" && strtotime($birth_date) === false) {
         $error_message = "Η ημερομηνία γέννησης δεν είναι έγκυρη.";
     } else {
-        $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1");
+        $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ? OR username = ? OR identity_number = ? LIMIT 1");
 
         if ($check_stmt) {
-            $check_stmt->bind_param("ss", $email, $username);
+            $check_stmt->bind_param("sss", $email, $username, $identity_number);
             $check_stmt->execute();
             $check_stmt->store_result();
 
             if ($check_stmt->num_rows > 0) {
-                $error_message = "Υπάρχει ήδη λογαριασμός με αυτό το email ή username.";
+                $error_message = "Υπάρχει ήδη λογαριασμός με αυτό το email, username ή αριθμό ταυτότητας.";
             }
 
             $check_stmt->close();
@@ -72,13 +77,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $conn->begin_transaction();
 
             try {
-                $insert_stmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, phone, password_hash) VALUES (?, ?, ?, ?, ?, ?)");
+                $insert_stmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, identity_number, phone, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
                 if (!$insert_stmt) {
                     throw new RuntimeException("Σφάλμα προετοιμασίας εγγραφής: " . $conn->error);
                 }
 
-                $insert_stmt->bind_param("ssssss", $username, $first_name, $last_name, $email, $phone, $hashed_password);
+                $insert_stmt->bind_param("sssssss", $username, $first_name, $last_name, $email, $identity_number, $phone, $hashed_password);
 
                 if (!$insert_stmt->execute()) {
                     throw new RuntimeException("Σφάλμα κατά την εγγραφή: " . $insert_stmt->error);
@@ -241,6 +246,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <div>
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" placeholder="name@example.com" value="<?php echo h($_POST['email'] ?? ''); ?>" required>
+                    </div>
+                    <div>
+                        <label for="identity_number">Αριθμός ταυτότητας</label>
+                        <input type="text" id="identity_number" name="identity_number" placeholder="π.χ. AB123456" value="<?php echo h($_POST['identity_number'] ?? ''); ?>" autocomplete="off" required>
+                        <div class="field-hint">Μόνο γράμματα και αριθμοί, χωρίς κενά.</div>
                     </div>
                     <div>
                         <label for="first_name">Όνομα</label>

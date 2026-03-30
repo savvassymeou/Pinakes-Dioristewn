@@ -7,6 +7,8 @@ require_role('candidate', '../auth/login.php', '../Admin/admindashboard.php', '.
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+ensure_identity_number_column($conn);
+
 function candidate_value(?string $value, string $fallback = '—'): string
 {
     $value = trim((string) $value);
@@ -21,6 +23,7 @@ function load_candidate(PdoConnectionAdapter $conn, int $userId): ?array
             u.first_name,
             u.last_name,
             u.email,
+            u.identity_number,
             u.phone,
             u.created_at,
             cp.id AS profile_id,
@@ -114,14 +117,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update_profile') {
         $firstName = trim($_POST['first_name'] ?? '');
         $lastName = trim($_POST['last_name'] ?? '');
+        $identityNumber = normalize_identity_number($_POST['identity_number'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $fatherName = trim($_POST['father_name'] ?? '');
         $motherName = trim($_POST['mother_name'] ?? '');
         $birthDate = trim($_POST['birth_date'] ?? '');
         $specialtyId = (int) ($_POST['specialty_id'] ?? 0);
 
-        if ($firstName === '' || $lastName === '') {
-            $errorMessage = 'Συμπλήρωσε υποχρεωτικά όνομα και επώνυμο.';
+        if ($firstName === '' || $lastName === '' || $identityNumber === '') {
+            $errorMessage = 'Συμπλήρωσε υποχρεωτικά όνομα, επώνυμο και αριθμό ταυτότητας.';
+        } elseif (!is_valid_identity_number($identityNumber)) {
+            $errorMessage = identity_number_validation_message();
         } elseif ($birthDate !== '' && strtotime($birthDate) === false) {
             $errorMessage = 'Η ημερομηνία γέννησης δεν είναι έγκυρη.';
         } else {
@@ -141,12 +147,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
 
             try {
-                $userUpdateStmt = $conn->prepare('UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?');
+                $identityCheckStmt = $conn->prepare('SELECT id FROM users WHERE identity_number = ? AND id <> ? LIMIT 1');
+                if (!$identityCheckStmt) {
+                    throw new RuntimeException('Δεν ήταν δυνατός ο έλεγχος του αριθμού ταυτότητας.');
+                }
+
+                $identityCheckStmt->bind_param('si', $identityNumber, $userId);
+                $identityCheckStmt->execute();
+                $identityCheckStmt->store_result();
+                $identityExists = $identityCheckStmt->num_rows > 0;
+                $identityCheckStmt->close();
+
+                if ($identityExists) {
+                    throw new RuntimeException('Ο αριθμός ταυτότητας χρησιμοποιείται ήδη από άλλο χρήστη.');
+                }
+
+                $userUpdateStmt = $conn->prepare('UPDATE users SET first_name = ?, last_name = ?, identity_number = ?, phone = ? WHERE id = ?');
                 if (!$userUpdateStmt) {
                     throw new RuntimeException('Δεν ήταν δυνατή η ενημέρωση των βασικών στοιχείων.');
                 }
 
-                $userUpdateStmt->bind_param('sssi', $firstName, $lastName, $phoneValue, $userId);
+                $userUpdateStmt->bind_param('ssssi', $firstName, $lastName, $identityNumber, $phoneValue, $userId);
                 if (!$userUpdateStmt->execute()) {
                     throw new RuntimeException('Προέκυψε σφάλμα κατά την αποθήκευση των στοιχείων σου.');
                 }
@@ -525,6 +546,11 @@ require __DIR__ . '/../includes/header.php';
             </div>
 
             <div class="form-group">
+                <label for="identity_number">Αριθμός ταυτότητας</label>
+                <input id="identity_number" name="identity_number" type="text" value="<?php echo h($candidate['identity_number'] ?? ''); ?>" required>
+            </div>
+
+            <div class="form-group">
                 <label for="father_name">Όνομα πατέρα</label>
                 <input id="father_name" name="father_name" type="text" value="<?php echo h($candidate['father_name'] ?? ''); ?>">
             </div>
@@ -634,6 +660,7 @@ require __DIR__ . '/../includes/header.php';
                     <div class="info-list">
                         <div class="info-row"><span>Ονοματεπώνυμο</span><strong><?php echo h($candidate['first_name'] . ' ' . $candidate['last_name']); ?></strong></div>
                         <div class="info-row"><span>Email</span><strong><?php echo h($candidate['email']); ?></strong></div>
+                        <div class="info-row"><span>Αριθμός ταυτότητας</span><strong><?php echo h(candidate_value($candidate['identity_number'] ?? null)); ?></strong></div>
                         <div class="info-row"><span>Ηλικία</span><strong><?php echo $candidateAge !== null ? $candidateAge . ' ετών' : '—'; ?></strong></div>
                         <div class="info-row"><span>Μόρια</span><strong><?php echo $candidate['points'] !== null ? number_format((float) $candidate['points'], 2) : '—'; ?></strong></div>
                     </div>

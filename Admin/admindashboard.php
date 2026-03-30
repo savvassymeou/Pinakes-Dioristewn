@@ -8,6 +8,8 @@ require_role("admin", "../auth/login.php", "../Admin/admindashboard.php", "../Ca
 require_once __DIR__ . "/../includes/db.php";
 require_once __DIR__ . "/../includes/functions.php";
 
+ensure_identity_number_column($conn);
+
 function randomGreekPhone(): string
 {
     return "99" . str_pad((string) random_int(100000, 999999), 6, "0", STR_PAD_LEFT);
@@ -16,19 +18,19 @@ function randomGreekPhone(): string
 function buildDemoCandidates(string $specialtyTitle): array
 {
     $pool = [
-        ["ÃƒÅ½Ã¢â‚¬ËœÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â´ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã‚Â ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â´ÃƒÂÃ…â€™ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã¢â‚¬Å“ÃƒÅ½Ã‚Â¹ÃƒÂÃ…Â½ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã…â€œÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â±", "1989-04-17", 91.40],
-        ["ÃƒÅ½Ã¢â‚¬Â¢ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·", "ÃƒÅ½Ã‚Â§ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦", "ÃƒÅ½Ã‚ÂÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã¢â‚¬Â ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±", "1993-09-05", 88.20],
-        ["ÃƒÅ½Ã…â€œÃƒÅ½Ã‚Â¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã‚ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦", "ÃƒÅ½Ã…Â¡ÃƒÂÃ…Â½ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±", "1987-12-11", 84.75],
-        ["ÃƒÅ½Ã‚Â£ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â±", "ÃƒÅ½Ã¢â€žÂ¢ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦", "ÃƒÅ½Ã…â€œÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã¢â‚¬Â¢ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·", "1998-02-26", 93.10],
-        ["ÃƒÅ½Ã‚Â ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â", "ÃƒÅ½Ã¢â‚¬ËœÃƒÅ½Ã‚Â½ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚Â­ÃƒÂÃ†â€™ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±", "1995-07-14", 86.60],
-        ["ÃƒÅ½Ã‚Â§ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±", "ÃƒÅ½Ã‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦", "ÃƒÅ½Ã‚Â£ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡", "ÃƒÅ½Ã…Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚ÂµÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±", "1991-10-30", 89.35],
+        ["Ανδρέας", "Παπαδόπουλος", "Γιώργος", "Μαρία", "1989-04-17", 91.40],
+        ["Ελένη", "Χριστοδούλου", "Νίκος", "Άννα", "1993-09-05", 88.20],
+        ["Μάριος", "Νεοφύτου", "Κώστας", "Σταυρούλα", "1987-12-11", 84.75],
+        ["Σοφία", "Δεληγιάννη", "Μιχάλης", "Ελένη", "1998-02-26", 93.10],
+        ["Πέτρος", "Στυλιανού", "Ανδρέας", "Δέσποινα", "1995-07-14", 86.60],
+        ["Χριστίνα", "Νικολάου", "Σάββας", "Κατερίνα", "1991-10-30", 89.35],
     ];
 
     shuffle($pool);
     $selected = array_slice($pool, 0, 4);
 
     foreach ($selected as $index => &$candidate) {
-        $candidate["application_status"] = "ÃƒÅ½Ã‚Â¦ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…Â½ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ…â€™ ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¯ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± " . $specialtyTitle;
+        $candidate["application_status"] = "Φορτώθηκε από λίστα " . $specialtyTitle;
         $candidate["email"] = "demo." . time() . "." . $index . "@pinakes.local";
     }
     unset($candidate);
@@ -49,7 +51,7 @@ if ($specialtiesResult) {
 }
 
 $adminUser = null;
-$adminStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
+$adminStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, identity_number, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
 
 if ($adminStmt) {
     $adminStmt->bind_param("i", $_SESSION["user_id"]);
@@ -72,29 +74,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $firstName = trim($_POST["new_first_name"] ?? "");
         $lastName = trim($_POST["new_last_name"] ?? "");
         $email = trim($_POST["new_email"] ?? "");
+        $identityNumber = normalize_identity_number($_POST["new_identity_number"] ?? "");
         $phone = trim($_POST["new_phone"] ?? "");
         $username = generate_unique_username($conn, username_from_email($email));
         $role = $_POST["new_role"] ?? "candidate";
         $password = $_POST["new_password"] ?? "";
 
-        if ($firstName === "" || $lastName === "" || $email === "" || $password === "") {
-            $errorMessage = "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Â°ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¬ ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·.";
+        if ($firstName === "" || $lastName === "" || $email === "" || $identityNumber === "" || $password === "") {
+            $errorMessage = "Συμπλήρωσε όλα τα υποχρεωτικά πεδία για νέο χρήστη.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errorMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â¿ email ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿.";
+            $errorMessage = "Το email δεν είναι σε έγκυρη μορφή.";
+        } elseif (!is_valid_identity_number($identityNumber)) {
+            $errorMessage = identity_number_validation_message();
         } elseif (!in_array($role, ["admin", "candidate"], true)) {
-            $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡.";
+            $errorMessage = "Ο ρόλος που επιλέχθηκε δεν είναι έγκυρος.";
         } elseif (strlen($password) < 8) {
-            $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ 8 ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡.";
+            $errorMessage = "Ο κωδικός του νέου χρήστη πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
         } else {
-            $checkStmt = $conn->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+            $checkStmt = $conn->prepare("SELECT id FROM users WHERE email = ? OR identity_number = ? LIMIT 1");
 
             if ($checkStmt) {
-                $checkStmt->bind_param("s", $email);
+                $checkStmt->bind_param("ss", $email, $identityNumber);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
 
                 if ($checkResult && $checkResult->num_rows > 0) {
-                    $errorMessage = "ÃƒÅ½Ã‚Â¥ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¬ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â®ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ email.";
+                    $errorMessage = "Υπάρχει ήδη χρήστης με αυτό το email ή αριθμό ταυτότητας.";
                 }
 
                 $checkStmt->close();
@@ -102,15 +107,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if ($errorMessage === "") {
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $createStmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $createStmt = $conn->prepare("INSERT INTO users (username, first_name, last_name, email, identity_number, phone, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
                 if ($createStmt) {
-                    $createStmt->bind_param("sssssss", $username, $firstName, $lastName, $email, $phone, $hashedPassword, $role);
+                    $createStmt->bind_param("ssssssss", $username, $firstName, $lastName, $email, $identityNumber, $phone, $hashedPassword, $role);
 
                     if ($createStmt->execute()) {
-                        $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â®ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
+                        $successMessage = "Ο χρήστης δημιουργήθηκε επιτυχώς.";
                     } else {
-                        $errorMessage = "ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â®ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â´ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â® ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·.";
+                        $errorMessage = "Δεν ήταν δυνατή η δημιουργία του χρήστη.";
                     }
 
                     $createStmt->close();
@@ -122,26 +127,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $firstName = trim($_POST["edit_first_name"] ?? "");
         $lastName = trim($_POST["edit_last_name"] ?? "");
         $email = trim($_POST["edit_email"] ?? "");
+        $identityNumber = normalize_identity_number($_POST["edit_identity_number"] ?? "");
         $phone = trim($_POST["edit_phone"] ?? "");
         $role = $_POST["edit_role"] ?? "candidate";
         $password = $_POST["edit_password"] ?? "";
 
-        if ($editUserId <= 0 || $firstName === "" || $lastName === "" || $email === "") {
-            $errorMessage = "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¬ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¾ÃƒÅ½Ã‚ÂµÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·.";
+        if ($editUserId <= 0 || $firstName === "" || $lastName === "" || $email === "" || $identityNumber === "") {
+            $errorMessage = "Συμπλήρωσε σωστά τα στοιχεία επεξεργασίας χρήστη.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errorMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â¿ email ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿.";
+            $errorMessage = "Το email δεν είναι σε έγκυρη μορφή.";
+        } elseif (!is_valid_identity_number($identityNumber)) {
+            $errorMessage = identity_number_validation_message();
         } elseif (!in_array($role, ["admin", "candidate"], true)) {
-            $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡.";
+            $errorMessage = "Ο ρόλος που επιλέχθηκε δεν είναι έγκυρος.";
         } else {
-            $checkStmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1");
+            $checkStmt = $conn->prepare("SELECT id FROM users WHERE (email = ? OR identity_number = ?) AND id <> ? LIMIT 1");
 
             if ($checkStmt) {
-                $checkStmt->bind_param("si", $email, $editUserId);
+                $checkStmt->bind_param("ssi", $email, $identityNumber, $editUserId);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
 
                 if ($checkResult && $checkResult->num_rows > 0) {
-                    $errorMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â¿ email ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â®ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ…â€™ ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·.";
+                    $errorMessage = "Το email ή ο αριθμός ταυτότητας χρησιμοποιείται ήδη από άλλο χρήστη.";
                 }
 
                 $checkStmt->close();
@@ -150,33 +158,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($errorMessage === "") {
                 if ($password !== "") {
                     if (strlen($password) < 8) {
-                        $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ 8 ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡.";
+                        $errorMessage = "Ο νέος κωδικός χρήστη πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
                     } else {
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                        $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, role = ?, password_hash = ? WHERE id = ?");
+                        $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, identity_number = ?, phone = ?, role = ?, password_hash = ? WHERE id = ?");
 
                         if ($updateStmt) {
-                            $updateStmt->bind_param("ssssssi", $firstName, $lastName, $email, $phone, $role, $hashedPassword, $editUserId);
+                            $updateStmt->bind_param("sssssssi", $firstName, $lastName, $email, $identityNumber, $phone, $role, $hashedPassword, $editUserId);
 
                             if ($updateStmt->execute()) {
-                                $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚ÂµÃƒÂÃ‚ÂÃƒÂÃ…Â½ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
+                                $successMessage = "Ο χρήστης ενημερώθηκε επιτυχώς.";
                             } else {
-                                $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â­ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Âµ.";
+                                $errorMessage = "Δεν ήταν δυνατή η ενημέρωση του χρήστη.";
                             }
 
                             $updateStmt->close();
                         }
                     }
                 } else {
-                    $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, role = ? WHERE id = ?");
+                    $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, identity_number = ?, phone = ?, role = ? WHERE id = ?");
 
                     if ($updateStmt) {
-                        $updateStmt->bind_param("sssssi", $firstName, $lastName, $email, $phone, $role, $editUserId);
+                        $updateStmt->bind_param("ssssssi", $firstName, $lastName, $email, $identityNumber, $phone, $role, $editUserId);
 
                         if ($updateStmt->execute()) {
-                            $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚ÂµÃƒÂÃ‚ÂÃƒÂÃ…Â½ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
+                            $successMessage = "Ο χρήστης ενημερώθηκε επιτυχώς.";
                         } else {
-                            $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â­ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Âµ.";
+                            $errorMessage = "Δεν ήταν δυνατή η ενημέρωση του χρήστη.";
                         }
 
                         $updateStmt->close();
@@ -188,9 +196,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $deleteUserId = (int) ($_POST["delete_user_id"] ?? 0);
 
         if ($deleteUserId <= 0) {
-            $errorMessage = "ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â®.";
+            $errorMessage = "Δεν επιλέχθηκε έγκυρος χρήστης για διαγραφή.";
         } elseif ($deleteUserId === (int) $_SESSION["user_id"]) {
-            $errorMessage = "ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ÃƒÂÃ‹â€ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ admin ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÂÃ…â€™.";
+            $errorMessage = "Δεν μπορείς να διαγράψεις τον δικό σου admin λογαριασμό.";
         } else {
             $conn->begin_transaction();
 
@@ -247,14 +255,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $deleteUserStmt->bind_param("i", $deleteUserId);
 
                     if (!$deleteUserStmt->execute()) {
-                        throw new RuntimeException("ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â® ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Âµ.");
+                        throw new RuntimeException("Δεν διαγράφηκε ο χρήστης από τη βάση.");
                     }
 
                     $deleteUserStmt->close();
                 }
 
                 $conn->commit();
-                $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
+                $successMessage = "Ο χρήστης διαγράφηκε επιτυχώς.";
             } catch (Throwable $exception) {
                 $conn->rollback();
                 $errorMessage = $exception->getMessage();
@@ -273,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if (!$selectedSpecialty) {
-            $errorMessage = "ÃƒÅ½Ã¢â‚¬Â¢ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¾ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Â ÃƒÂÃ…â€™ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â±.";
+            $errorMessage = "Επίλεξε έγκυρη ειδικότητα για φόρτωση πίνακα.";
         } else {
             $demoCandidates = buildDemoCandidates($selectedSpecialty["title"]);
             $defaultPassword = password_hash("candidate123", PASSWORD_DEFAULT);
@@ -293,7 +301,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 );
 
                 if (!$userStmt || !$profileStmt) {
-                    throw new RuntimeException("ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â®ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â´ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â® ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â‚¬Â ÃƒÂÃ…â€™ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡.");
+                throw new RuntimeException("Δεν ήταν δυνατή η προετοιμασία της φόρτωσης.");
                 }
 
                 foreach ($demoCandidates as $candidate) {
@@ -311,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $userStmt->bind_param("ssssss", $username, $firstName, $lastName, $email, $phone, $defaultPassword);
 
                     if (!$userStmt->execute()) {
-                        throw new RuntimeException("ÃƒÅ½Ã¢â‚¬ËœÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¡ demo ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ‹â€ ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦.");
+                    throw new RuntimeException("Αποτυχία δημιουργίας demo υποψηφίου.");
                     }
 
                     $userId = (int) $conn->insert_id;
@@ -330,14 +338,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     );
 
                     if (!$profileStmt->execute()) {
-                        throw new RuntimeException("ÃƒÅ½Ã¢â‚¬ËœÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â½ ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ‹â€ ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦.");
+                    throw new RuntimeException("Αποτυχία καταχώρισης στοιχείων υποψηφίου.");
                     }
                 }
 
                 $userStmt->close();
                 $profileStmt->close();
                 $conn->commit();
-                $successMessage = "ÃƒÅ½Ã‚Â¦ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…Â½ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ 4 demo ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÂÃ‹â€ ÃƒÅ½Ã‚Â®ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± " . $selectedSpecialty["title"] . " ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ " . $loadYear . ".";
+            $successMessage = "Φορτώθηκαν 4 demo υποψήφιοι για την ειδικότητα " . $selectedSpecialty["title"] . " για το έτος " . $loadYear . ".";
             } catch (Throwable $exception) {
                 $conn->rollback();
                 $errorMessage = $exception->getMessage();
@@ -347,40 +355,43 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $firstName = trim($_POST["first_name"] ?? "");
         $lastName = trim($_POST["last_name"] ?? "");
         $email = trim($_POST["email"] ?? "");
+        $identityNumber = normalize_identity_number($_POST["identity_number"] ?? "");
         $phone = trim($_POST["phone"] ?? "");
 
-        if ($firstName === "" || $lastName === "" || $email === "") {
-            $errorMessage = "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â±, ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÂÃ…Â½ÃƒÅ½Ã‚Â½ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¿ ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ email.";
+        if ($firstName === "" || $lastName === "" || $email === "" || $identityNumber === "") {
+            $errorMessage = "Συμπλήρωσε όνομα, επώνυμο, email και αριθμό ταυτότητας.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errorMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â¿ email ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¿.";
+            $errorMessage = "Το email δεν είναι σε έγκυρη μορφή.";
+        } elseif (!is_valid_identity_number($identityNumber)) {
+            $errorMessage = identity_number_validation_message();
         } else {
-            $checkStmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1");
+            $checkStmt = $conn->prepare("SELECT id FROM users WHERE (email = ? OR identity_number = ?) AND id <> ? LIMIT 1");
 
             if ($checkStmt) {
-                $checkStmt->bind_param("si", $email, $_SESSION["user_id"]);
+                $checkStmt->bind_param("ssi", $email, $identityNumber, $_SESSION["user_id"]);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
 
                 if ($checkResult && $checkResult->num_rows > 0) {
-                    $errorMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â¿ email ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â®ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â· ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ…â€™ ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·.";
+                    $errorMessage = "Το email ή ο αριθμός ταυτότητας χρησιμοποιείται ήδη από άλλο χρήστη.";
                 }
 
                 $checkStmt->close();
             }
 
             if ($errorMessage === "") {
-                $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE id = ?");
+                $updateStmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, identity_number = ?, phone = ? WHERE id = ?");
 
                 if ($updateStmt) {
-                    $updateStmt->bind_param("ssssi", $firstName, $lastName, $email, $phone, $_SESSION["user_id"]);
+                    $updateStmt->bind_param("sssssi", $firstName, $lastName, $email, $identityNumber, $phone, $_SESSION["user_id"]);
 
                     if ($updateStmt->execute()) {
                         $_SESSION["first_name"] = $firstName;
                         $_SESSION["last_name"] = $lastName;
                         $_SESSION["email"] = $email;
-                        $successMessage = "ÃƒÅ½Ã‚Â¤ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¬ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ admin ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚ÂµÃƒÂÃ‚ÂÃƒÂÃ…Â½ÃƒÅ½Ã‚Â¸ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½.";
+                        $successMessage = "Τα βασικά στοιχεία του admin ενημερώθηκαν.";
                     } else {
-                        $errorMessage = "ÃƒÅ½Ã¢â‚¬ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â­ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â½ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â½.";
+                        $errorMessage = "Δεν έγινε ενημέρωση των στοιχείων.";
                     }
 
                     $updateStmt->close();
@@ -393,13 +404,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $confirmPassword = $_POST["confirm_password"] ?? "";
 
         if ($currentPassword === "" || $newPassword === "" || $confirmPassword === "") {
-            $errorMessage = "ÃƒÅ½Ã‚Â£ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â± ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â.";
+            $errorMessage = "Συμπλήρωσε όλα τα πεδία του κωδικού.";
         } elseif (!password_verify($currentPassword, $adminUser["password_hash"])) {
-            $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡.";
+            $errorMessage = "Ο τρέχων κωδικός δεν είναι σωστός.";
         } elseif (strlen($newPassword) < 8) {
-            $errorMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â­ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ 8 ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â®ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡.";
+            $errorMessage = "Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
         } elseif ($newPassword !== $confirmPassword) {
-            $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Â°ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â· ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¹ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â¶ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹.";
+            $errorMessage = "Η επιβεβαίωση του νέου κωδικού δεν ταιριάζει.";
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
             $passwordStmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
@@ -408,10 +419,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $passwordStmt->bind_param("si", $hashedPassword, $_SESSION["user_id"]);
 
                 if ($passwordStmt->execute()) {
-                    $successMessage = "ÃƒÅ½Ã…Â¸ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¾ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ…Â½ÃƒÂÃ¢â‚¬Å¡.";
+                    $successMessage = "Ο κωδικός πρόσβασης άλλαξε επιτυχώς.";
                     $adminUser["password_hash"] = $hashedPassword;
                 } else {
-                    $errorMessage = "ÃƒÅ½Ã¢â‚¬â€ ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â® ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â­ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Â¡ÃƒÅ½Ã‚Âµ.";
+                    $errorMessage = "Η αλλαγή κωδικού απέτυχε.";
                 }
 
                 $passwordStmt->close();
@@ -420,7 +431,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($successMessage !== "" || $errorMessage !== "") {
-        $refreshStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
+        $refreshStmt = $conn->prepare("SELECT id, username, first_name, last_name, email, identity_number, phone, password_hash, created_at FROM users WHERE id = ? LIMIT 1");
 
         if ($refreshStmt) {
             $refreshStmt->bind_param("i", $_SESSION["user_id"]);
@@ -447,6 +458,7 @@ $usersResult = $conn->query("
         u.first_name,
         u.last_name,
         u.email,
+        u.identity_number,
         u.phone,
         u.role,
         u.created_at,
@@ -542,7 +554,7 @@ $pageTitle = APP_NAME . " | Admin Dashboard";
 $bodyClass = "theme-admin";
 $currentPage = "admin";
 $navBase = "../";
-$headerActionLabel = "Ρυθμίσεις Λογαριασμού";
+$headerActionLabel = "Î¡Ï…Î¸Î¼Î¯ÏƒÎµÎ¹Ï‚ Î›Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï";
 $headerActionHref = "#account";
 
 function admin_text(?string $value, string $fallback = "—"): string
@@ -578,8 +590,8 @@ require __DIR__ . "/../includes/header.php";
         <section class="page-hero" aria-labelledby="pageTitle">
             <div class="hero-text">
                 <span class="eyebrow-home">Admin Control Center</span>
-                <h1 id="pageTitle">Πίνακας Διαχείρισης</h1>
-                <p class="muted">Από εδώ διαχειρίζεσαι χρήστες, λίστες, βασικά reports και τα προσωπικά στοιχεία του admin λογαριασμού μέσα από ένα ενιαίο περιβάλλον.</p>
+    <h1 id="pageTitle">Πίνακας Διαχείρισης</h1>
+    <p class="muted">Από εδώ διαχειρίζεσαι χρήστες, λίστες, βασικά reports και τα προσωπικά στοιχεία του admin λογαριασμού μέσα από ένα ενιαίο περιβάλλον.</p>
             </div>
 
             <div class="hero-badges">
@@ -594,76 +606,76 @@ require __DIR__ . "/../includes/header.php";
             </div>
         </section>
 
-        <section class="hero-metrics" aria-label="Σύνοψη διαχείρισης">
+<section class="hero-metrics" aria-label="Σύνοψη διαχείρισης">
             <article class="metric-card">
-                <span class="metric-label">Σύνολο υποψηφίων</span>
+        <span class="metric-label">Σύνολο υποψηφίων</span>
                 <span class="metric-value"><?php echo (int) $overview["total_candidates"]; ?></span>
-                <p class="metric-note">Εγγραφές candidate profiles σε όλο το σύστημα.</p>
+        <p class="metric-note">Εγγραφές candidate profiles σε όλο το σύστημα.</p>
             </article>
             <article class="metric-card">
-                <span class="metric-label">Νέοι υποψήφιοι <?php echo date("Y"); ?></span>
+        <span class="metric-label">Νέοι υποψήφιοι <?php echo date("Y"); ?></span>
                 <span class="metric-value"><?php echo (int) $overview["new_candidates_year"]; ?></span>
-                <p class="metric-note">Νέες εγγραφές χρηστών με ρόλο candidate.</p>
+        <p class="metric-note">Νέες εγγραφές χρηστών με ρόλο candidate.</p>
             </article>
             <article class="metric-card">
-                <span class="metric-label">Συνολικά tracked</span>
+        <span class="metric-label">Συνολικά tracked</span>
                 <span class="metric-value"><?php echo (int) $overview["tracked_total"]; ?></span>
-                <p class="metric-note">Σχέσεις παρακολούθησης ανάμεσα σε υποψηφίους.</p>
+        <p class="metric-note">Σχέσεις παρακολούθησης ανάμεσα σε υποψηφίους.</p>
             </article>
         </section>
 
         <?php if ($successMessage !== ""): ?>
-            <div class="alert alert-success"><?php echo h(admin_text($successMessage, "Η ενέργεια ολοκληρώθηκε επιτυχώς.")); ?></div>
+    <div class="alert alert-success"><?php echo h(admin_text($successMessage, "Η ενέργεια ολοκληρώθηκε επιτυχώς.")); ?></div>
         <?php endif; ?>
 
         <?php if ($errorMessage !== ""): ?>
-            <div class="alert alert-error"><?php echo h(admin_text($errorMessage, "Παρουσιάστηκε πρόβλημα κατά την ολοκλήρωση της ενέργειας.")); ?></div>
+    <div class="alert alert-error"><?php echo h(admin_text($errorMessage, "Παρουσιάστηκε πρόβλημα κατά την ολοκλήρωση της ενέργειας.")); ?></div>
         <?php endif; ?>
 
-        <section class="grid grid-admin" aria-label="Ενότητες διαχείρισης">
+<section class="grid grid-admin" aria-label="Ενότητες διαχείρισης">
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">1</div>
-                <h2>Χρήστες</h2>
-                <p>Δημιουργία, επεξεργασία και διαγραφή χρηστών με άμεση πρόσβαση στον πλήρη πίνακα.</p>
-                <div class="card-actions"><a class="btn" href="#manage-users">Άνοιγμα</a></div>
+    <h2>Χρήστες</h2>
+    <p>Δημιουργία, επεξεργασία και διαγραφή χρηστών με άμεση πρόσβαση στον πλήρη πίνακα.</p>
+    <div class="card-actions"><a class="btn" href="#manage-users">Άνοιγμα</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">2</div>
-                <h2>Λίστες</h2>
-                <p>Προβολή στατιστικών ανά ειδικότητα και φόρτωση demo υποψηφίων για δοκιμές.</p>
-                <div class="card-actions"><a class="btn" href="#manage-lists">Άνοιγμα</a></div>
+    <h2>Λίστες</h2>
+    <p>Προβολή στατιστικών ανά ειδικότητα και φόρτωση demo υποψηφίων για δοκιμές.</p>
+    <div class="card-actions"><a class="btn" href="#manage-lists">Άνοιγμα</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">3</div>
-                <h2>Reports</h2>
-                <p>Συνοπτικά KPI, κατανομή υποψηφίων και χρονολογική επισκόπηση του συστήματος.</p>
-                <div class="card-actions"><a class="btn" href="#reports">Άνοιγμα</a></div>
+    <h2>Reports</h2>
+    <p>Συνοπτικά KPI, κατανομή υποψηφίων και χρονολογική επισκόπηση του συστήματος.</p>
+    <div class="card-actions"><a class="btn" href="#reports">Άνοιγμα</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">4</div>
-                <h2>Λογαριασμός</h2>
-                <p>Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης για τον admin λογαριασμό.</p>
-                <div class="card-actions"><a class="btn" href="#account">Άνοιγμα</a></div>
+    <h2>Λογαριασμός</h2>
+    <p>Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης για τον admin λογαριασμό.</p>
+    <div class="card-actions"><a class="btn" href="#account">Άνοιγμα</a></div>
             </article>
         </section>
 
         <section class="panel" id="manage-users" aria-labelledby="usersTitle">
             <div class="panel-head">
-                <h2 id="usersTitle">Διαχείριση Χρηστών</h2>
-                <p class="muted">Οργάνωσε το σύνολο των χρηστών του συστήματος από ένα ενιαίο σημείο διαχείρισης.</p>
+        <h2 id="usersTitle">Διαχείριση Χρηστών</h2>
+        <p class="muted">Οργάνωσε το σύνολο των χρηστών του συστήματος από ένα ενιαίο σημείο διαχείρισης.</p>
             </div>
 
             <div class="account-grid">
                 <form class="panel panel-nested" method="post" action="#manage-users">
                     <input type="hidden" name="action" value="create_user">
-                    <h3>Νέος Χρήστης</h3>
+        <h3>Νέος Χρήστης</h3>
                     <div class="form-stack">
                         <div class="form-group">
-                            <label for="new_first_name">Όνομα</label>
+                <label for="new_first_name">Όνομα</label>
                             <input id="new_first_name" name="new_first_name" type="text" required>
                         </div>
                         <div class="form-group">
-                            <label for="new_last_name">Επώνυμο</label>
+                <label for="new_last_name">Επώνυμο</label>
                             <input id="new_last_name" name="new_last_name" type="text" required>
                         </div>
                         <div class="form-group">
@@ -671,37 +683,41 @@ require __DIR__ . "/../includes/header.php";
                             <input id="new_email" name="new_email" type="email" required>
                         </div>
                         <div class="form-group">
-                            <label for="new_phone">Τηλέφωνο</label>
+                <label for="new_identity_number">Αριθμός ταυτότητας</label>
+                            <input id="new_identity_number" name="new_identity_number" type="text" required>
+                        </div>
+                        <div class="form-group">
+                <label for="new_phone">Τηλέφωνο</label>
                             <input id="new_phone" name="new_phone" type="text">
                         </div>
                         <div class="form-group">
-                            <label for="new_role">Ρόλος</label>
+                <label for="new_role">Ρόλος</label>
                             <select id="new_role" name="new_role" required>
                                 <option value="candidate">candidate</option>
                                 <option value="admin">admin</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="new_password">Κωδικός πρόσβασης</label>
+                <label for="new_password">Κωδικός πρόσβασης</label>
                             <input id="new_password" name="new_password" type="password" required>
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Δημιουργία Χρήστη</button>
+        <button class="btn btn-primary" type="submit">Δημιουργία Χρήστη</button>
                 </form>
 
                 <form class="panel panel-nested" method="post" action="#manage-users">
                     <input type="hidden" name="action" value="update_user">
                     <input type="hidden" name="edit_user_id" value="<?php echo (int) ($editingUser["id"] ?? 0); ?>">
-                    <h3>Επεξεργασία Χρήστη</h3>
+        <h3>Επεξεργασία Χρήστη</h3>
 
                     <?php if ($editingUser): ?>
                         <div class="form-stack">
                             <div class="form-group">
-                                <label for="edit_first_name">Όνομα</label>
+                <label for="edit_first_name">Όνομα</label>
                                 <input id="edit_first_name" name="edit_first_name" type="text" value="<?php echo h($editingUser["first_name"]); ?>" required>
                             </div>
                             <div class="form-group">
-                                <label for="edit_last_name">Επώνυμο</label>
+                <label for="edit_last_name">Επώνυμο</label>
                                 <input id="edit_last_name" name="edit_last_name" type="text" value="<?php echo h($editingUser["last_name"]); ?>" required>
                             </div>
                             <div class="form-group">
@@ -709,65 +725,71 @@ require __DIR__ . "/../includes/header.php";
                                 <input id="edit_email" name="edit_email" type="email" value="<?php echo h($editingUser["email"]); ?>" required>
                             </div>
                             <div class="form-group">
-                                <label for="edit_phone">Τηλέφωνο</label>
+                <label for="edit_identity_number">Αριθμός ταυτότητας</label>
+                                <input id="edit_identity_number" name="edit_identity_number" type="text" value="<?php echo h($editingUser["identity_number"] ?? ""); ?>" required>
+                            </div>
+                            <div class="form-group">
+                <label for="edit_phone">Τηλέφωνο</label>
                                 <input id="edit_phone" name="edit_phone" type="text" value="<?php echo h($editingUser["phone"] ?? ""); ?>">
                             </div>
                             <div class="form-group">
-                                <label for="edit_role">Ρόλος</label>
+                <label for="edit_role">Ρόλος</label>
                                 <select id="edit_role" name="edit_role" required>
                                     <option value="candidate" <?php echo ($editingUser["role"] ?? "") === "candidate" ? "selected" : ""; ?>>candidate</option>
                                     <option value="admin" <?php echo ($editingUser["role"] ?? "") === "admin" ? "selected" : ""; ?>>admin</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="edit_password">Νέος κωδικός</label>
-                                <input id="edit_password" name="edit_password" type="password" placeholder="Άφησέ το κενό για να μείνει ο ίδιος">
+                <label for="edit_password">Νέος κωδικός</label>
+                <input id="edit_password" name="edit_password" type="password" placeholder="Άφησέ το κενό για να μείνει ο ίδιος">
                             </div>
                         </div>
                         <div class="card-actions">
-                            <button class="btn btn-primary" type="submit">Αποθήκευση Αλλαγών</button>
-                            <a class="btn btn-secondary" href="admindashboard.php#manage-users">Ακύρωση</a>
+            <button class="btn btn-primary" type="submit">Αποθήκευση Αλλαγών</button>
+            <a class="btn btn-secondary" href="admindashboard.php#manage-users">Ακύρωση</a>
                         </div>
                     <?php else: ?>
-                        <div class="empty-state">Επίλεξε έναν χρήστη από τον παρακάτω πίνακα για να φορτωθούν τα στοιχεία του προς επεξεργασία.</div>
+        <div class="empty-state">Επίλεξε έναν χρήστη από τον παρακάτω πίνακα για να φορτωθούν τα στοιχεία του προς επεξεργασία.</div>
                     <?php endif; ?>
                 </form>
             </div>
 
             <div class="table-titlebar">
-                <h3>Πίνακας χρηστών</h3>
-                <p class="panel-subtitle">Σύνολο: <?php echo count($users); ?> εγγραφές</p>
+    <h3>Πίνακας χρηστών</h3>
+    <p class="panel-subtitle">Σύνολο: <?php echo count($users); ?> εγγραφές</p>
             </div>
-            <div class="table-wrap" role="region" aria-label="Λίστα χρηστών">
+<div class="table-wrap" role="region" aria-label="Λίστα χρηστών">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Όνομα</th>
+            <th>Όνομα</th>
                             <th>Email</th>
-                            <th>Ρόλος</th>
-                            <th>Ειδικότητα</th>
-                            <th>Θέση</th>
-                            <th>Ημερομηνία</th>
-                            <th class="right">Ενέργειες</th>
+            <th>Ταυτότητα</th>
+            <th>Ρόλος</th>
+            <th>Ειδικότητα</th>
+            <th>Θέση</th>
+            <th>Ημερομηνία</th>
+            <th class="right">Ενέργειες</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($users === []): ?>
-                            <tr><td colspan="7" class="empty-cell">Δεν υπάρχουν χρήστες για εμφάνιση.</td></tr>
+            <tr><td colspan="8" class="empty-cell">Δεν υπάρχουν χρήστες για εμφάνιση.</td></tr>
                         <?php else: ?>
                             <?php foreach ($users as $row): ?>
                                 <tr>
                                     <td><?php echo h($row["first_name"] . " " . $row["last_name"]); ?></td>
                                     <td><?php echo h($row["email"]); ?></td>
+                                    <td><?php echo h($row["identity_number"] ?? "—"); ?></td>
                                     <td><span class="pill"><?php echo h($row["role"]); ?></span></td>
                                     <td><?php echo h(admin_text($row["specialty_title"] ?? null)); ?></td>
-                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : '—'; ?></td>
+                <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : '—'; ?></td>
                                     <td><?php echo h(date("d/m/Y", strtotime($row["created_at"]))); ?></td>
                                     <td class="right">
                                         <div class="inline-actions">
                                             <a class="btn btn-small" href="?edit_user=<?php echo (int) $row["id"]; ?>#manage-users">Edit</a>
                                             <?php if ((int) $row["id"] !== (int) $_SESSION["user_id"]): ?>
-                                                <form method="post" action="#manage-users" onsubmit="return confirm('Να διαγραφεί ο χρήστης;');">
+                                                <form method="post" action="#manage-users" onsubmit="return confirm('ÎÎ± Î´Î¹Î±Î³ÏÎ±Ï†ÎµÎ¯ Î¿ Ï‡ÏÎ®ÏƒÏ„Î·Ï‚;');">
                                                     <input type="hidden" name="action" value="delete_user">
                                                     <input type="hidden" name="delete_user_id" value="<?php echo (int) $row["id"]; ?>">
                                                     <button class="btn btn-small" type="submit">Delete</button>
@@ -785,14 +807,14 @@ require __DIR__ . "/../includes/header.php";
 
         <section class="panel" id="manage-lists" aria-labelledby="listsTitle">
             <div class="panel-head">
-                <h2 id="listsTitle">Διαχείριση Λιστών</h2>
-                <p class="muted">Φόρτωσε demo υποψηφίους για μια ειδικότητα και δες συνοπτικά στατιστικά ανά λίστα.</p>
+        <h2 id="listsTitle">Διαχείριση Λιστών</h2>
+        <p class="muted">Φόρτωσε demo υποψηφίους για μια ειδικότητα και δες συνοπτικά στατιστικά ανά λίστα.</p>
             </div>
 
             <form class="form-grid" method="post" action="#manage-lists">
                 <input type="hidden" name="action" value="load_list">
                 <div class="form-group">
-                    <label for="specialty_id">Ειδικότητα</label>
+            <label for="specialty_id">Ειδικότητα</label>
                     <select id="specialty_id" name="specialty_id" required>
                         <?php foreach ($specialties as $specialty): ?>
                             <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $selectedSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
@@ -802,7 +824,7 @@ require __DIR__ . "/../includes/header.php";
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="load_year">Έτος</label>
+            <label for="load_year">Έτος</label>
                     <select id="load_year" name="load_year" required>
                         <?php for ($year = (int) date("Y"); $year >= (int) date("Y") - 3; $year--): ?>
                             <option value="<?php echo $year; ?>" <?php echo $selectedLoadYear === $year ? "selected" : ""; ?>><?php echo $year; ?></option>
@@ -810,38 +832,38 @@ require __DIR__ . "/../includes/header.php";
                     </select>
                 </div>
                 <div class="form-group form-actions">
-                    <button class="btn btn-primary" type="submit">Φόρτωση Demo Υποψηφίων</button>
+        <button class="btn btn-primary" type="submit">Φόρτωση Demo Υποψηφίων</button>
                 </div>
             </form>
 
             <div class="table-titlebar">
-                <h3>Στατιστικά ανά ειδικότητα</h3>
-                <p class="panel-subtitle"><?php echo count($specialtyStats); ?> ειδικότητες</p>
+    <h3>Στατιστικά ανά ειδικότητα</h3>
+    <p class="panel-subtitle"><?php echo count($specialtyStats); ?> ειδικότητες</p>
             </div>
-            <div class="table-wrap" role="region" aria-label="Πίνακες ανά ειδικότητα">
+<div class="table-wrap" role="region" aria-label="Πίνακες ανά ειδικότητα">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Ειδικότητα</th>
-                            <th>Περιγραφή</th>
-                            <th>Υποψήφιοι</th>
-                            <th>Μέσος όρος ηλικίας</th>
-                            <th>Μέσος όρος μορίων</th>
-                            <th>Τελευταία φόρτωση</th>
+            <th>Ειδικότητα</th>
+            <th>Περιγραφή</th>
+            <th>Υποψήφιοι</th>
+            <th>Μέσος όρος ηλικίας</th>
+            <th>Μέσος όρος μορίων</th>
+            <th>Τελευταία φόρτωση</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($specialtyStats === []): ?>
-                            <tr><td colspan="6" class="empty-cell">Δεν υπάρχουν ακόμη στατιστικά για εμφάνιση.</td></tr>
+            <tr><td colspan="6" class="empty-cell">Δεν υπάρχουν ακόμη στατιστικά για εμφάνιση.</td></tr>
                         <?php else: ?>
                             <?php foreach ($specialtyStats as $row): ?>
                                 <tr>
                                     <td><?php echo h(admin_text($row["title"])); ?></td>
-                                    <td><?php echo h(admin_text($row["description"] ?? null, "—")); ?></td>
+                <td><?php echo h(admin_text($row["description"] ?? null, "—")); ?></td>
                                     <td><?php echo (int) $row["candidate_count"]; ?></td>
-                                    <td><?php echo $row["average_age"] !== null ? number_format((float) $row["average_age"], 1) : '—'; ?></td>
-                                    <td><?php echo $row["average_points"] !== null ? number_format((float) $row["average_points"], 2) : '—'; ?></td>
-                                    <td><?php echo $row["last_loaded"] ? h(date("d/m/Y H:i", strtotime($row["last_loaded"]))) : 'Δεν υπάρχει φόρτωση'; ?></td>
+                <td><?php echo $row["average_age"] !== null ? number_format((float) $row["average_age"], 1) : '—'; ?></td>
+                <td><?php echo $row["average_points"] !== null ? number_format((float) $row["average_points"], 2) : '—'; ?></td>
+                <td><?php echo $row["last_loaded"] ? h(date("d/m/Y H:i", strtotime($row["last_loaded"]))) : 'Δεν υπάρχει φόρτωση'; ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -852,32 +874,32 @@ require __DIR__ . "/../includes/header.php";
 
         <section class="panel" id="reports" aria-labelledby="reportsTitle">
             <div class="panel-head">
-                <h2 id="reportsTitle">Reports</h2>
-                <p class="muted">Συνοπτική εικόνα της δραστηριότητας του συστήματος με βασικούς δείκτες και κατανομές.</p>
+        <h2 id="reportsTitle">Reports</h2>
+        <p class="muted">Συνοπτική εικόνα της δραστηριότητας του συστήματος με βασικούς δείκτες και κατανομές.</p>
             </div>
 
             <div class="stats">
                 <div class="stat">
                     <div class="stat-kpi"><?php echo (int) $overview["total_candidates"]; ?></div>
-                    <div class="stat-label">Σύνολο candidate profiles</div>
+        <div class="stat-label">Σύνολο candidate profiles</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-kpi"><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : '—'; ?></div>
-                    <div class="stat-label">Μέσος όρος ηλικίας</div>
+        <div class="stat-kpi"><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : '—'; ?></div>
+        <div class="stat-label">Μέσος όρος ηλικίας</div>
                 </div>
                 <div class="stat">
                     <div class="stat-kpi"><?php echo (int) $overview["tracked_total"]; ?></div>
-                    <div class="stat-label">Συνολικά tracked relationships</div>
+                    <div class="stat-label">Î£Ï…Î½Î¿Î»Î¹ÎºÎ¬ tracked relationships</div>
                 </div>
             </div>
 
             <div class="reports-layout">
                 <div class="chart-card">
-                    <h3>Υποψήφιοι ανά ειδικότητα</h3>
+        <h3>Υποψήφιοι ανά ειδικότητα</h3>
                     <?php if ($specialtyStats === [] || $maxSpecialtyCount === 0): ?>
-                        <p class="empty-copy">Δεν υπάρχουν αρκετά δεδομένα για γράφημα αυτή τη στιγμή.</p>
+        <p class="empty-copy">Δεν υπάρχουν αρκετά δεδομένα για γράφημα αυτή τη στιγμή.</p>
                     <?php else: ?>
-                        <div class="chart-mock" aria-label="Γράφημα υποψηφίων ανά ειδικότητα">
+        <div class="chart-mock" aria-label="Γράφημα υποψηφίων ανά ειδικότητα">
                             <?php foreach ($specialtyStats as $row): ?>
                                 <?php $count = (int) $row["candidate_count"]; $width = $maxSpecialtyCount > 0 ? max(12, (int) round(($count / $maxSpecialtyCount) * 100)) : 12; ?>
                                 <div class="bar" style="width: <?php echo $width; ?>%"><span><?php echo h(admin_text($row["title"])); ?> - <?php echo $count; ?></span></div>
@@ -887,13 +909,13 @@ require __DIR__ . "/../includes/header.php";
                 </div>
 
                 <div class="chart-card">
-                    <h3>Υποψήφιοι ανά έτος</h3>
+        <h3>Υποψήφιοι ανά έτος</h3>
                     <?php if ($yearlyRows === []): ?>
-                        <p class="empty-copy">Δεν υπάρχουν ακόμη εγγραφές ανά έτος για εμφάνιση.</p>
+        <p class="empty-copy">Δεν υπάρχουν ακόμη εγγραφές ανά έτος για εμφάνιση.</p>
                     <?php else: ?>
                         <div class="year-list">
                             <?php foreach ($yearlyRows as $yearRow): ?>
-                                <div class="year-item"><span><?php echo h((string) $yearRow["report_year"]); ?></span><strong><?php echo (int) $yearRow["candidate_count"]; ?> υποψήφιοι</strong></div>
+            <div class="year-item"><span><?php echo h((string) $yearRow["report_year"]); ?></span><strong><?php echo (int) $yearRow["candidate_count"]; ?> υποψήφιοι</strong></div>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
@@ -904,21 +926,21 @@ require __DIR__ . "/../includes/header.php";
 
         <section class="panel" id="account" aria-labelledby="accountTitle">
             <div class="panel-head">
-                <h2 id="accountTitle">Λογαριασμός Admin</h2>
-                <p class="muted">Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης χωρίς έξοδο από το dashboard.</p>
+        <h2 id="accountTitle">Λογαριασμός Admin</h2>
+        <p class="muted">Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης χωρίς έξοδο από το dashboard.</p>
             </div>
 
             <div class="account-grid">
                 <form class="panel panel-nested" method="post" action="#account">
                     <input type="hidden" name="action" value="update_profile">
-                    <h3>Βασικά Στοιχεία</h3>
+        <h3>Βασικά Στοιχεία</h3>
                     <div class="form-stack">
                         <div class="form-group">
-                            <label for="first_name">Όνομα</label>
+                <label for="first_name">Όνομα</label>
                             <input id="first_name" name="first_name" type="text" value="<?php echo h($adminUser["first_name"]); ?>" required>
                         </div>
                         <div class="form-group">
-                            <label for="last_name">Επώνυμο</label>
+                <label for="last_name">Επώνυμο</label>
                             <input id="last_name" name="last_name" type="text" value="<?php echo h($adminUser["last_name"]); ?>" required>
                         </div>
                         <div class="form-group">
@@ -926,31 +948,35 @@ require __DIR__ . "/../includes/header.php";
                             <input id="email" name="email" type="email" value="<?php echo h($adminUser["email"]); ?>" required>
                         </div>
                         <div class="form-group">
-                            <label for="phone">Τηλέφωνο</label>
+                <label for="identity_number">Αριθμός ταυτότητας</label>
+                            <input id="identity_number" name="identity_number" type="text" value="<?php echo h($adminUser["identity_number"] ?? ""); ?>" required>
+                        </div>
+                        <div class="form-group">
+                <label for="phone">Τηλέφωνο</label>
                             <input id="phone" name="phone" type="text" value="<?php echo h($adminUser["phone"] ?? ""); ?>">
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Αποθήκευση Στοιχείων</button>
+        <button class="btn btn-primary" type="submit">Αποθήκευση Στοιχείων</button>
                 </form>
 
                 <form class="panel panel-nested" method="post" action="#account">
                     <input type="hidden" name="action" value="change_password">
-                    <h3>Αλλαγή Κωδικού</h3>
+        <h3>Αλλαγή Κωδικού</h3>
                     <div class="form-stack">
                         <div class="form-group">
-                            <label for="current_password">Τρέχων κωδικός</label>
+                <label for="current_password">Τρέχων κωδικός</label>
                             <input id="current_password" name="current_password" type="password" required>
                         </div>
                         <div class="form-group">
-                            <label for="new_password">Νέος κωδικός</label>
+                <label for="new_password">Νέος κωδικός</label>
                             <input id="new_password" name="new_password" type="password" required>
                         </div>
                         <div class="form-group">
-                            <label for="confirm_password">Επιβεβαίωση νέου κωδικού</label>
+                <label for="confirm_password">Επιβεβαίωση νέου κωδικού</label>
                             <input id="confirm_password" name="confirm_password" type="password" required>
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Αλλαγή Κωδικού</button>
+        <button class="btn btn-primary" type="submit">Αλλαγή Κωδικού</button>
                 </form>
             </div>
         </section>
