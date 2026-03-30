@@ -1,0 +1,217 @@
+<?php
+
+require_once __DIR__ . "/../includes/db.php";
+require_once __DIR__ . "/../includes/auth.php";
+require_once __DIR__ . "/../includes/functions.php";
+
+if (is_logged_in()) {
+    redirect_to_dashboard_by_role("../Admin/admindashboard.php", "../Candidate/candidatedashboard.php", "login.php");
+}
+
+$successMessage = "";
+$errorMessage = "";
+$resetLink = "";
+$email = trim($_POST["email"] ?? "");
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if ($email === "") {
+        $errorMessage = "Συμπλήρωσε το email του λογαριασμού σου.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errorMessage = "Το email δεν είναι έγκυρο.";
+    } elseif (!ensure_password_reset_tokens_table($conn)) {
+        $errorMessage = "Δεν ήταν δυνατή η προετοιμασία της επαναφοράς κωδικού.";
+    } else {
+        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+
+        if (!$stmt) {
+            $errorMessage = "Δεν ήταν δυνατός ο έλεγχος του λογαριασμού αυτή τη στιγμή.";
+        } else {
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result ? $result->fetch_assoc() : null;
+            $stmt->close();
+
+            if ($user) {
+                $token = create_password_reset_token($conn, (int) $user["id"]);
+
+                if ($token === null) {
+                    $errorMessage = "Δεν ήταν δυνατή η δημιουργία συνδέσμου επαναφοράς.";
+                } else {
+                    $resetLink = build_password_reset_link($token);
+                }
+            }
+        }
+
+        if ($errorMessage === "") {
+            $successMessage = "Αν υπάρχει λογαριασμός με αυτό το email, δημιουργήθηκε σύνδεσμος επαναφοράς κωδικού.";
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ξέχασα Κωδικό | Πίνακες Διοριστέων</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #eef3f8;
+            --bg-accent: #dce7f5;
+            --panel: rgba(255, 255, 255, 0.96);
+            --panel-border: rgba(21, 55, 92, 0.12);
+            --text: #14263d;
+            --muted: #5d7088;
+            --accent: #b8862f;
+            --accent-2: #d9ab55;
+            --accent-dark: #7a5720;
+            --field: #f7f9fc;
+            --field-border: #cfdae8;
+            --danger-bg: #fff1f1;
+            --danger-border: #efc2c2;
+            --danger-text: #8e2f2f;
+            --success-bg: #eef9f0;
+            --success-border: #c8e8cf;
+            --success-text: #25613a;
+            --shadow: 0 24px 60px rgba(17, 39, 68, 0.14);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(185, 134, 47, 0.16), transparent 22%),
+                radial-gradient(circle at left, rgba(52, 103, 168, 0.10), transparent 26%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-accent) 100%);
+        }
+        .page { min-height: 100vh; display: grid; place-items: center; padding: 32px 18px; }
+        .card {
+            width: min(100%, 520px);
+            padding: 34px 32px;
+            border-radius: 28px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--shadow);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; font-weight: 800; }
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            font-family: "Space Grotesk", sans-serif;
+            box-shadow: 0 14px 28px rgba(184, 134, 47, 0.22);
+        }
+        .brand-copy strong { display: block; font-size: 1rem; }
+        .brand-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.92rem; font-weight: 600; }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(184, 134, 47, 0.12);
+            color: var(--accent-dark);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        h1 { margin: 0 0 10px; font-family: "Space Grotesk", sans-serif; font-size: clamp(2rem, 4vw, 2.6rem); line-height: 1.02; }
+        .intro { margin: 0 0 28px; color: var(--muted); line-height: 1.65; font-size: 0.98rem; }
+        label { display: block; margin: 0 0 8px; color: var(--text); font-weight: 800; }
+        input {
+            width: 100%;
+            padding: 15px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--field-border);
+            background: var(--field);
+            color: var(--text);
+            font-size: 1rem;
+            margin-bottom: 18px;
+        }
+        .message {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            line-height: 1.55;
+            border: 1px solid transparent;
+        }
+        .message.success { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+        .message.error { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+        .dev-link {
+            display: block;
+            margin-top: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: #fff8ea;
+            border: 1px solid #ecd5a4;
+            color: #6f531f;
+            line-height: 1.55;
+            word-break: break-all;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 18px 32px rgba(184, 134, 47, 0.24);
+        }
+        .helper-links { margin-top: 20px; text-align: center; color: var(--muted); font-size: 0.95rem; }
+        .helper-links a { color: var(--accent-dark); font-weight: 800; }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="card">
+            <div class="brand">
+                <span class="brand-mark">EEY</span>
+                <div class="brand-copy">
+                    <strong>Πίνακες Διοριστέων</strong>
+                    <span>Επαναφορά κωδικού πρόσβασης</span>
+                </div>
+            </div>
+            <span class="eyebrow">Forgot Password</span>
+            <h1>Ξέχασα τον Κωδικό</h1>
+            <p class="intro">Συμπλήρωσε το email σου και, αν υπάρχει λογαριασμός, θα εμφανιστεί εδώ ο σύνδεσμος επαναφοράς για να ορίσεις νέο κωδικό.</p>
+
+            <?php if ($successMessage !== ""): ?>
+                <div class="message success">
+                    <?php echo h($successMessage); ?>
+                    <?php if ($resetLink !== ""): ?>
+                        <a class="dev-link" href="<?php echo h($resetLink); ?>"><?php echo h($resetLink); ?></a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($errorMessage !== ""): ?>
+                <div class="message error"><?php echo h($errorMessage); ?></div>
+            <?php endif; ?>
+
+            <form method="post" action="">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" value="<?php echo h($email); ?>" placeholder="name@example.com" required>
+                <button type="submit">Δημιουργία Συνδέσμου</button>
+            </form>
+
+            <div class="helper-links">
+                <a href="login.php">Επιστροφή στη Σύνδεση</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

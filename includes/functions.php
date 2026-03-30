@@ -4,6 +4,56 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/config.php";
 
+function repair_mojibake_segment(string $value): string
+{
+    if ($value === '' || !preg_match('/[ÃÂÎÏâ]/u', $value)) {
+        return $value;
+    }
+
+    $decoded = $value;
+
+    for ($i = 0; $i < 4; $i++) {
+        $candidate = @iconv('UTF-8', 'Windows-1252//IGNORE', $decoded);
+
+        if (!is_string($candidate) || $candidate === '' || $candidate === $decoded) {
+            break;
+        }
+
+        $decoded = $candidate;
+
+        if (preg_match('/\p{Greek}/u', $decoded) && !preg_match('/[ÃÂÎÏâ]/u', $decoded)) {
+            break;
+        }
+    }
+
+    return $decoded;
+}
+
+function repair_mojibake_output_buffer(string $buffer): string
+{
+    $fixed = preg_replace_callback(
+        '/[ÃÂÎÏâ][^<>"\']*/u',
+        static fn(array $matches): string => repair_mojibake_segment($matches[0]),
+        $buffer
+    );
+
+    return is_string($fixed) ? $fixed : $buffer;
+}
+
+function ensure_output_encoding_fix(): void
+{
+    static $started = false;
+
+    if ($started || PHP_SAPI === 'cli') {
+        return;
+    }
+
+    ob_start('repair_mojibake_output_buffer');
+    $started = true;
+}
+
+ensure_output_encoding_fix();
+
 function e(?string $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
@@ -12,6 +62,150 @@ function e(?string $value): string
 function h(?string $value): string
 {
     return e($value);
+}
+
+function current_scheme(): string
+{
+    $https = $_SERVER["HTTPS"] ?? "";
+    $forwardedProto = $_SERVER["HTTP_X_FORWARDED_PROTO"] ?? "";
+
+    if (
+        (is_string($https) && $https !== "" && strtolower($https) !== "off")
+        || strtolower((string) $forwardedProto) === "https"
+    ) {
+        return "https";
+    }
+
+    return "http";
+}
+
+function current_host(): string
+{
+    $host = trim((string) ($_SERVER["HTTP_HOST"] ?? ""));
+
+    return $host !== "" ? $host : "localhost";
+}
+
+function current_script_dir(): string
+{
+    $scriptName = str_replace("\\", "/", (string) ($_SERVER["SCRIPT_NAME"] ?? ""));
+    $dir = rtrim(str_replace("\\", "/", dirname($scriptName)), "/.");
+
+    return $dir === "" ? "" : $dir;
+}
+
+function build_app_url(string $path = ""): string
+{
+    $base = current_scheme() . "://" . current_host() . current_script_dir();
+    $path = ltrim($path, "/");
+
+    return $path === "" ? $base : $base . "/" . $path;
+}
+
+function is_local_host(): bool
+{
+    $host = strtolower(current_host());
+    $host = explode(":", $host)[0];
+
+    return in_array($host, ["localhost", "127.0.0.1", "::1"], true);
+}
+
+function format_mailbox_header(string $email, string $name): string
+{
+    $safeEmail = filter_var($email, FILTER_VALIDATE_EMAIL) ?: MAIL_FROM_ADDRESS;
+    $safeName = trim(str_replace(["\r", "\n"], "", $name));
+
+    if ($safeName === "") {
+        return $safeEmail;
+    }
+
+    $encodedName = "=?UTF-8?B?" . base64_encode($safeName) . "?=";
+
+    return $encodedName . " <" . $safeEmail . ">";
+}
+
+function send_html_email(string $to, string $subject, string $htmlBody, string $textBody = ""): bool
+{
+    $recipient = filter_var($to, FILTER_VALIDATE_EMAIL);
+
+    if ($recipient === false) {
+        return false;
+    }
+
+    $plainText = trim($textBody) !== "" ? $textBody : strip_tags($htmlBody);
+    $boundary = "mixed_" . bin2hex(random_bytes(12));
+    $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
+    $fromHeader = format_mailbox_header(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
+    $headers = [
+        "MIME-Version: 1.0",
+        "Content-Type: multipart/alternative; boundary=\"" . $boundary . "\"",
+        "From: " . $fromHeader,
+        "Reply-To: " . $fromHeader,
+        "X-Mailer: PHP/" . phpversion(),
+    ];
+
+    $message = [];
+    $message[] = "--" . $boundary;
+    $message[] = "Content-Type: text/plain; charset=UTF-8";
+    $message[] = "Content-Transfer-Encoding: 8bit";
+    $message[] = "";
+    $message[] = $plainText;
+    $message[] = "";
+    $message[] = "--" . $boundary;
+    $message[] = "Content-Type: text/html; charset=UTF-8";
+    $message[] = "Content-Transfer-Encoding: 8bit";
+    $message[] = "";
+    $message[] = $htmlBody;
+    $message[] = "";
+    $message[] = "--" . $boundary . "--";
+
+    return @mail($recipient, $encodedSubject, implode("\r\n", $message), implode("\r\n", $headers));
+}
+
+function build_password_reset_link(string $token): string
+{
+    return build_app_url("reset_password.php") . "?token=" . urlencode($token);
+}
+
+function send_password_reset_email(string $email, string $resetLink): bool
+{
+    $subject = APP_NAME . " - Επαναφορά κωδικού";
+    $htmlBody = <<<HTML
+<html lang="el">
+<body style="font-family: Arial, sans-serif; background: #f6f8fb; color: #17324d; padding: 24px;">
+    <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 18px; padding: 32px; border: 1px solid #dbe5f0;">
+        <h1 style="margin-top: 0; font-size: 24px;">Επαναφορά κωδικού</h1>
+        <p>Λάβαμε αίτημα για αλλαγή του κωδικού πρόσβασης στον λογαριασμό σου.</p>
+        <p>Πάτησε στο παρακάτω κουμπί για να ορίσεις νέο κωδικό. Ο σύνδεσμος ισχύει για 1 ώρα.</p>
+        <p style="margin: 28px 0;">
+            <a href="{$resetLink}" style="display: inline-block; padding: 14px 22px; border-radius: 12px; background: #b8862f; color: #ffffff; text-decoration: none; font-weight: 700;">Ορισμός νέου κωδικού</a>
+        </p>
+        <p>Αν το κουμπί δεν ανοίγει, αντέγραψε αυτό το link στον browser σου:</p>
+        <p><a href="{$resetLink}">{$resetLink}</a></p>
+        <p style="margin-top: 28px; color: #5d7088;">Αν δεν ζήτησες εσύ επαναφορά κωδικού, αγνόησε αυτό το email.</p>
+    </div>
+</body>
+</html>
+HTML;
+    $textBody = "Επαναφορά κωδικού\n\n"
+        . "Λάβαμε αίτημα για αλλαγή του κωδικού πρόσβασης στον λογαριασμό σου.\n"
+        . "Άνοιξε το παρακάτω link για να ορίσεις νέο κωδικό. Ο σύνδεσμος ισχύει για 1 ώρα.\n\n"
+        . $resetLink . "\n\n"
+        . "Αν δεν ζήτησες εσύ επαναφορά κωδικού, αγνόησε αυτό το email.";
+
+    return send_html_email($email, $subject, $htmlBody, $textBody);
+}
+
+function is_valid_username_format(string $value): bool
+{
+    $value = trim($value);
+
+    return $value !== "" && preg_match('/^\p{L}{3,}$/u', $value) === 1;
+}
+
+function username_validation_message(): string
+{
+    return "Το username πρέπει να περιέχει μόνο γράμματα και να έχει τουλάχιστον 3 χαρακτήρες.";
 }
 
 function normalize_username(string $value): string
@@ -165,4 +359,109 @@ function path_from_root(string $target): string
     global $navBase;
 
     return ($navBase ?? "") . $target;
+}
+
+function ensure_password_reset_tokens_table($conn): bool
+{
+    $sql = <<<SQL
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_password_reset_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL;
+
+    return $conn->query($sql) !== false;
+}
+
+function create_password_reset_token($conn, int $userId): ?string
+{
+    if (!ensure_password_reset_tokens_table($conn)) {
+        return null;
+    }
+
+    $deleteStmt = $conn->prepare("DELETE FROM password_reset_tokens WHERE user_id = ?");
+    if ($deleteStmt) {
+        $deleteStmt->bind_param("i", $userId);
+        $deleteStmt->execute();
+        $deleteStmt->close();
+    }
+
+    try {
+        $token = bin2hex(random_bytes(32));
+    } catch (Throwable) {
+        return null;
+    }
+
+    $tokenHash = hash("sha256", $token);
+    $expiresAt = date("Y-m-d H:i:s", time() + 3600);
+    $insertStmt = $conn->prepare("INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)");
+
+    if (!$insertStmt) {
+        return null;
+    }
+
+    $insertStmt->bind_param("iss", $userId, $tokenHash, $expiresAt);
+    $ok = $insertStmt->execute();
+    $insertStmt->close();
+
+    return $ok ? $token : null;
+}
+
+function find_valid_password_reset($conn, string $token): ?array
+{
+    if ($token === "" || !ensure_password_reset_tokens_table($conn)) {
+        return null;
+    }
+
+    $tokenHash = hash("sha256", $token);
+    $stmt = $conn->prepare(
+        "SELECT prt.id, prt.user_id, prt.expires_at, prt.used_at, u.email
+         FROM password_reset_tokens prt
+         INNER JOIN users u ON u.id = prt.user_id
+         WHERE prt.token_hash = ?
+         LIMIT 1"
+    );
+
+    if (!$stmt) {
+        return null;
+    }
+
+    $stmt->bind_param("s", $tokenHash);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+
+    if (!$row) {
+        return null;
+    }
+
+    if (($row["used_at"] ?? null) !== null) {
+        return null;
+    }
+
+    if (strtotime((string) $row["expires_at"]) < time()) {
+        return null;
+    }
+
+    return $row;
+}
+
+function mark_password_reset_used($conn, int $resetId): void
+{
+    $stmt = $conn->prepare("UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ? LIMIT 1");
+
+    if (!$stmt) {
+        return;
+    }
+
+    $stmt->bind_param("i", $resetId);
+    $stmt->execute();
+    $stmt->close();
 }

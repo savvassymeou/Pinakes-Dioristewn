@@ -1,7 +1,12 @@
 <?php
 
 require_once __DIR__ . "/../includes/db.php";
+require_once __DIR__ . "/../includes/auth.php";
 require_once __DIR__ . "/../includes/functions.php";
+
+if (is_logged_in()) {
+    redirect_to_dashboard_by_role("../Admin/admindashboard.php", "../Candidate/candidatedashboard.php", "login.php");
+}
 
 $success_message = "";
 $error_message = "";
@@ -15,7 +20,7 @@ if ($specialties_result) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $username = normalize_username($_POST["username"] ?? "");
+    $username = trim($_POST["username"] ?? "");
     $first_name = trim($_POST["first_name"] ?? "");
     $last_name = trim($_POST["last_name"] ?? "");
     $email = trim($_POST["email"] ?? "");
@@ -30,8 +35,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error_message = "Συμπλήρωσε όλα τα υποχρεωτικά πεδία.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Το email δεν είναι έγκυρο.";
-    } elseif (strlen($username) < 3) {
-        $error_message = "Το username πρέπει να έχει τουλάχιστον 3 χαρακτήρες.";
+    } elseif (!is_valid_username_format($username)) {
+        $error_message = username_validation_message();
     } elseif (strlen($password) < 8) {
         $error_message = "Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
     } elseif ($birth_date !== "" && strtotime($birth_date) === false) {
@@ -196,6 +201,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             transform: translateY(-1px);
         }
         .field-hint { margin-top: 7px; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+        .field-feedback { margin-top: 7px; min-height: 22px; font-size: 0.86rem; line-height: 1.45; color: var(--muted); }
+        .field-feedback.is-success { color: var(--success-text); }
+        .field-feedback.is-error { color: var(--danger-text); }
         .actions { margin-top: 26px; }
         button {
             width: 100%; padding: 15px; border: none; border-radius: 16px; cursor: pointer; font-size: 1rem;
@@ -227,7 +235,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div class="form-grid">
                     <div>
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" placeholder="Εισαγωγή username" value="<?php echo h($_POST['username'] ?? ''); ?>" required>
+                        <input type="text" id="username" name="username" placeholder="Μόνο γράμματα" value="<?php echo h($_POST['username'] ?? ''); ?>" autocomplete="username" spellcheck="false" required>
+                        <div id="usernameFeedback" class="field-feedback">Το username πρέπει να περιέχει μόνο γράμματα.</div>
                     </div>
                     <div>
                         <label for="email">Email</label>
@@ -277,5 +286,87 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="helper-links">Έχεις ήδη λογαριασμό; <a href="login.php">Σύνδεση</a></div>
         </section>
     </main>
+    <script>
+        const usernameInput = document.getElementById("username");
+        const usernameFeedback = document.getElementById("usernameFeedback");
+        const registerForm = usernameInput ? usernameInput.form : null;
+        let usernameState = { checkedValue: "", valid: false, available: false, message: "" };
+        let usernameTimer = null;
+
+        function setUsernameFeedback(message, state) {
+            usernameFeedback.textContent = message;
+            usernameFeedback.classList.remove("is-success", "is-error");
+
+            if (state === "success") {
+                usernameFeedback.classList.add("is-success");
+            } else if (state === "error") {
+                usernameFeedback.classList.add("is-error");
+            }
+        }
+
+        async function checkUsernameAvailability() {
+            const value = usernameInput.value.trim();
+            usernameState.checkedValue = value;
+
+            if (value === "") {
+                usernameState = { checkedValue: value, valid: false, available: false, message: "Το username πρέπει να περιέχει μόνο γράμματα." };
+                setUsernameFeedback(usernameState.message, "");
+                return;
+            }
+
+            setUsernameFeedback("Έλεγχος username...", "");
+
+            try {
+                const response = await fetch("check_username.php?username=" + encodeURIComponent(value), {
+                    headers: { "X-Requested-With": "fetch" }
+                });
+                const data = await response.json();
+
+                if (usernameInput.value.trim() !== value) {
+                    return;
+                }
+
+                usernameState = {
+                    checkedValue: value,
+                    valid: Boolean(data.valid),
+                    available: Boolean(data.available),
+                    message: String(data.message || "")
+                };
+
+                setUsernameFeedback(usernameState.message, usernameState.valid && usernameState.available ? "success" : "error");
+            } catch (error) {
+                usernameState = { checkedValue: value, valid: false, available: false, message: "Δεν ήταν δυνατός ο έλεγχος του username." };
+                setUsernameFeedback(usernameState.message, "error");
+            }
+        }
+
+        if (usernameInput) {
+            usernameInput.addEventListener("input", () => {
+                window.clearTimeout(usernameTimer);
+                usernameTimer = window.setTimeout(checkUsernameAvailability, 250);
+            });
+
+            if (usernameInput.value.trim() !== "") {
+                checkUsernameAvailability();
+            }
+        }
+
+        if (registerForm) {
+            registerForm.addEventListener("submit", (event) => {
+                const value = usernameInput.value.trim();
+
+                if (usernameState.checkedValue !== value || !usernameState.valid || !usernameState.available) {
+                    event.preventDefault();
+                    setUsernameFeedback(
+                        usernameState.checkedValue === value && usernameState.message !== ""
+                            ? usernameState.message
+                            : "Έλεγξε πρώτα ότι το username είναι έγκυρο και διαθέσιμο.",
+                        "error"
+                    );
+                    usernameInput.focus();
+                }
+            });
+        }
+    </script>
 </body>
 </html>

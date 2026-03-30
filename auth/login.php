@@ -155,7 +155,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <input type="password" id="password" name="password" placeholder="Εισαγωγή κωδικού" required>
                 <button type="submit">Σύνδεση</button>
             </form>
-            <div class="helper-links">Δεν έχεις λογαριασμό; <a href="register.php">Εγγραφή</a></div>
+            <div class="helper-links">
+                Δεν έχεις λογαριασμό; <a href="register.php">Εγγραφή</a><br>
+                <a href="forgot_password.php">Ξέχασα τον κωδικό μου</a>
+            </div>
         </section>
     </main>
 </body>
