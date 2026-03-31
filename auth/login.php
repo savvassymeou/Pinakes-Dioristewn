@@ -9,7 +9,7 @@ require_once __DIR__ . "/../includes/functions.php";
 $error_message = "";
 
 if (is_logged_in()) {
-    redirect_to_dashboard_by_role("../Admin/admindashboard.php", "../Candidate/candidatedashboard.php", "login.php");
+    redirect_to_dashboard_by_role("../modules/admin/dashboard.php", "../modules/admin/candidate/dashboard.php", "login.php");
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -39,11 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_SESSION["role"] = $user["role"];
 
                     if ($user["role"] === "admin") {
-                        header("Location: ../Admin/admindashboard.php");
+                        header("Location: ../modules/admin/dashboard.php");
                         exit;
                     }
 
-                    header("Location: ../Candidate/candidatedashboard.php");
+                    header("Location: ../modules/admin/candidate/dashboard.php");
                     exit;
                 }
             }
@@ -163,3 +163,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </main>
 </body>
 </html>
+

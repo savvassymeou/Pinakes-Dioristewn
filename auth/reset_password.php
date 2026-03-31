@@ -5,7 +5,7 @@ require_once __DIR__ . "/../includes/auth.php";
 require_once __DIR__ . "/../includes/functions.php";
 
 if (is_logged_in()) {
-    redirect_to_dashboard_by_role("../Admin/admindashboard.php", "../Candidate/candidatedashboard.php", "login.php");
+    redirect_to_dashboard_by_role("../modules/admin/dashboard.php", "../modules/admin/candidate/dashboard.php", "login.php");
 }
 
 $token = trim($_GET["token"] ?? $_POST["token"] ?? "");
@@ -213,3 +213,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $errorMessage === "" && $resetReque
     </main>
 </body>
 </html>
+

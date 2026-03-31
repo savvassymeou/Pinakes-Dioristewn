@@ -13,7 +13,7 @@ $userFullName = current_user_full_name();
 $userInitials = current_user_initials();
 $userRoleLabel = current_role_label();
 
-$dashboardHref = $isAdmin ? 'Admin/admindashboard.php' : 'Candidate/candidatedashboard.php';
+$dashboardHref = $isAdmin ? 'modules/admin/dashboard.php' : 'modules/admin/candidate/dashboard.php';
 $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
 ?>
 <!DOCTYPE html>
@@ -177,8 +177,8 @@ $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
                     <div class="nav-group main">
                         <a class="active" href="index.php">&#913;&#961;&#967;&#953;&#954;&#942;</a>
                         <a href="Search/searchdashboard.php">&#913;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;</a>
-                        <?php if ($isAdmin): ?><a href="Admin/admindashboard.php">Admin</a><?php endif; ?>
-                        <?php if ($isCandidate): ?><a href="Candidate/candidatedashboard.php">Candidate</a><?php endif; ?>
+                        <?php if ($isAdmin): ?><a href="modules/admin/dashboard.php">Admin</a><?php endif; ?>
+                        <?php if ($isCandidate): ?><a href="modules/admin/candidate/dashboard.php">Candidate</a><?php endif; ?>
                     </div>
                     <div class="nav-group auth">
                         <?php if ($isGuest): ?>
@@ -280,3 +280,4 @@ $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
     </div>
 </body>
 </html>
+

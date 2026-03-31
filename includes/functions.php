@@ -341,11 +341,11 @@ function current_dashboard_item(): ?array
     $role = current_user_role();
 
     if ($role === ROLE_ADMIN) {
-        return ["key" => "admin", "label" => "Admin", "href" => "Admin/admindashboard.php"];
+        return ["key" => "admin", "label" => "Admin", "href" => "modules/admin/dashboard.php"];
     }
 
     if ($role === ROLE_CANDIDATE) {
-        return ["key" => "candidate", "label" => "Candidate", "href" => "Candidate/candidatedashboard.php"];
+        return ["key" => "candidate", "label" => "Candidate", "href" => "modules/admin/candidate/dashboard.php"];
     }
 
     return null;
@@ -522,3 +522,4 @@ function mark_password_reset_used($conn, int $resetId): void
     $stmt->execute();
     $stmt->close();
 }
+

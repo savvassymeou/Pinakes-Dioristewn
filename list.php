@@ -3,7 +3,7 @@
 session_start();
 
 require_once __DIR__ . "/includes/auth.php";
-require_role("admin", "auth/login.php", "Admin/admindashboard.php", "Candidate/candidatedashboard.php");
+require_role("admin", "auth/login.php", "modules/admin/dashboard.php", "modules/admin/candidate/dashboard.php");
 
 require_once __DIR__ . "/includes/db.php";
 require_once __DIR__ . "/includes/functions.php";
@@ -502,7 +502,7 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
                 </div>
 
                 <div class="top-actions">
-                    <a class="action-link" href="Admin/admindashboard.php">Επιστροφή στο Admin</a>
+                    <a class="action-link" href="modules/admin/dashboard.php">Επιστροφή στο Admin</a>
                     <a class="action-link" href="auth/logout.php">Αποσύνδεση</a>
                 </div>
             </div>
@@ -629,3 +629,4 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
     </main>
 </body>
 </html>
+
