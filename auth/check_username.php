@@ -1,51 +1,27 @@
 <?php
 
-require_once __DIR__ . "/../includes/db.php";
-require_once __DIR__ . "/../includes/functions.php";
+declare(strict_types=1);
 
-header("Content-Type: application/json; charset=UTF-8");
+header('Content-Type: application/json; charset=UTF-8');
 
-$username = trim($_GET["username"] ?? "");
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 
-if ($username === "") {
-    echo json_encode([
-        "valid" => false,
-        "available" => false,
-        "message" => "Συμπλήρωσε username.",
-    ], JSON_UNESCAPED_UNICODE);
+$username = trim((string) ($_GET['username'] ?? $_POST['username'] ?? ''));
+
+if ($username === '') {
+    echo json_encode(['available' => false, 'message' => 'Συμπλήρωσε πρώτα username.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if (!is_valid_username_format($username)) {
-    echo json_encode([
-        "valid" => false,
-        "available" => false,
-        "message" => username_validation_message(),
-    ], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['available' => false, 'message' => username_validation_message()], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
-
-if (!$stmt) {
-    echo json_encode([
-        "valid" => true,
-        "available" => false,
-        "message" => "Δεν ήταν δυνατός ο έλεγχος του username αυτή τη στιγμή.",
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$stmt->store_result();
-$available = $stmt->num_rows === 0;
-$stmt->close();
+$exists = username_exists($conn, $username);
 
 echo json_encode([
-    "valid" => true,
-    "available" => $available,
-    "message" => $available
-        ? "Το username είναι διαθέσιμο."
-        : "Το username χρησιμοποιείται ήδη.",
+    'available' => !$exists,
+    'message' => $exists ? 'Το username χρησιμοποιείται ήδη.' : 'Το username είναι διαθέσιμο.'
 ], JSON_UNESCAPED_UNICODE);

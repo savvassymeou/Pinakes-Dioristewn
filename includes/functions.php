@@ -6,7 +6,7 @@ require_once __DIR__ . "/config.php";
 
 function repair_mojibake_segment(string $value): string
 {
-    if ($value === '' || !preg_match('/[ÃÂÎÏâ]/u', $value)) {
+    if ($value === '' || !preg_match('/[ÃƒÆ’Ã†â€™ÃƒÆ’Ã¢â‚¬Å¡ÃƒÆ’Ã…Â½ÃƒÆ’Ã‚ÂÃƒÆ’Ã‚Â¢]/u', $value)) {
         return $value;
     }
 
@@ -21,7 +21,7 @@ function repair_mojibake_segment(string $value): string
 
         $decoded = $candidate;
 
-        if (preg_match('/\p{Greek}/u', $decoded) && !preg_match('/[ÃÂÎÏâ]/u', $decoded)) {
+        if (preg_match('/\p{Greek}/u', $decoded) && !preg_match('/[ÃƒÆ’Ã†â€™ÃƒÆ’Ã¢â‚¬Å¡ÃƒÆ’Ã…Â½ÃƒÆ’Ã‚ÂÃƒÆ’Ã‚Â¢]/u', $decoded)) {
             break;
         }
     }
@@ -32,7 +32,7 @@ function repair_mojibake_segment(string $value): string
 function repair_mojibake_output_buffer(string $buffer): string
 {
     $fixed = preg_replace_callback(
-        '/[ÃÂÎÏâ][^<>"\']*/u',
+        '/[ÃƒÆ’Ã†â€™ÃƒÆ’Ã¢â‚¬Å¡ÃƒÆ’Ã…Â½ÃƒÆ’Ã‚ÂÃƒÆ’Ã‚Â¢][^<>"\']*/u',
         static fn(array $matches): string => repair_mojibake_segment($matches[0]),
         $buffer
     );
@@ -169,29 +169,29 @@ function build_password_reset_link(string $token): string
 
 function send_password_reset_email(string $email, string $resetLink): bool
 {
-    $subject = APP_NAME . " - Επαναφορά κωδικού";
+    $subject = APP_NAME . " - ÃƒÅ½Ã¢â‚¬Â¢ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â";
     $htmlBody = <<<HTML
 <html lang="el">
 <body style="font-family: Arial, sans-serif; background: #f6f8fb; color: #17324d; padding: 24px;">
     <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 18px; padding: 32px; border: 1px solid #dbe5f0;">
-        <h1 style="margin-top: 0; font-size: 24px;">Επαναφορά κωδικού</h1>
-        <p>Λάβαμε αίτημα για αλλαγή του κωδικού πρόσβασης στον λογαριασμό σου.</p>
-        <p>Πάτησε στο παρακάτω κουμπί για να ορίσεις νέο κωδικό. Ο σύνδεσμος ισχύει για 1 ώρα.</p>
+        <h1 style="margin-top: 0; font-size: 24px;">ÃƒÅ½Ã¢â‚¬Â¢ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â</h1>
+        <p>ÃƒÅ½Ã¢â‚¬ÂºÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â® ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÂÃ…â€™ ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦.</p>
+        <p>ÃƒÅ½Ã‚Â ÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â° ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¯ ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¯ÃƒÂÃ†â€™ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™. ÃƒÅ½Ã…Â¸ ÃƒÂÃ†â€™ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± 1 ÃƒÂÃ…Â½ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±.</p>
         <p style="margin: 28px 0;">
-            <a href="{$resetLink}" style="display: inline-block; padding: 14px 22px; border-radius: 12px; background: #b8862f; color: #ffffff; text-decoration: none; font-weight: 700;">Ορισμός νέου κωδικού</a>
+            <a href="{$resetLink}" style="display: inline-block; padding: 14px 22px; border-radius: 12px; background: #b8862f; color: #ffffff; text-decoration: none; font-weight: 700;">ÃƒÅ½Ã…Â¸ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÂÃ…â€™ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â</a>
         </p>
-        <p>Αν το κουμπί δεν ανοίγει, αντέγραψε αυτό το link στον browser σου:</p>
+        <p>ÃƒÅ½Ã¢â‚¬ËœÃƒÅ½Ã‚Â½ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ÃƒÅ½Ã‚Â¼ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â¯ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¯ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹, ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â³ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÂÃ‹â€ ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ link ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ browser ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦:</p>
         <p><a href="{$resetLink}">{$resetLink}</a></p>
-        <p style="margin-top: 28px; color: #5d7088;">Αν δεν ζήτησες εσύ επαναφορά κωδικού, αγνόησε αυτό το email.</p>
+        <p style="margin-top: 28px; color: #5d7088;">ÃƒÅ½Ã¢â‚¬ËœÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â¶ÃƒÅ½Ã‚Â®ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂµÃƒÂÃ†â€™ÃƒÂÃ‚Â ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â, ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â½ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ email.</p>
     </div>
 </body>
 </html>
 HTML;
-    $textBody = "Επαναφορά κωδικού\n\n"
-        . "Λάβαμε αίτημα για αλλαγή του κωδικού πρόσβασης στον λογαριασμό σου.\n"
-        . "Άνοιξε το παρακάτω link για να ορίσεις νέο κωδικό. Ο σύνδεσμος ισχύει για 1 ώρα.\n\n"
+    $textBody = "ÃƒÅ½Ã¢â‚¬Â¢ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â\n\n"
+        . "ÃƒÅ½Ã¢â‚¬ÂºÃƒÅ½Ã‚Â¬ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â¯ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â® ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â ÃƒÂÃ¢â€šÂ¬ÃƒÂÃ‚ÂÃƒÂÃ…â€™ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â²ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡ ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â»ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â±ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÂÃ…â€™ ÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Â¦.\n"
+        . "ÃƒÅ½Ã¢â‚¬Â ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â¿ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â¾ÃƒÅ½Ã‚Âµ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ ÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¬ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ¢â‚¬Â° link ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â± ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¯ÃƒÂÃ†â€™ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â­ÃƒÅ½Ã‚Â¿ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÂÃ…â€™. ÃƒÅ½Ã…Â¸ ÃƒÂÃ†â€™ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÂÃ†â€™ÃƒÅ½Ã‚Â¼ÃƒÅ½Ã‚Â¿ÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚Â¹ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Â¡ÃƒÂÃ‚ÂÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â¹ ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚Â± 1 ÃƒÂÃ…Â½ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â±.\n\n"
         . $resetLink . "\n\n"
-        . "Αν δεν ζήτησες εσύ επαναφορά κωδικού, αγνόησε αυτό το email.";
+        . "ÃƒÅ½Ã¢â‚¬ËœÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚ÂµÃƒÅ½Ã‚Â½ ÃƒÅ½Ã‚Â¶ÃƒÅ½Ã‚Â®ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â‚¬Å¡ ÃƒÅ½Ã‚ÂµÃƒÂÃ†â€™ÃƒÂÃ‚Â ÃƒÅ½Ã‚ÂµÃƒÂÃ¢â€šÂ¬ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â½ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â ÃƒÅ½Ã‚Â¿ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â¬ ÃƒÅ½Ã‚ÂºÃƒÂÃ¢â‚¬Â°ÃƒÅ½Ã‚Â´ÃƒÅ½Ã‚Â¹ÃƒÅ½Ã‚ÂºÃƒÅ½Ã‚Â¿ÃƒÂÃ‚Â, ÃƒÅ½Ã‚Â±ÃƒÅ½Ã‚Â³ÃƒÅ½Ã‚Â½ÃƒÂÃ…â€™ÃƒÅ½Ã‚Â·ÃƒÂÃ†â€™ÃƒÅ½Ã‚Âµ ÃƒÅ½Ã‚Â±ÃƒÂÃ¢â‚¬Â¦ÃƒÂÃ¢â‚¬Å¾ÃƒÂÃ…â€™ ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â¿ email.";
 
     return send_html_email($email, $subject, $htmlBody, $textBody);
 }
@@ -205,7 +205,7 @@ function is_valid_username_format(string $value): bool
 
 function username_validation_message(): string
 {
-    return "Το username πρέπει να περιέχει μόνο γράμματα και να έχει τουλάχιστον 3 χαρακτήρες.";
+    return 'Το username πρέπει να περιέχει μόνο γράμματα και να έχει τουλάχιστον 3 χαρακτήρες.';
 }
 
 function normalize_identity_number(string $value): string
@@ -229,7 +229,7 @@ function is_valid_identity_number(string $value): bool
 
 function identity_number_validation_message(): string
 {
-    return "Ο αριθμός ταυτότητας πρέπει να περιέχει μόνο γράμματα και αριθμούς.";
+    return 'Ο αριθμός ταυτότητας πρέπει να περιέχει μόνο γράμματα και αριθμούς.';
 }
 
 function normalize_username(string $value): string
@@ -307,7 +307,7 @@ function current_user_full_name(): string
         return $fullName;
     }
 
-    return "Χρήστης";
+    return "ÃƒÅ½Ã‚Â§ÃƒÂÃ‚ÂÃƒÅ½Ã‚Â®ÃƒÂÃ†â€™ÃƒÂÃ¢â‚¬Å¾ÃƒÅ½Ã‚Â·ÃƒÂÃ¢â‚¬Å¡";
 }
 
 function current_user_initials(): string
@@ -324,14 +324,14 @@ function current_user_initials(): string
         $initials .= mb_strtoupper(mb_substr($lastName, 0, 1, "UTF-8"), "UTF-8");
     }
 
-    return $initials !== "" ? $initials : "ΧΡ";
+    return $initials !== "" ? $initials : "ÃƒÅ½Ã‚Â§ÃƒÅ½Ã‚Â¡";
 }
 
 function current_role_label(): ?string
 {
     return match (current_user_role()) {
-        ROLE_ADMIN => "Διαχειριστής",
-        ROLE_CANDIDATE => "Υποψήφιος",
+        ROLE_ADMIN => "????????????",
+        ROLE_CANDIDATE => "?????????",
         default => null,
     };
 }
@@ -341,11 +341,11 @@ function current_dashboard_item(): ?array
     $role = current_user_role();
 
     if ($role === ROLE_ADMIN) {
-        return ["key" => "admin", "label" => "Admin", "href" => "modules/admin/dashboard.php"];
+        return ["key" => "admin", "label" => "Admin", "href" => "modules/admin/admindashboard.php"];
     }
 
     if ($role === ROLE_CANDIDATE) {
-        return ["key" => "candidate", "label" => "Candidate", "href" => "modules/admin/candidate/dashboard.php"];
+        return ["key" => "candidate", "label" => "Candidate", "href" => "modules/candidate/candidatedashboard.php"];
     }
 
     return null;
@@ -355,20 +355,16 @@ function nav_items(string $currentPage): array
 {
     $role = current_user_role();
     $items = [
-        ["key" => "home", "label" => "Αρχική", "href" => "index.php"],
-        ["key" => "search", "label" => "Search", "href" => "Search/searchdashboard.php"],
+        ["key" => "home", "label" => "??????", "href" => "index.php"],
+        ["key" => "search", "label" => "?????????", "href" => "Search/searchdashboard.php"],
     ];
 
-    $dashboardItem = current_dashboard_item();
-    if ($dashboardItem !== null) {
-        $items[] = $dashboardItem;
-    }
-
     if ($role === ROLE_ADMIN) {
+        $items[] = ["key" => "admin", "label" => "Admin", "href" => "modules/admin/admindashboard.php"];
         $items[] = ["key" => "list", "label" => "List", "href" => "list.php"];
+    } elseif ($role === ROLE_CANDIDATE) {
+        $items[] = ["key" => "candidate", "label" => "Candidate", "href" => "modules/candidate/candidatedashboard.php"];
     }
-
-    $items[] = ["key" => "api", "label" => "API", "href" => "api/api.php"];
 
     foreach ($items as &$item) {
         $item["active"] = $item["key"] === $currentPage;

@@ -13,8 +13,8 @@ $userFullName = current_user_full_name();
 $userInitials = current_user_initials();
 $userRoleLabel = current_role_label();
 
-$dashboardHref = $isAdmin ? 'modules/admin/dashboard.php' : 'modules/admin/candidate/dashboard.php';
-$dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
+$dashboardHref = $isAdmin ? 'modules/admin/admindashboard.php' : 'modules/candidate/candidatedashboard.php';
+$dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
 ?>
 <!DOCTYPE html>
 <html lang="el">
@@ -177,21 +177,21 @@ $dashboardLabel = $isAdmin ? 'Admin Dashboard' : 'Candidate Dashboard';
                     <div class="nav-group main">
                         <a class="active" href="index.php">&#913;&#961;&#967;&#953;&#954;&#942;</a>
                         <a href="Search/searchdashboard.php">&#913;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;</a>
-                        <?php if ($isAdmin): ?><a href="modules/admin/dashboard.php">Admin</a><?php endif; ?>
-                        <?php if ($isCandidate): ?><a href="modules/admin/candidate/dashboard.php">Candidate</a><?php endif; ?>
+                        <?php if ($isAdmin): ?><a href="modules/admin/admindashboard.php">Admin</a><?php endif; ?>
+                        <?php if ($isCandidate): ?><a href="modules/candidate/candidatedashboard.php">Candidate</a><?php endif; ?>
                     </div>
                     <div class="nav-group auth">
                         <?php if ($isGuest): ?>
                             <a class="auth-link primary" href="auth/register.php">&#917;&#947;&#947;&#961;&#945;&#966;&#942;</a>
                             <a class="auth-link" href="auth/login.php">&#931;&#973;&#957;&#948;&#949;&#963;&#951;</a>
                         <?php else: ?>
-                            <div class="user-chip" aria-label="<?php echo h($userFullName); ?>">
+                            <a class="user-chip" href="<?php echo h($dashboardHref); ?>" aria-label="<?php echo h($dashboardLabel); ?>">
                                 <span class="user-avatar"><?php echo h($userInitials); ?></span>
                                 <span class="user-meta">
                                     <strong><?php echo h($userFullName); ?></strong>
                                     <span><?php echo h($userRoleLabel ?? 'Συνδεδεμένος χρήστης'); ?></span>
                                 </span>
-                            </div>
+                            </a>
                             <a class="auth-link" href="auth/logout.php">&#913;&#960;&#959;&#963;&#973;&#957;&#948;&#949;&#963;&#951;</a>
                         <?php endif; ?>
                     </div>
