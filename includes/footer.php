@@ -6,7 +6,7 @@
             </div>
             <div class="footer-links">
                 <a class="footer-link" href="<?php echo e(path_from_root("index.php")); ?>">&#913;&#961;&#967;&#953;&#954;&#942;</a>
-                <a class="footer-link" href="<?php echo e(path_from_root("Search/searchdashboard.php")); ?>">Search</a>
+                <a class="footer-link" href="<?php echo e(path_from_root("modules/search/searchdashboard.php")); ?>">Search</a>
                 <a class="footer-link" href="<?php echo e(path_from_root("api/api.php")); ?>">API</a>
             </div>
         </div>

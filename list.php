@@ -3,7 +3,7 @@
 session_start();
 
 require_once __DIR__ . "/includes/auth.php";
-require_role("admin", "auth/login.php", "modules/admin/dashboard.php", "modules/admin/candidate/dashboard.php");
+require_role("admin", "auth/login.php", "modules/admin/dashboard.php", "modules/candidate/candidatedashboard.php");
 
 require_once __DIR__ . "/includes/db.php";
 require_once __DIR__ . "/includes/functions.php";
@@ -629,4 +629,5 @@ $hasFilters = $keyword !== "" || $specialtyId > 0;
     </main>
 </body>
 </html>
+
 

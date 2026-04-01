@@ -356,7 +356,7 @@ function nav_items(string $currentPage): array
     $role = current_user_role();
     $items = [
         ["key" => "home", "label" => "??????", "href" => "index.php"],
-        ["key" => "search", "label" => "?????????", "href" => "Search/searchdashboard.php"],
+        ["key" => "search", "label" => "?????????", "href" => "modules/search/searchdashboard.php"],
     ];
 
     if ($role === ROLE_ADMIN) {
@@ -518,4 +518,5 @@ function mark_password_reset_used($conn, int $resetId): void
     $stmt->execute();
     $stmt->close();
 }
+
 
