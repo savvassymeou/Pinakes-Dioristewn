@@ -41,14 +41,10 @@ function buildDemoCandidates(string $specialtyTitle): array
 $successMessage = "";
 $errorMessage = "";
 
-$specialties = [];
-$specialtiesResult = $conn->query("SELECT id, title, description FROM specialties ORDER BY title ASC");
-
-if ($specialtiesResult) {
-    while ($row = $specialtiesResult->fetch_assoc()) {
-        $specialties[] = $row;
-    }
-}
+$specialties = fetch_all_prepared(
+    $conn,
+    "SELECT id, title, description FROM specialties ORDER BY title ASC"
+);
 
 $adminUser = null;
 $adminStmt = $conn->prepare("SELECT u.id, u.username, up.first_name, up.last_name, u.email, up.identity_number, up.phone, u.password_hash, u.created_at FROM users u LEFT JOIN user_profiles up ON up.user_id = u.id WHERE u.id = ? LIMIT 1");
@@ -532,8 +528,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $editingUserId = (int) ($_GET["edit_user"] ?? 0);
 $editingUser = null;
 
-$users = [];
-$usersResult = $conn->query("
+$users = fetch_all_prepared($conn, "
     SELECT
         u.id,
         up.first_name,
@@ -552,13 +547,9 @@ $usersResult = $conn->query("
     ORDER BY u.role DESC, u.created_at DESC, u.id DESC
 ");
 
-if ($usersResult) {
-    while ($row = $usersResult->fetch_assoc()) {
-        $users[] = $row;
-
-        if ($editingUserId > 0 && (int) $row["id"] === $editingUserId) {
-            $editingUser = $row;
-        }
+foreach ($users as $row) {
+    if ($editingUserId > 0 && (int) $row["id"] === $editingUserId) {
+        $editingUser = $row;
     }
 }
 
@@ -569,25 +560,20 @@ $overview = [
     "tracked_total" => 0,
 ];
 
-$overviewSql = "
-    SELECT
+$overviewRow = fetch_one_prepared(
+    $conn,
+    "SELECT
         (SELECT COUNT(*) FROM candidate_profiles) AS total_candidates,
         (SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) FROM candidate_profiles WHERE birth_date IS NOT NULL) AS average_age,
         (SELECT COUNT(*) FROM users WHERE role = 'candidate' AND YEAR(created_at) = YEAR(CURDATE())) AS new_candidates_year,
-        (SELECT COUNT(*) FROM tracked_candidates) AS tracked_total
-";
-$overviewResult = $conn->query($overviewSql);
+        (SELECT COUNT(*) FROM tracked_candidates) AS tracked_total"
+);
 
-if ($overviewResult) {
-    $overviewRow = $overviewResult->fetch_assoc();
-
-    if ($overviewRow) {
-        $overview = $overviewRow;
-    }
+if ($overviewRow) {
+    $overview = $overviewRow;
 }
 
-$specialtyStats = [];
-$specialtyStatsSql = "
+$specialtyStats = fetch_all_prepared($conn, "
     SELECT
         s.id,
         s.title,
@@ -600,29 +586,15 @@ $specialtyStatsSql = "
     LEFT JOIN candidate_profiles cp ON cp.specialty_id = s.id
     GROUP BY s.id, s.title, s.description
     ORDER BY candidate_count DESC, s.title ASC
-";
-$specialtyStatsResult = $conn->query($specialtyStatsSql);
+");
 
-if ($specialtyStatsResult) {
-    while ($row = $specialtyStatsResult->fetch_assoc()) {
-        $specialtyStats[] = $row;
-    }
-}
-
-$yearlyRows = [];
-$yearlyResult = $conn->query("
+$yearlyRows = fetch_all_prepared($conn, "
     SELECT YEAR(created_at) AS report_year, COUNT(*) AS candidate_count
     FROM users
     WHERE role = 'candidate'
     GROUP BY YEAR(created_at)
     ORDER BY report_year DESC
 ");
-
-if ($yearlyResult) {
-    while ($row = $yearlyResult->fetch_assoc()) {
-        $yearlyRows[] = $row;
-    }
-}
 
 $maxSpecialtyCount = 0;
 

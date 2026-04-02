@@ -61,13 +61,10 @@ $userId = (int) ($_SESSION['user_id'] ?? 0);
 $successMessage = '';
 $errorMessage = '';
 
-$specialties = [];
-$specialtiesResult = $conn->query('SELECT id, title FROM specialties ORDER BY title ASC');
-if ($specialtiesResult) {
-    while ($row = $specialtiesResult->fetch_assoc()) {
-        $specialties[] = $row;
-    }
-}
+$specialties = fetch_all_prepared(
+    $conn,
+    'SELECT id, title FROM specialties ORDER BY title ASC'
+);
 
 $candidate = load_candidate($conn, $userId);
 if (!$candidate) {
@@ -362,43 +359,38 @@ $searchName = trim($_GET['search_name'] ?? '');
 $searchSpecialtyId = (int) ($_GET['search_specialty_id'] ?? 0);
 $searchResults = [];
 
-$searchSql = 'SELECT
-    cp.id AS profile_id,
-    up.first_name,
-    up.last_name,
-    s.title AS specialty_title,
-    cp.ranking_position,
-    cp.points,
-    cp.application_status
-FROM candidate_profiles cp
-INNER JOIN users u ON u.id = cp.user_id
-INNER JOIN user_profiles up ON up.user_id = u.id
-LEFT JOIN specialties s ON s.id = cp.specialty_id
-WHERE u.id <> ?';
-
-$searchTypes = 'i';
-$searchParams = [$userId];
-
-if ($searchName !== '') {
-    $searchSql .= ' AND (up.first_name LIKE ? OR up.last_name LIKE ? OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)';
-    $searchWildcard = '%' . $searchName . '%';
-    $searchParams[] = $searchWildcard;
-    $searchParams[] = $searchWildcard;
-    $searchParams[] = $searchWildcard;
-    $searchTypes .= 'sss';
-}
-
-if ($searchSpecialtyId > 0) {
-    $searchSql .= ' AND cp.specialty_id = ?';
-    $searchParams[] = $searchSpecialtyId;
-    $searchTypes .= 'i';
-}
-
-$searchSql .= ' ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC LIMIT 12';
-$searchStmt = $conn->prepare($searchSql);
+$searchWildcard = '%' . $searchName . '%';
+$searchStmt = $conn->prepare(
+    'SELECT
+        cp.id AS profile_id,
+        up.first_name,
+        up.last_name,
+        s.title AS specialty_title,
+        cp.ranking_position,
+        cp.points,
+        cp.application_status
+     FROM candidate_profiles cp
+     INNER JOIN users u ON u.id = cp.user_id
+     INNER JOIN user_profiles up ON up.user_id = u.id
+     LEFT JOIN specialties s ON s.id = cp.specialty_id
+     WHERE u.id <> ?
+       AND (? = "" OR up.first_name LIKE ? OR up.last_name LIKE ? OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)
+       AND (? = 0 OR cp.specialty_id = ?)
+     ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC
+     LIMIT 12'
+);
 
 if ($searchStmt) {
-    $searchStmt->bind_param($searchTypes, ...$searchParams);
+    $searchStmt->bind_param(
+        'issssii',
+        $userId,
+        $searchName,
+        $searchWildcard,
+        $searchWildcard,
+        $searchWildcard,
+        $searchSpecialtyId,
+        $searchSpecialtyId
+    );
     $searchStmt->execute();
     $searchResult = $searchStmt->get_result();
     if ($searchResult) {

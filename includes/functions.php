@@ -252,29 +252,28 @@ function username_from_email(string $email): string
 
 function username_exists($conn, string $username, ?int $ignoreUserId = null): bool
 {
-    $sql = 'SELECT id FROM users WHERE username = ?';
     if ($ignoreUserId !== null) {
-        $sql .= ' AND id <> ?';
-    }
-    $sql .= ' LIMIT 1';
-
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        return false;
-    }
-
-    if ($ignoreUserId !== null) {
-        $stmt->bind_param('si', $username, $ignoreUserId);
-    } else {
-        $stmt->bind_param('s', $username);
+        return fetch_one_prepared(
+            $conn,
+            'SELECT id
+             FROM users
+             WHERE username = ?
+               AND id <> ?
+             LIMIT 1',
+            'si',
+            [$username, $ignoreUserId]
+        ) !== null;
     }
 
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $exists = $result && $result->num_rows > 0;
-    $stmt->close();
-
-    return $exists;
+    return fetch_one_prepared(
+        $conn,
+        'SELECT id
+         FROM users
+         WHERE username = ?
+         LIMIT 1',
+        's',
+        [$username]
+    ) !== null;
 }
 
 function generate_unique_username($conn, string $base, ?int $ignoreUserId = null): string
@@ -371,6 +370,74 @@ function path_from_root(string $target): string
 
     return "/" . $projectDir . "/" . str_replace("\\", "/", $cleanTarget);
 }
+function execute_prepared_statement($conn, string $sql, string $types = "", array $params = []): bool
+{
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        return false;
+    }
+
+    if ($params !== []) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    $executed = $stmt->execute();
+    $stmt->close();
+
+    return $executed;
+}
+function fetch_all_prepared($conn, string $sql, string $types = "", array $params = []): array
+{
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        return [];
+    }
+
+    if ($params !== []) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return [];
+    }
+
+    $rows = [];
+    $result = $stmt->get_result();
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
+
+    $stmt->close();
+
+    return $rows;
+}
+function fetch_one_prepared($conn, string $sql, string $types = "", array $params = []): ?array
+{
+    $rows = fetch_all_prepared($conn, $sql, $types, $params);
+
+    return $rows[0] ?? null;
+}
+function table_column_exists($conn, string $tableName, string $columnName): bool
+{
+    $row = fetch_one_prepared(
+        $conn,
+        'SELECT COUNT(*) AS total
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND COLUMN_NAME = ?',
+        'ss',
+        [$tableName, $columnName]
+    );
+
+    return (int) ($row['total'] ?? 0) > 0;
+}
 function ensure_password_reset_tokens_table($conn): bool
 {
     $sql = <<<SQL
@@ -385,7 +452,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL;
-    return $conn->query($sql) !== false;
+    return execute_prepared_statement($conn, $sql);
 }
 function ensure_user_profiles_table($conn): bool
 {
@@ -403,47 +470,72 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL;
 
-    if ($conn->query($createSql) === false) {
+    if (!execute_prepared_statement($conn, $createSql)) {
         return false;
     }
 
-    $firstNameCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'first_name'");
-    $lastNameCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'last_name'");
+    $hasFirstName = table_column_exists($conn, 'users', 'first_name');
+    $hasLastName = table_column_exists($conn, 'users', 'last_name');
 
-    if ($firstNameCheck === false || $lastNameCheck === false) {
-        return false;
-    }
-
-    if ($firstNameCheck->num_rows === 0 || $lastNameCheck->num_rows === 0) {
+    if (!$hasFirstName || !$hasLastName) {
         return true;
     }
 
-    $identityCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'identity_number'");
-    $phoneCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
+    $hasIdentity = table_column_exists($conn, 'users', 'identity_number');
+    $hasPhone = table_column_exists($conn, 'users', 'phone');
 
-    if ($identityCheck === false || $phoneCheck === false) {
-        return false;
-    }
+    $migrateSql = match (true) {
+        $hasIdentity && $hasPhone => <<<SQL
+            INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.identity_number,
+                u.phone
+            FROM users u
+            LEFT JOIN user_profiles up ON up.user_id = u.id
+            WHERE up.user_id IS NULL
+        SQL,
+        $hasIdentity => <<<SQL
+            INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.identity_number,
+                NULL
+            FROM users u
+            LEFT JOIN user_profiles up ON up.user_id = u.id
+            WHERE up.user_id IS NULL
+        SQL,
+        $hasPhone => <<<SQL
+            INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                NULL,
+                u.phone
+            FROM users u
+            LEFT JOIN user_profiles up ON up.user_id = u.id
+            WHERE up.user_id IS NULL
+        SQL,
+        default => <<<SQL
+            INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                NULL,
+                NULL
+            FROM users u
+            LEFT JOIN user_profiles up ON up.user_id = u.id
+            WHERE up.user_id IS NULL
+        SQL,
+    };
 
-    $hasIdentity = $identityCheck->num_rows > 0;
-    $hasPhone = $phoneCheck->num_rows > 0;
-    $identitySelect = $hasIdentity ? 'u.identity_number' : 'NULL';
-    $phoneSelect = $hasPhone ? 'u.phone' : 'NULL';
-
-    $migrateSql = "
-        INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
-        SELECT
-            u.id,
-            u.first_name,
-            u.last_name,
-            {$identitySelect},
-            {$phoneSelect}
-        FROM users u
-        LEFT JOIN user_profiles up ON up.user_id = u.id
-        WHERE up.user_id IS NULL
-    ";
-
-    return $conn->query($migrateSql) !== false;
+    return execute_prepared_statement($conn, $migrateSql);
 }
 
 function ensure_identity_number_column($conn): bool

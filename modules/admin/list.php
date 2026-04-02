@@ -37,8 +37,9 @@ foreach ($specialties as $specialty) {
     }
 }
 
-$sql = "
-    SELECT
+$searchTerm = "%" . $keyword . "%";
+$stmt = $conn->prepare(
+    "SELECT
         up.first_name,
         up.last_name,
         u.email,
@@ -47,48 +48,34 @@ $sql = "
         cp.application_status,
         cp.ranking_position,
         cp.points
-    FROM candidate_profiles cp
-    INNER JOIN users u ON u.id = cp.user_id
-    INNER JOIN user_profiles up ON up.user_id = u.id
-    LEFT JOIN specialties s ON s.id = cp.specialty_id
-    WHERE 1 = 1
-";
-
-$params = [];
-$types = "";
-
-if ($keyword !== "") {
-    $sql .= " AND (
-        CONCAT(up.first_name, ' ', up.last_name) LIKE ?
-        OR u.email LIKE ?
-        OR COALESCE(up.phone, '') LIKE ?
-        OR COALESCE(s.title, '') LIKE ?
-        OR COALESCE(cp.application_status, '') LIKE ?
-    )";
-
-    $searchTerm = "%" . $keyword . "%";
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $types .= "sssss";
-}
-
-if ($specialtyId > 0) {
-    $sql .= " AND cp.specialty_id = ?";
-    $params[] = $specialtyId;
-    $types .= "i";
-}
-
-$sql .= " ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC, up.first_name ASC LIMIT 50";
-
-$stmt = $conn->prepare($sql);
+     FROM candidate_profiles cp
+     INNER JOIN users u ON u.id = cp.user_id
+     INNER JOIN user_profiles up ON up.user_id = u.id
+     LEFT JOIN specialties s ON s.id = cp.specialty_id
+     WHERE (? = '' OR (
+            CONCAT(up.first_name, ' ', up.last_name) LIKE ?
+            OR u.email LIKE ?
+            OR COALESCE(up.phone, '') LIKE ?
+            OR COALESCE(s.title, '') LIKE ?
+            OR COALESCE(cp.application_status, '') LIKE ?
+        ))
+       AND (? = 0 OR cp.specialty_id = ?)
+     ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC, up.first_name ASC
+     LIMIT 50"
+);
 
 if ($stmt) {
-    if ($params !== []) {
-        $stmt->bind_param($types, ...$params);
-    }
+    $stmt->bind_param(
+        "ssssssii",
+        $keyword,
+        $searchTerm,
+        $searchTerm,
+        $searchTerm,
+        $searchTerm,
+        $searchTerm,
+        $specialtyId,
+        $specialtyId
+    );
 
     $stmt->execute();
     $result = $stmt->get_result();

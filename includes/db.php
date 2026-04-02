@@ -122,19 +122,6 @@ final class PdoConnectionAdapter
         $this->pdo = $pdo;
     }
 
-    public function query(string $sql): PdoResultAdapter|false
-    {
-        try {
-            $statement = $this->pdo->query($sql);
-            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-            $this->error = "";
-            return new PdoResultAdapter($rows);
-        } catch (PDOException $exception) {
-            $this->error = $exception->getMessage();
-            return false;
-        }
-    }
-
     public function prepare(string $sql): PdoStatementAdapter|false
     {
         try {
@@ -186,9 +173,9 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-} catch (PDOException $exception) {
+} catch (PDOException) {
     http_response_code(500);
-    die(
+    echo(
         "<!DOCTYPE html>
         <html lang='el'>
         <head>
@@ -236,6 +223,7 @@ try {
         </body>
         </html>"
     );
+    exit;
 }
 
 $conn = new PdoConnectionAdapter($pdo);
