@@ -23,7 +23,7 @@
 - authentication / session logic
 - `seed.sql`
 - ελέγχους ασφαλείας
-- διορθώσεις στη διαδικασία login
+- διορθώσεις στη διαδικασία `auth/register.php`
 - διορθώσεις και βελτιώσεις στο `modules/list.php`
 - βελτιώσεις στη ροή εγγραφής χρηστών
 - υποστήριξη σε styling / navigation / search module
