@@ -10,7 +10,6 @@
 Ανέλαβε κυρίως:
 - οργάνωση και δομή του project
 - `schema.sql`
-- `seed.sql`
 - `includes/db.php`
 - `auth/register.php`
 - `auth/logout.php`
@@ -22,6 +21,7 @@
 Ανέλαβε κυρίως:
 - `auth/login.php`
 - authentication / session logic
+- `seed.sql`
 - ελέγχους ασφαλείας
 - διορθώσεις στη διαδικασία login
 - διορθώσεις και βελτιώσεις στο `modules/list.php`
