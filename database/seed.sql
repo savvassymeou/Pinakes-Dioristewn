@@ -7,13 +7,31 @@ INSERT INTO specialties (title, description) VALUES
 ('ΠΕ03 Μαθηματικοί', 'Ενδεικτική ειδικότητα για υποψηφίους μαθηματικών.'),
 ('ΠΕ86 Πληροφορικής', 'Ενδεικτική ειδικότητα για υποψηφίους πληροφορικής.');
 
-INSERT INTO users (username, first_name, last_name, email, phone, password_hash, role) VALUES
-('admin', 'Admin', 'User', 'admin@example.com', '99111111', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'admin'),
-('maria', 'Maria', 'Papadopoulou', 'maria@example.com', '99222222', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('giorgos', 'Giorgos', 'Ioannou', 'giorgos@example.com', '99333333', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('eleni', 'Eleni', 'Nikolaou', 'eleni@example.com', '99444444', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('petros', 'Petros', 'Stavrou', 'petros@example.com', '99555555', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
-('sofia', 'Sofia', 'Maniati', 'sofia@example.com', '99666666', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate');
+INSERT INTO users (username, email, password_hash, role) VALUES
+('admin', 'admin@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'admin'),
+('maria', 'maria@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('giorgos', 'giorgos@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('eleni', 'eleni@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('petros', 'petros@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate'),
+('sofia', 'sofia@example.com', '$2y$10$QCkjO19wCUVT28txduk22u6M50rY4VgOFjDIkqag2lpLvYp5JQ28.', 'candidate');
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Admin', 'User', 'AD123456', '99111111' FROM users WHERE email = 'admin@example.com';
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Maria', 'Papadopoulou', 'AA123456', '99222222' FROM users WHERE email = 'maria@example.com';
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Giorgos', 'Ioannou', 'BB234567', '99333333' FROM users WHERE email = 'giorgos@example.com';
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Eleni', 'Nikolaou', 'CC345678', '99444444' FROM users WHERE email = 'eleni@example.com';
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Petros', 'Stavrou', 'DD456789', '99555555' FROM users WHERE email = 'petros@example.com';
+
+INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone)
+SELECT id, 'Sofia', 'Maniati', 'EE567890', '99666666' FROM users WHERE email = 'sofia@example.com';
 
 INSERT INTO candidate_profiles (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points, created_at)
 SELECT u.id, 'Nikos', 'Eleni', '1992-05-14', 1, 'Ενεργή αίτηση', 12, 84.50, '2024-02-10 10:00:00'

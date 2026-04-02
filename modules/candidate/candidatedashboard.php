@@ -7,7 +7,7 @@ require_role('candidate', '../../auth/login.php', '../admin/dashboard.php', 'can
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/functions.php';
 
-ensure_identity_number_column($conn);
+ensure_user_profiles_table($conn);
 
 function candidate_value(?string $value, string $fallback = '—'): string
 {
@@ -20,11 +20,11 @@ function load_candidate(PdoConnectionAdapter $conn, int $userId): ?array
     $stmt = $conn->prepare(
         'SELECT
             u.id,
-            u.first_name,
-            u.last_name,
+            up.first_name,
+            up.last_name,
             u.email,
-            u.identity_number,
-            u.phone,
+            up.identity_number,
+            up.phone,
             u.created_at,
             cp.id AS profile_id,
             cp.father_name,
@@ -37,6 +37,7 @@ function load_candidate(PdoConnectionAdapter $conn, int $userId): ?array
             cp.created_at AS profile_created_at,
             s.title AS specialty_title
         FROM users u
+        LEFT JOIN user_profiles up ON up.user_id = u.id
         LEFT JOIN candidate_profiles cp ON cp.user_id = u.id
         LEFT JOIN specialties s ON s.id = cp.specialty_id
         WHERE u.id = ?
@@ -147,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
 
             try {
-                $identityCheckStmt = $conn->prepare('SELECT id FROM users WHERE identity_number = ? AND id <> ? LIMIT 1');
+                $identityCheckStmt = $conn->prepare('SELECT user_id AS id FROM user_profiles WHERE identity_number = ? AND user_id <> ? LIMIT 1');
                 if (!$identityCheckStmt) {
                     throw new RuntimeException('Δεν ήταν δυνατός ο έλεγχος του αριθμού ταυτότητας.');
                 }
@@ -162,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new RuntimeException('Ο αριθμός ταυτότητας χρησιμοποιείται ήδη από άλλο χρήστη.');
                 }
 
-                $userUpdateStmt = $conn->prepare('UPDATE users SET first_name = ?, last_name = ?, identity_number = ?, phone = ? WHERE id = ?');
+                $userUpdateStmt = $conn->prepare('UPDATE user_profiles SET first_name = ?, last_name = ?, identity_number = ?, phone = ? WHERE user_id = ?');
                 if (!$userUpdateStmt) {
                     throw new RuntimeException('Δεν ήταν δυνατή η ενημέρωση των βασικών στοιχείων.');
                 }
@@ -217,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $successMessage = 'Το προφίλ σου ενημερώθηκε επιτυχώς.';
             } catch (Throwable $exception) {
                 $conn->rollback();
-                $errorMessage = $exception->getMessage();
+                $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03B5\\u03BD\\u03B7\\u03BC\\u03AD\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03BF\\u03C5 \\u03C0\\u03C1\\u03BF\\u03C6\\u03AF\\u03BB \\u03C3\\u03BF\\u03C5. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
             }
         }
     }
@@ -363,14 +364,15 @@ $searchResults = [];
 
 $searchSql = 'SELECT
     cp.id AS profile_id,
-    u.first_name,
-    u.last_name,
+    up.first_name,
+    up.last_name,
     s.title AS specialty_title,
     cp.ranking_position,
     cp.points,
     cp.application_status
 FROM candidate_profiles cp
 INNER JOIN users u ON u.id = cp.user_id
+INNER JOIN user_profiles up ON up.user_id = u.id
 LEFT JOIN specialties s ON s.id = cp.specialty_id
 WHERE u.id <> ?';
 
@@ -378,7 +380,7 @@ $searchTypes = 'i';
 $searchParams = [$userId];
 
 if ($searchName !== '') {
-    $searchSql .= ' AND (u.first_name LIKE ? OR u.last_name LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ?)';
+    $searchSql .= ' AND (up.first_name LIKE ? OR up.last_name LIKE ? OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)';
     $searchWildcard = '%' . $searchName . '%';
     $searchParams[] = $searchWildcard;
     $searchParams[] = $searchWildcard;
@@ -392,7 +394,7 @@ if ($searchSpecialtyId > 0) {
     $searchTypes .= 'i';
 }
 
-$searchSql .= ' ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, u.last_name ASC LIMIT 12';
+$searchSql .= ' ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC LIMIT 12';
 $searchStmt = $conn->prepare($searchSql);
 
 if ($searchStmt) {
@@ -410,14 +412,15 @@ $trackedRows = [];
 $trackedStmt = $conn->prepare(
     'SELECT
         tc.created_at,
-        u.first_name,
-        u.last_name,
+        up.first_name,
+        up.last_name,
         s.title AS specialty_title,
         cp.ranking_position,
         cp.points
      FROM tracked_candidates tc
      INNER JOIN candidate_profiles cp ON cp.id = tc.candidate_profile_id
      INNER JOIN users u ON u.id = cp.user_id
+     INNER JOIN user_profiles up ON up.user_id = u.id
      LEFT JOIN specialties s ON s.id = cp.specialty_id
      WHERE tc.user_id = ?
      ORDER BY tc.created_at DESC'
@@ -782,5 +785,6 @@ require __DIR__ . '/../../includes/header.php';
     </section>
 </main>
 <?php require __DIR__ . '/../../includes/footer.php'; ?>
+
 
 

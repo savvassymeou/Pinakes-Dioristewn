@@ -14,8 +14,7 @@ $userInitials = current_user_initials();
 $userRoleLabel = current_role_label();
 
 $dashboardHref = $isAdmin ? 'modules/admin/admindashboard.php' : 'modules/candidate/candidatedashboard.php';
-$dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
-?>
+$dashboardLabel = $isAdmin ? 'Dashboard ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂµÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â®' : 'Dashboard ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦';?>
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -69,36 +68,118 @@ $dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
         .topbar-inner {
             width: min(1200px, calc(100% - 32px));
             margin: 0 auto;
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(260px, 1.2fr) auto;
             align-items: center;
-            justify-content: space-between;
-            gap: 16px;
+            gap: 18px;
         }
         .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .brand-mark {
-            width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
-            font-family: "Space Grotesk", sans-serif; font-weight: 800; box-shadow: 0 14px 28px rgba(184,134,47,0.22);
-            flex-shrink: 0;
-        }
+        .brand-logo { width: 132px; max-width: 38vw; height: auto; object-fit: contain; flex-shrink: 0; }
         .brand-copy strong { display: block; font-size: 1rem; }
         .brand-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.92rem; font-weight: 600; }
-        .nav { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; justify-content: flex-end; }
-        .nav-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .nav-group.auth { padding-left: 28px; margin-left: 18px; border-left: 1px solid rgba(21,55,92,0.14); }
+        .nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
+        .nav-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .nav-group.auth { padding-left: 20px; margin-left: 6px; border-left: 1px solid rgba(21,55,92,0.14); }
         .user-chip {
-            display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 12px 6px 8px;
+            display: inline-flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 14px 8px 8px;
             border-radius: 18px; background: rgba(255,255,255,0.92); border: 1px solid var(--field-border);
             box-shadow: 0 12px 24px rgba(17,39,68,0.08);
         }
         .user-avatar {
-            width: 38px; height: 38px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
             background: linear-gradient(135deg, #2f7f64, #4fa77e); color: #fff; font-weight: 800; letter-spacing: 0.05em;
             box-shadow: 0 10px 20px rgba(47,127,100,0.22); flex-shrink: 0;
         }
-        .user-meta { display: grid; gap: 2px; min-width: 0; }
-        .user-meta strong { font-size: 0.95rem; line-height: 1.1; }
-        .user-meta span { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
+        .user-meta { display: grid; gap: 1px; min-width: 0; }
+        .user-meta strong { font-size: 0.98rem; line-height: 1.15; }
+        .user-meta span { color: var(--muted); font-size: 0.8rem; font-weight: 700; line-height: 1.2; }
+        .profile-menu { position: relative; }
+        .profile-trigger {
+            display: inline-flex; align-items: center; gap: 8px; min-height: 58px; padding: 8px 10px 8px 8px;
+            border: 1px solid rgba(137,92,199,0.16); border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,244,255,0.96));
+            color: var(--text); font: inherit; box-shadow: 0 16px 34px rgba(17,39,68,0.10); cursor: pointer;
+        }
+        .profile-trigger:hover, .profile-menu:focus-within .profile-trigger {
+            transform: translateY(-1px); box-shadow: 0 20px 38px rgba(17,39,68,0.14);
+        }
+        .profile-role-badge {
+            display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 999px;
+            background: linear-gradient(135deg, #6f1fc7 0%, #8a37df 100%); color: #fff; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.01em;
+            white-space: nowrap; box-shadow: 0 12px 22px rgba(111,31,199,0.24);
+        }
+        .profile-trigger-avatar {
+            width: 42px; height: 42px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #f1e8ff 0%, #e4d2ff 100%); border: 1px solid rgba(111,31,199,0.14); color: #6122b7;
+            font-weight: 800; letter-spacing: 0.04em;
+        }
+        .profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 176px;
+  padding: 8px 0;
+  border-radius: 0;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 18px 40px rgba(17, 39, 68, 0.16);
+  display: grid;
+  gap: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+.profile-menu:hover .profile-dropdown,
+.profile-menu:focus-within .profile-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 0;
+  color: #24364d;
+  font-weight: 500;
+  font-size: 0.92rem;
+  background: transparent;
+}
+
+.profile-dropdown-item:hover {
+  background: rgba(241, 246, 252, 0.9);
+}
+
+.profile-dropdown-item-logout {
+  color: #e35b52;
+}
+
+.profile-dropdown-item-logout .profile-dropdown-icon {
+  color: #e35b52;
+}
+
+.profile-dropdown-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  flex: 0 0 20px;
+}
+
+.profile-dropdown-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: currentColor;
+}
+
         .nav a {
             display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px;
             border-radius: 16px; border: 1px solid var(--field-border); background: rgba(255,255,255,0.86);
@@ -153,7 +234,7 @@ $dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
         }
         @media (max-width: 760px) {
             .shell { width: min(100%, calc(100% - 22px)); margin-top: 12px; }
-            .topbar-inner { align-items: flex-start; flex-direction: column; }
+            .topbar-inner { display: flex; align-items: flex-start; flex-direction: column; }
             .nav { width: 100%; justify-content: flex-start; gap: 12px; }
             .nav-group { width: 100%; }
             .nav-group.auth { padding-left: 0; margin-left: 0; border-left: none; }
@@ -167,11 +248,7 @@ $dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
         <header class="topbar">
             <div class="topbar-inner">
                 <a class="brand" href="index.php">
-                    <span class="brand-mark">EEY</span>
-                    <span class="brand-copy">
-                        <strong>&#928;&#943;&#957;&#945;&#954;&#949;&#962; &#916;&#953;&#959;&#961;&#953;&#963;&#964;&#941;&#969;&#957;</strong>
-                        <span>&#917;&#966;&#945;&#961;&#956;&#959;&#947;&#942; &#960;&#945;&#961;&#945;&#954;&#959;&#955;&#959;&#973;&#952;&#951;&#963;&#951;&#962; &#965;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957; &#954;&#945;&#953; &#949;&#953;&#948;&#953;&#954;&#959;&#964;&#942;&#964;&#969;&#957;</span>
-                    </span>
+                    <img class="brand-logo" src="<?php echo h(path_from_root("assets/images/ichnos-logo.jpg")); ?>" alt="<?php echo h(APP_NAME); ?> logo"><span class="brand-copy"><strong><?php echo h(APP_NAME); ?></strong><span><?php echo h(APP_TAGLINE); ?></span></span>
                 </a>
                 <nav class="nav" aria-label="&#922;&#973;&#961;&#953;&#945; &#960;&#955;&#959;&#942;&#947;&#951;&#963;&#951;">
                     <div class="nav-group main">
@@ -185,14 +262,26 @@ $dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
                             <a class="auth-link primary" href="auth/register.php">&#917;&#947;&#947;&#961;&#945;&#966;&#942;</a>
                             <a class="auth-link" href="auth/login.php">&#931;&#973;&#957;&#948;&#949;&#963;&#951;</a>
                         <?php else: ?>
-                            <a class="user-chip" href="<?php echo h($dashboardHref); ?>" aria-label="<?php echo h($dashboardLabel); ?>">
-                                <span class="user-avatar"><?php echo h($userInitials); ?></span>
-                                <span class="user-meta">
-                                    <strong><?php echo h($userFullName); ?></strong>
-                                    <span><?php echo h($userRoleLabel ?? 'Συνδεδεμένος χρήστης'); ?></span>
-                                </span>
-                            </a>
-                            <a class="auth-link" href="auth/logout.php">&#913;&#960;&#959;&#963;&#973;&#957;&#948;&#949;&#963;&#951;</a>
+                            <div class="profile-menu home-profile-menu">
+                                <button type="button" class="profile-trigger" aria-haspopup="menu">
+                                    <span class="profile-role-badge"><?php echo h($userRoleLabel ?? u('\u03A3\u03C5\u03BD\u03B4\u03B5\u03B4\u03B5\u03BC\u03AD\u03BD\u03BF\u03C2 \u03C7\u03C1\u03AE\u03C3\u03C4\u03B7\u03C2')); ?></span>
+                                    <span class="profile-trigger-avatar"><?php echo h($userInitials); ?></span>
+                                </button>
+                                <div class="profile-dropdown" role="menu">
+                                    <a class="profile-dropdown-item" href="<?php echo h($dashboardHref); ?>" role="menuitem">
+                                        <span class="profile-dropdown-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.33 0-6 1.79-6 4v1h12v-1c0-2.21-2.67-4-6-4Z"/></svg>
+                                        </span>
+                                        <span>&#927; &#955;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962; &#956;&#959;&#965;</span>
+                                    </a>
+                                    <a class="profile-dropdown-item profile-dropdown-item-logout" href="auth/logout.php" role="menuitem">
+                                        <span class="profile-dropdown-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v-2h4V9h-4V7l-5 5 5 5Z"/><path d="M14 5h5v14h-5v-2h3V7h-3V5Z"/></svg>
+                                        </span>
+                                        <span>&#913;&#960;&#959;&#963;&#973;&#957;&#948;&#949;&#963;&#951;</span>
+                                    </a>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </nav>
@@ -280,5 +369,6 @@ $dashboardLabel = $isAdmin ? '??????? ???????????' : '?????? ?????????';
     </div>
 </body>
 </html>
+
 
 

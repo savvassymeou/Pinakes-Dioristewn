@@ -1,7 +1,4 @@
 <?php
-
-declare(strict_types=1);
-
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
@@ -12,13 +9,13 @@ $successMessage = '';
 $resetRequest = null;
 
 if (!ensure_password_reset_tokens_table($conn)) {
-    $errorMessage = 'Δεν ήταν δυνατή η προετοιμασία της επαναφοράς κωδικού.';
+    $errorMessage = u('\u0394\u03B5\u03BD \u03AE\u03C4\u03B1\u03BD \u03B4\u03C5\u03BD\u03B1\u03C4\u03AE \u03B7 \u03C0\u03C1\u03BF\u03B5\u03C4\u03BF\u03B9\u03BC\u03B1\u03C3\u03AF\u03B1 \u03C4\u03B7\u03C2 \u03B5\u03C0\u03B1\u03BD\u03B1\u03C6\u03BF\u03C1\u03AC\u03C2 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD.');
 } elseif ($token === '') {
-    $errorMessage = 'Λείπει το token επαναφοράς κωδικού.';
+    $errorMessage = u('\u039B\u03B5\u03AF\u03C0\u03B5\u03B9 \u03C4\u03BF token \u03B5\u03C0\u03B1\u03BD\u03B1\u03C6\u03BF\u03C1\u03AC\u03C2 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD.');
 } else {
     $resetRequest = find_valid_password_reset($conn, $token);
     if (!$resetRequest) {
-        $errorMessage = 'Ο σύνδεσμος επαναφοράς δεν είναι έγκυρος ή έχει λήξει.';
+        $errorMessage = u('\u039F \u03C3\u03CD\u03BD\u03B4\u03B5\u03C3\u03BC\u03BF\u03C2 \u03B5\u03C0\u03B1\u03BD\u03B1\u03C6\u03BF\u03C1\u03AC\u03C2 \u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9 \u03AD\u03B3\u03BA\u03C5\u03C1\u03BF\u03C2 \u03AE \u03AD\u03C7\u03B5\u03B9 \u03BB\u03AE\u03BE\u03B5\u03B9.');
     }
 }
 
@@ -27,27 +24,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $errorMessage === '' && $resetReque
     $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
 
     if ($password === '' || $confirmPassword === '') {
-        $errorMessage = 'Συμπλήρωσε και τα δύο πεδία κωδικού.';
+        $errorMessage = u('\u03A3\u03C5\u03BC\u03C0\u03BB\u03AE\u03C1\u03C9\u03C3\u03B5 \u03BA\u03B1\u03B9 \u03C4\u03B1 \u03B4\u03CD\u03BF \u03C0\u03B5\u03B4\u03AF\u03B1 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD.');
     } elseif (strlen($password) < 8) {
-        $errorMessage = 'Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.';
+        $errorMessage = u('\u039F \u03BD\u03AD\u03BF\u03C2 \u03BA\u03C9\u03B4\u03B9\u03BA\u03CC\u03C2 \u03C0\u03C1\u03AD\u03C0\u03B5\u03B9 \u03BD\u03B1 \u03AD\u03C7\u03B5\u03B9 \u03C4\u03BF\u03C5\u03BB\u03AC\u03C7\u03B9\u03C3\u03C4\u03BF\u03BD 8 \u03C7\u03B1\u03C1\u03B1\u03BA\u03C4\u03AE\u03C1\u03B5\u03C2.');
     } elseif ($password !== $confirmPassword) {
-        $errorMessage = 'Η επιβεβαίωση κωδικού δεν ταιριάζει.';
+        $errorMessage = u('\u0397 \u03B5\u03C0\u03B9\u03B2\u03B5\u03B2\u03B1\u03AF\u03C9\u03C3\u03B7 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD \u03B4\u03B5\u03BD \u03C4\u03B1\u03B9\u03C1\u03B9\u03AC\u03B6\u03B5\u03B9.');
     } else {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $updateStmt = $conn->prepare('UPDATE users SET password_hash = ? WHERE id = ? LIMIT 1');
 
         if (!$updateStmt) {
-            $errorMessage = 'Δεν ήταν δυνατή η αποθήκευση του νέου κωδικού.';
+            $errorMessage = u('\u0394\u03B5\u03BD \u03AE\u03C4\u03B1\u03BD \u03B4\u03C5\u03BD\u03B1\u03C4\u03AE \u03B7 \u03B1\u03C0\u03BF\u03B8\u03AE\u03BA\u03B5\u03C5\u03C3\u03B7 \u03C4\u03BF\u03C5 \u03BD\u03AD\u03BF\u03C5 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD.');
         } else {
             $userId = (int) $resetRequest['user_id'];
             $updateStmt->bind_param('si', $hashedPassword, $userId);
 
             if ($updateStmt->execute()) {
                 mark_password_reset_used($conn, (int) $resetRequest['id']);
-                $successMessage = 'Ο κωδικός σου άλλαξε επιτυχώς. Τώρα μπορείς να συνδεθείς με τον νέο κωδικό.';
+                $successMessage = u('\u039F \u03BA\u03C9\u03B4\u03B9\u03BA\u03CC\u03C2 \u03C3\u03BF\u03C5 \u03AC\u03BB\u03BB\u03B1\u03BE\u03B5 \u03B5\u03C0\u03B9\u03C4\u03C5\u03C7\u03CE\u03C2. \u03A4\u03CE\u03C1\u03B1 \u03BC\u03C0\u03BF\u03C1\u03B5\u03AF\u03C2 \u03BD\u03B1 \u03C3\u03C5\u03BD\u03B4\u03B5\u03B8\u03B5\u03AF\u03C2 \u03BC\u03B5 \u03C4\u03BF\u03BD \u03BD\u03AD\u03BF \u03BA\u03C9\u03B4\u03B9\u03BA\u03CC.');
                 $resetRequest = null;
             } else {
-                $errorMessage = 'Η αλλαγή κωδικού απέτυχε.';
+                $errorMessage = u('\u0397 \u03B1\u03BB\u03BB\u03B1\u03B3\u03AE \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD \u03B1\u03C0\u03AD\u03C4\u03C5\u03C7\u03B5.');
             }
 
             $updateStmt->close();
@@ -60,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $errorMessage === '' && $resetReque
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Νέος Κωδικός | Πίνακες Διοριστέων</title>
+    <title><?php echo h(u('\u039D\u03AD\u03BF\u03C2 \u039A\u03C9\u03B4\u03B9\u03BA\u03CC\u03C2') . ' | ' . APP_NAME); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -70,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $errorMessage === '' && $resetReque
         body { margin:0; min-height:100vh; font-family:'Manrope',sans-serif; color:var(--text); background:radial-gradient(circle at top, rgba(185,134,47,.16), transparent 22%), radial-gradient(circle at left, rgba(52,103,168,.10), transparent 26%), linear-gradient(180deg, var(--bg) 0%, var(--bg-accent) 100%); }
         .page { min-height:100vh; display:grid; place-items:center; padding:32px 18px; }
         .card { width:min(100%,520px); padding:34px 32px; border-radius:28px; background:var(--panel); border:1px solid var(--panel-border); box-shadow:var(--shadow); }
-        .brand { display:flex; align-items:center; gap:12px; margin-bottom:28px; font-weight:800; }
-        .brand-mark { width:44px; height:44px; display:grid; place-items:center; border-radius:14px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-family:'Space Grotesk',sans-serif; box-shadow:0 14px 28px rgba(184,134,47,.22); }
+        .brand { display:flex; align-items:center; gap:14px; margin-bottom:28px; font-weight:800; }
+        .brand-logo { width:148px; max-width:44vw; height:auto; object-fit:contain; display:block; }
         .brand-copy strong { display:block; font-size:1rem; }
         .brand-copy span { display:block; margin-top:2px; color:var(--muted); font-size:.92rem; font-weight:600; }
         .eyebrow { display:inline-flex; align-items:center; margin-bottom:16px; padding:7px 12px; border-radius:999px; background:rgba(184,134,47,.12); color:var(--accent-dark); font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
@@ -96,35 +93,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $errorMessage === '' && $resetReque
 <body>
     <main class="page">
         <section class="card">
-            <div class="brand"><span class="brand-mark">EEY</span><div class="brand-copy"><strong>Πίνακες Διοριστέων</strong><span>Ορισμός νέου κωδικού</span></div></div>
+            <div class="brand">
+                <img class="brand-logo" src="../assets/images/ichnos-logo.jpg" alt="<?php echo h(APP_NAME); ?> logo">
+                <div class="brand-copy">
+                    <strong><?php echo h(APP_NAME); ?></strong>
+                    <span>&#927;&#961;&#953;&#963;&#956;&#972;&#962; &#957;&#941;&#959;&#965; &#954;&#969;&#948;&#953;&#954;&#959;&#973;</span>
+                </div>
+            </div>
             <span class="eyebrow">Reset Password</span>
-            <h1>Νέος Κωδικός</h1>
-            <p class="intro">Όρισε νέο κωδικό πρόσβασης για τον λογαριασμό σου.</p>
+            <h1>&#925;&#941;&#959;&#962; &#954;&#969;&#948;&#953;&#954;&#972;&#962;</h1>
+            <p class="intro">&#908;&#961;&#953;&#963;&#949; &#957;&#941;&#959; &#954;&#969;&#948;&#953;&#954;&#972; &#960;&#961;&#972;&#963;&#946;&#945;&#963;&#951;&#962; &#947;&#953;&#945; &#964;&#959;&#957; &#955;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972; &#963;&#959;&#965;.</p>
             <?php if ($successMessage !== ''): ?><div class="message success"><?php echo h($successMessage); ?></div><?php endif; ?>
             <?php if ($errorMessage !== ''): ?><div class="message error"><?php echo h($errorMessage); ?></div><?php endif; ?>
             <?php if ($resetRequest && $successMessage === ''): ?>
                 <form method="post" action="">
                     <input type="hidden" name="token" value="<?php echo h($token); ?>">
-                    <label for="password">Νέος κωδικός</label>
+                    <label for="password">&#925;&#941;&#959;&#962; &#954;&#969;&#948;&#953;&#954;&#972;&#962;</label>
                     <div class="password-field">
-                        <input id="password" name="password" type="password" placeholder="Τουλάχιστον 8 χαρακτήρες" required>
-                        <button type="button" class="password-toggle" data-target="password" aria-label="Εμφάνιση κωδικού">
+                        <input id="password" name="password" type="password" placeholder="&#932;&#959;&#965;&#955;&#940;&#967;&#953;&#963;&#964;&#959;&#957; 8 &#967;&#945;&#961;&#945;&#954;&#964;&#942;&#961;&#949;&#962;" required>
+                        <button type="button" class="password-toggle" data-target="password" aria-label="&#917;&#956;&#966;&#940;&#957;&#953;&#963;&#951; &#954;&#969;&#948;&#953;&#954;&#959;&#973;">
                             <svg class="icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             <svg class="icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7A3 3 0 0 0 13.3 13.4"></path><path d="M9.9 5.2A11.4 11.4 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-3.2 4.2"></path><path d="M6.2 6.3C3.6 8.1 2 12 2 12a17.8 17.2 0 0 0 6.1 5.3A10.8 10.8 0 0 0 12 18c1.2 0 2.4-.2 3.5-.6"></path></svg>
                         </button>
                     </div>
-                    <label for="confirm_password">Επιβεβαίωση κωδικού</label>
+                    <label for="confirm_password">&#917;&#960;&#953;&#946;&#949;&#946;&#945;&#943;&#969;&#963;&#951; &#954;&#969;&#948;&#953;&#954;&#959;&#973;</label>
                     <div class="password-field">
-                        <input id="confirm_password" name="confirm_password" type="password" placeholder="Επανάλαβε τον νέο κωδικό" required>
-                        <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Εμφάνιση κωδικού">
+                        <input id="confirm_password" name="confirm_password" type="password" placeholder="&#917;&#960;&#945;&#957;&#940;&#955;&#945;&#946;&#949; &#964;&#959;&#957; &#957;&#941;&#959; &#954;&#969;&#948;&#953;&#954;&#972;" required>
+                        <button type="button" class="password-toggle" data-target="confirm_password" aria-label="&#917;&#956;&#966;&#940;&#957;&#953;&#963;&#951; &#954;&#969;&#948;&#953;&#954;&#959;&#973;">
                             <svg class="icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             <svg class="icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.7A3 3 0 0 0 13.3 13.4"></path><path d="M9.9 5.2A11.4 11.4 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-3.2 4.2"></path><path d="M6.2 6.3C3.6 8.1 2 12 2 12a17.8 17.2 0 0 0 6.1 5.3A10.8 10.8 0 0 0 12 18c1.2 0 2.4-.2 3.5-.6"></path></svg>
                         </button>
                     </div>
-                    <button type="submit" class="submit-btn">Αλλαγή Κωδικού</button>
+                    <button type="submit" class="submit-btn">&#913;&#955;&#955;&#945;&#947;&#942; &#954;&#969;&#948;&#953;&#954;&#959;&#973;</button>
                 </form>
             <?php endif; ?>
-            <div class="helper-links"><a href="login.php">Επιστροφή στη Σύνδεση</a></div>
+            <div class="helper-links"><a href="login.php">&#917;&#960;&#953;&#963;&#964;&#961;&#959;&#966;&#942; &#963;&#964;&#951; &#931;&#973;&#957;&#948;&#949;&#963;&#951;</a></div>
         </section>
     </main>
     <script>
@@ -135,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $errorMessage === '' && $resetReque
                 const visible = input.type === 'password';
                 input.type = visible ? 'text' : 'password';
                 button.classList.toggle('is-visible', visible);
-                button.setAttribute('aria-label', visible ? 'Απόκρυψη κωδικού' : 'Εμφάνιση κωδικού');
+                button.setAttribute('aria-label', visible ? '\u0391\u03C0\u03CC\u03BA\u03C1\u03C5\u03C8\u03B7 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD' : '\u0395\u03BC\u03C6\u03AC\u03BD\u03B9\u03C3\u03B7 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD');
             });
         });
     </script>

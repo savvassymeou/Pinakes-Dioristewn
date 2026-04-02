@@ -1,3 +1,3 @@
-<?php
+﻿<?php
 
-require __DIR__ . "/../list.php";
+require __DIR__ . '/admin/list.php';

@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/functions.php"; ?>
+﻿<?php require_once __DIR__ . "/functions.php"; ?>
 <!doctype html>
 <html lang="el">
 <head>
@@ -11,8 +11,15 @@
     <header class="site-header">
         <div class="container header-row">
             <a class="brand" href="<?php echo e(path_from_root("index.php")); ?>">
-                <span class="brand-mark" aria-hidden="true">EEY</span>
-                <span class="brand-text"><?php echo e(APP_NAME); ?></span>
+                <img
+                    class="brand-logo"
+                    src="<?php echo e(path_from_root("assets/images/ichnos-logo.jpg")); ?>"
+                    alt="<?php echo e(APP_NAME); ?> logo"
+                >
+                <span class="brand-lockup">
+                    <span class="brand-text"><?php echo e(APP_NAME); ?></span>
+                    <span class="brand-subtitle"><?php echo e(APP_TAGLINE); ?></span>
+                </span>
             </a>
             <?php require __DIR__ . "/nav.php"; ?>
         </div>
