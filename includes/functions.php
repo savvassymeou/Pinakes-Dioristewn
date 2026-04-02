@@ -366,9 +366,32 @@ function nav_items(string $currentPage): array
 function path_from_root(string $target): string
 {
     $cleanTarget = ltrim($target, "/\\");
-    $projectDir = basename(dirname(__DIR__));
+    $scriptName = str_replace("\\", "/", (string) ($_SERVER["SCRIPT_NAME"] ?? ""));
+    $scriptDirUrl = rtrim(str_replace("\\", "/", dirname($scriptName)), "/.");
+    $scriptFilename = str_replace("\\", "/", (string) ($_SERVER["SCRIPT_FILENAME"] ?? ""));
+    $projectRoot = str_replace("\\", "/", dirname(__DIR__));
+    $currentDirFs = $scriptFilename !== "" ? str_replace("\\", "/", dirname($scriptFilename)) : $projectRoot;
+    $relativeDir = "";
 
-    return "/" . $projectDir . "/" . str_replace("\\", "/", $cleanTarget);
+    if ($currentDirFs === $projectRoot) {
+        $relativeDir = "";
+    } elseif (str_starts_with($currentDirFs, $projectRoot . "/")) {
+        $relativeDir = trim(substr($currentDirFs, strlen($projectRoot)), "/");
+    }
+
+    $basePath = $scriptDirUrl;
+
+    if ($relativeDir !== "") {
+        $relativeUrlSuffix = "/" . str_replace("\\", "/", $relativeDir);
+
+        if (str_ends_with($basePath, $relativeUrlSuffix)) {
+            $basePath = substr($basePath, 0, -strlen($relativeUrlSuffix));
+        }
+    }
+
+    $basePath = rtrim($basePath, "/");
+
+    return ($basePath === "" ? "" : $basePath) . "/" . str_replace("\\", "/", $cleanTarget);
 }
 function execute_prepared_statement($conn, string $sql, string $types = "", array $params = []): bool
 {

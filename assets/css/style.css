@@ -94,10 +94,14 @@ img { max-width: 100%; display: block; }
 }
 
 .brand-logo {
-  width: 128px;
-  max-width: 36vw;
-  height: auto;
+  width: min(128px, 36vw);
+  height: min(128px, 36vw);
+  padding: 10px;
+  border-radius: 50%;
+  background: #fff;
   object-fit: contain;
+  box-sizing: border-box;
+  box-shadow: 0 10px 24px rgba(16, 54, 96, 0.12);
   flex-shrink: 0;
 }
 

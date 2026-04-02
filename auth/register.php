@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .page { min-height:100vh; display:grid; place-items:center; padding:32px 18px; }
         .card { width:min(100%,720px); padding:34px 32px; border-radius:28px; background:var(--panel); border:1px solid var(--panel-border); box-shadow:var(--shadow); }
         .brand { display:flex; align-items:center; gap:14px; margin-bottom:28px; font-weight:800; }
-        .brand-logo { width:148px; max-width:44vw; height:auto; object-fit:contain; display:block; }
+        .brand-logo { width:min(148px,44vw); height:min(148px,44vw); padding:12px; border-radius:50%; background:#fff; object-fit:contain; box-sizing:border-box; box-shadow:0 14px 30px rgba(16,54,96,.14); display:block; }
         .brand-copy strong { display:block; font-size:1rem; }
         .brand-copy span { display:block; margin-top:2px; color:var(--muted); font-size:.92rem; font-weight:600; }
         .eyebrow { display:inline-flex; align-items:center; margin-bottom:16px; padding:7px 12px; border-radius:999px; background:rgba(184,134,47,.12); color:var(--accent-dark); font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="page">
         <section class="card">
             <div class="brand">
-                <img class="brand-logo" src="../assets/images/ichnos-logo.jpg" alt="<?php echo h(APP_NAME); ?> logo">
+                <img class="brand-logo" src="../assets/images/ichnos-logo.jpg?v=20260402" alt="<?php echo h(APP_NAME); ?> logo">
                 <div class="brand-copy">
                     <strong><?php echo h(APP_NAME); ?></strong>
                     <span>&#916;&#951;&#956;&#953;&#959;&#965;&#961;&#947;&#943;&#945; &#955;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#959;&#973; &#965;&#960;&#959;&#968;&#951;&#966;&#943;&#959;&#965;</span>

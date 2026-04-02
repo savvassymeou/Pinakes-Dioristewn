@@ -13,7 +13,7 @@
             <a class="brand" href="<?php echo e(path_from_root("index.php")); ?>">
                 <img
                     class="brand-logo"
-                    src="<?php echo e(path_from_root("assets/images/ichnos-logo.jpg")); ?>"
+                    src="<?php echo e(path_from_root("assets/images/ichnos-logo.jpg") . "?v=20260402"); ?>"
                     alt="<?php echo e(APP_NAME); ?> logo"
                 >
                 <span class="brand-lockup">
