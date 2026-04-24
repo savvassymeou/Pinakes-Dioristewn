@@ -3,39 +3,208 @@
 session_start();
 require_once __DIR__ . "/../../includes/auth.php";
 
-require_role("admin", "../../auth/login.php", "dashboard.php", "../candidate/candidatedashboard.php");
+require_role("admin", "../../auth/login.php", "admindashboard.php", "../candidate/candidatedashboard.php");
 
 require_once __DIR__ . "/../../includes/db.php";
 require_once __DIR__ . "/../../includes/functions.php";
 
 ensure_user_profiles_table($conn);
 
-function randomGreekPhone(): string
+function normalize_import_header(string $header): string
 {
-    return "99" . str_pad((string) random_int(100000, 999999), 6, "0", STR_PAD_LEFT);
+    $header = trim($header);
+    $header = preg_replace('/^\xEF\xBB\xBF/', '', $header) ?? $header;
+    $header = str_replace([' ', '-', '.', '/', '\\'], '_', $header);
+
+    if (function_exists('mb_strtolower')) {
+        $header = mb_strtolower($header, 'UTF-8');
+    } else {
+        $header = strtolower($header);
+    }
+
+    $header = strtr($header, [
+        'ά' => 'α',
+        'έ' => 'ε',
+        'ή' => 'η',
+        'ί' => 'ι',
+        'ϊ' => 'ι',
+        'ΐ' => 'ι',
+        'ό' => 'ο',
+        'ύ' => 'υ',
+        'ϋ' => 'υ',
+        'ΰ' => 'υ',
+        'ώ' => 'ω',
+    ]);
+
+    return trim($header, "_");
 }
 
-function buildDemoCandidates(string $specialtyTitle): array
+function import_header_key(string $header): ?string
 {
-    $pool = [
-        ["Ανδρέας", "Παπαδόπουλος", "Γιώργος", "Μαρία", "1989-04-17", 91.40],
-        ["Ελένη", "Χριστοδούλου", "Νίκος", "Άννα", "1993-09-05", 88.20],
-        ["Μάριος", "Νεοφύτου", "Κώστας", "Σταυρούλα", "1987-12-11", 84.75],
-        ["Σοφία", "Δεληγιάννη", "Μιχάλης", "Ελένη", "1998-02-26", 93.10],
-        ["Πέτρος", "Στυλιανού", "Ανδρέας", "Δέσποινα", "1995-07-14", 86.60],
-        ["Χριστίνα", "Νικολάου", "Σάββας", "Κατερίνα", "1991-10-30", 89.35],
+    $header = normalize_import_header($header);
+    $map = [
+        'first_name' => 'first_name',
+        'firstname' => 'first_name',
+        'name' => 'first_name',
+        'onoma' => 'first_name',
+        'last_name' => 'last_name',
+        'lastname' => 'last_name',
+        'surname' => 'last_name',
+        'eponymo' => 'last_name',
+        'father_name' => 'father_name',
+        'father' => 'father_name',
+        'patronymo' => 'father_name',
+        'mother_name' => 'mother_name',
+        'mother' => 'mother_name',
+        'mitronymo' => 'mother_name',
+        'birth_date' => 'birth_date',
+        'birthdate' => 'birth_date',
+        'date_of_birth' => 'birth_date',
+        'identity_number' => 'identity_number',
+        'identity' => 'identity_number',
+        'id_number' => 'identity_number',
+        'adt' => 'identity_number',
+        'email' => 'email',
+        'phone' => 'phone',
+        'telephone' => 'phone',
+        'ranking_position' => 'ranking_position',
+        'rank' => 'ranking_position',
+        'position' => 'ranking_position',
+        'points' => 'points',
+        'score' => 'points',
+        'moria' => 'points',
+        'application_status' => 'application_status',
+        'status' => 'application_status',
     ];
 
-    shuffle($pool);
-    $selected = array_slice($pool, 0, 4);
-
-    foreach ($selected as $index => &$candidate) {
-        $candidate["application_status"] = "Φορτώθηκε από λίστα " . $specialtyTitle;
-        $candidate["email"] = "demo." . time() . "." . $index . "@pinakes.local";
+    if (isset($map[$header])) {
+        return $map[$header];
     }
-    unset($candidate);
 
-    return $selected;
+    if (str_contains($header, 'ονομα') && !str_contains($header, 'πατρ') && !str_contains($header, 'μητρ')) {
+        return 'first_name';
+    }
+    if (str_contains($header, 'επωνυμ')) {
+        return 'last_name';
+    }
+    if (str_contains($header, 'πατρ')) {
+        return 'father_name';
+    }
+    if (str_contains($header, 'μητρ')) {
+        return 'mother_name';
+    }
+    if (str_contains($header, 'γενν')) {
+        return 'birth_date';
+    }
+    if (str_contains($header, 'ταυτοτ') || str_contains($header, 'αδτ')) {
+        return 'identity_number';
+    }
+    if (str_contains($header, 'τηλ')) {
+        return 'phone';
+    }
+    if (str_contains($header, 'θεση') || str_contains($header, 'σειρα')) {
+        return 'ranking_position';
+    }
+    if (str_contains($header, 'μορι') || str_contains($header, 'βαθμ')) {
+        return 'points';
+    }
+    if (str_contains($header, 'καταστ')) {
+        return 'application_status';
+    }
+
+    return null;
+}
+
+function normalize_import_date(?string $value): ?string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return null;
+    }
+
+    foreach (['Y-m-d', 'd/m/Y', 'd-m-Y', 'd.m.Y'] as $format) {
+        $date = DateTime::createFromFormat($format, $value);
+        if ($date instanceof DateTime) {
+            return $date->format('Y-m-d');
+        }
+    }
+
+    $timestamp = strtotime($value);
+    return $timestamp !== false ? date('Y-m-d', $timestamp) : null;
+}
+
+function normalize_import_decimal(?string $value): ?float
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return null;
+    }
+
+    if (str_contains($value, ',') && str_contains($value, '.')) {
+        $value = str_replace('.', '', $value);
+    }
+    $value = str_replace(',', '.', $value);
+
+    return is_numeric($value) ? (float) $value : null;
+}
+
+function generated_import_email($conn, string $firstName, string $lastName, ?string $identityNumber): string
+{
+    $base = $identityNumber !== null && $identityNumber !== ''
+        ? 'candidate.' . strtolower(preg_replace('/[^a-zA-Z0-9]+/', '', $identityNumber))
+        : username_from_email($firstName . '.' . $lastName . '@pinakes.local');
+
+    return generate_unique_username($conn, $base) . '@pinakes.local';
+}
+
+function load_candidates_from_csv(string $filePath): array
+{
+    $handle = fopen($filePath, 'rb');
+    if (!$handle) {
+        return [];
+    }
+
+    $firstLine = fgets($handle);
+    if (!is_string($firstLine)) {
+        fclose($handle);
+        return [];
+    }
+
+    $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
+    rewind($handle);
+
+    $headers = fgetcsv($handle, 10000, $delimiter);
+    if (!is_array($headers)) {
+        fclose($handle);
+        return [];
+    }
+
+    $keys = [];
+    foreach ($headers as $index => $header) {
+        $key = import_header_key((string) $header);
+        if ($key !== null) {
+            $keys[$index] = $key;
+        }
+    }
+
+    $rows = [];
+    while (($data = fgetcsv($handle, 10000, $delimiter)) !== false) {
+        if (!is_array($data)) {
+            continue;
+        }
+
+        $row = [];
+        foreach ($keys as $index => $key) {
+            $row[$key] = trim((string) ($data[$index] ?? ''));
+        }
+
+        if (($row['first_name'] ?? '') !== '' && ($row['last_name'] ?? '') !== '') {
+            $rows[] = $row;
+        }
+    }
+
+    fclose($handle);
+    return $rows;
 }
 
 $successMessage = "";
@@ -312,7 +481,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
             }
         }
-    } elseif ($action === "load_list") {
+    } elseif ($action === "import_list_csv") {
         $specialtyId = (int) ($_POST["specialty_id"] ?? 0);
         $loadYear = (int) ($_POST["load_year"] ?? date("Y"));
         $selectedSpecialty = null;
@@ -324,93 +493,127 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
+        $uploadedFile = $_FILES["list_file"] ?? null;
+
         if (!$selectedSpecialty) {
-            $errorMessage = "Επίλεξε έγκυρη ειδικότητα για φόρτωση πίνακα.";
+            $errorMessage = u('\u0395\u03c0\u03af\u03bb\u03b5\u03be\u03b5 \u03ad\u03b3\u03ba\u03c5\u03c1\u03b7 \u03b5\u03b9\u03b4\u03b9\u03ba\u03cc\u03c4\u03b7\u03c4\u03b1 \u03b3\u03b9\u03b1 \u03c6\u03cc\u03c1\u03c4\u03c9\u03c3\u03b7 \u03c0\u03af\u03bd\u03b1\u03ba\u03b1.');
+        } elseif (!is_array($uploadedFile) || (int) ($uploadedFile["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            $errorMessage = u('\u0395\u03c0\u03ad\u03bb\u03b5\u03be\u03b5 \u03ad\u03bd\u03b1 CSV \u03b1\u03c1\u03c7\u03b5\u03af\u03bf \u03c0\u03af\u03bd\u03b1\u03ba\u03b1 \u03b1\u03c0\u03cc \u03c4\u03b7\u03bd \u0395\u0395\u03a5.');
         } else {
-            $demoCandidates = buildDemoCandidates($selectedSpecialty["title"]);
-            $defaultPassword = password_hash("candidate123", PASSWORD_DEFAULT);
+            $importRows = load_candidates_from_csv((string) $uploadedFile["tmp_name"]);
 
-                        $maxRankRow = ["max_rank" => 0];
-            $rankingStmt = $conn->prepare("SELECT COALESCE(MAX(ranking_position), 0) AS max_rank FROM candidate_profiles WHERE specialty_id = ?");
-            if ($rankingStmt) {
-                $rankingStmt->bind_param("i", $specialtyId);
-                $rankingStmt->execute();
-                $rankingResult = $rankingStmt->get_result();
-                $maxRankRow = $rankingResult ? ($rankingResult->fetch_assoc() ?: ["max_rank" => 0]) : ["max_rank" => 0];
-                $rankingStmt->close();
-            }
-            $nextRank = (int) ($maxRankRow["max_rank"] ?? 0) + 1;
+            if ($importRows === []) {
+                $errorMessage = u('\u0394\u03b5\u03bd \u03b2\u03c1\u03ad\u03b8\u03b7\u03ba\u03b1\u03bd \u03ad\u03b3\u03ba\u03c5\u03c1\u03b5\u03c2 \u03b5\u03b3\u03b3\u03c1\u03b1\u03c6\u03ad\u03c2. \u03a4\u03bf CSV \u03c0\u03c1\u03ad\u03c0\u03b5\u03b9 \u03bd\u03b1 \u03ad\u03c7\u03b5\u03b9 \u03c3\u03c4\u03ae\u03bb\u03b5\u03c2 first_name,last_name \u03ae \u03b1\u03bd\u03c4\u03af\u03c3\u03c4\u03bf\u03b9\u03c7\u03b5\u03c2 \u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ad\u03c2 \u03b5\u03c0\u03b9\u03ba\u03b5\u03c6\u03b1\u03bb\u03af\u03b4\u03b5\u03c2.');
+            } else {
+                $defaultPassword = password_hash("candidate123", PASSWORD_DEFAULT);
+                $inserted = 0;
+                $updated = 0;
+                $skipped = 0;
 
-            $conn->begin_transaction();
+                $conn->begin_transaction();
 
-            try {
-                $userStmt = $conn->prepare(
-                    "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, 'candidate')"
-                );
-                $profileStmt = $conn->prepare(
-                    "INSERT INTO candidate_profiles (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                );
+                try {
+                    foreach ($importRows as $row) {
+                        $firstName = trim((string) ($row["first_name"] ?? ""));
+                        $lastName = trim((string) ($row["last_name"] ?? ""));
+                        $identityNumber = normalize_identity_number((string) ($row["identity_number"] ?? ""));
+                        $identityNumber = $identityNumber !== "" ? $identityNumber : null;
+                        $email = trim((string) ($row["email"] ?? ""));
+                        $email = filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : generated_import_email($conn, $firstName, $lastName, $identityNumber);
+                        $phone = trim((string) ($row["phone"] ?? ""));
+                        $phone = $phone !== "" ? $phone : null;
+                        $fatherName = trim((string) ($row["father_name"] ?? ""));
+                        $fatherName = $fatherName !== "" ? $fatherName : null;
+                        $motherName = trim((string) ($row["mother_name"] ?? ""));
+                        $motherName = $motherName !== "" ? $motherName : null;
+                        $birthDate = normalize_import_date($row["birth_date"] ?? null);
+                        $rankingPosition = trim((string) ($row["ranking_position"] ?? ""));
+                        $rankingPositionValue = ctype_digit($rankingPosition) ? (int) $rankingPosition : null;
+                        $pointsValue = normalize_import_decimal($row["points"] ?? null);
+                        $applicationStatus = trim((string) ($row["application_status"] ?? ""));
+                        $applicationStatus = $applicationStatus !== ""
+                            ? $applicationStatus
+                            : u('\u03a6\u03bf\u03c1\u03c4\u03ce\u03b8\u03b7\u03ba\u03b5 \u03b1\u03c0\u03cc \u03c0\u03af\u03bd\u03b1\u03ba\u03b1 \u0395\u0395\u03a5') . " (" . $loadYear . ")";
 
-                if (!$userStmt || !$profileStmt) {
-                throw new RuntimeException("Δεν ήταν δυνατή η προετοιμασία της φόρτωσης.");
+                        if ($firstName === "" || $lastName === "") {
+                            $skipped++;
+                            continue;
+                        }
+
+                        $existingUser = null;
+                        if ($identityNumber !== null) {
+                            $existingUser = fetch_one_prepared(
+                                $conn,
+                                "SELECT u.id FROM users u INNER JOIN user_profiles up ON up.user_id = u.id WHERE up.identity_number = ? LIMIT 1",
+                                "s",
+                                [$identityNumber]
+                            );
+                        }
+                        if (!$existingUser) {
+                            $existingUser = fetch_one_prepared($conn, "SELECT id FROM users WHERE email = ? LIMIT 1", "s", [$email]);
+                        }
+
+                        if ($existingUser) {
+                            $userId = (int) $existingUser["id"];
+                            execute_prepared_statement(
+                                $conn,
+                                "UPDATE users SET role = 'candidate' WHERE id = ?",
+                                "i",
+                                [$userId]
+                            );
+                            execute_prepared_statement(
+                                $conn,
+                                "UPDATE user_profiles SET first_name = ?, last_name = ?, identity_number = ?, phone = ? WHERE user_id = ?",
+                                "ssssi",
+                                [$firstName, $lastName, $identityNumber, $phone, $userId]
+                            );
+                            $updated++;
+                        } else {
+                            $username = generate_unique_username($conn, username_from_email($email));
+                            $userStmt = $conn->prepare("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, 'candidate')");
+                            if (!$userStmt) {
+                                throw new RuntimeException("Could not prepare user import.");
+                            }
+                            $userStmt->bind_param("sss", $username, $email, $defaultPassword);
+                            if (!$userStmt->execute()) {
+                                throw new RuntimeException("Could not insert imported user.");
+                            }
+                            $userStmt->close();
+                            $userId = (int) $conn->insert_id;
+
+                            execute_prepared_statement(
+                                $conn,
+                                "INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone) VALUES (?, ?, ?, ?, ?)",
+                                "issss",
+                                [$userId, $firstName, $lastName, $identityNumber, $phone]
+                            );
+                            $inserted++;
+                        }
+
+                        $profile = fetch_one_prepared($conn, "SELECT id FROM candidate_profiles WHERE user_id = ? LIMIT 1", "i", [$userId]);
+                        if ($profile) {
+                            execute_prepared_statement(
+                                $conn,
+                                "UPDATE candidate_profiles SET father_name = ?, mother_name = ?, birth_date = ?, specialty_id = ?, application_status = ?, ranking_position = ?, points = ?, created_at = CONCAT(?, '-01-01 00:00:00') WHERE id = ?",
+                                "sssisisdii",
+                                [$fatherName, $motherName, $birthDate, $specialtyId, $applicationStatus, $rankingPositionValue, $pointsValue, $loadYear, (int) $profile["id"]]
+                            );
+                        } else {
+                            execute_prepared_statement(
+                                $conn,
+                                "INSERT INTO candidate_profiles (user_id, father_name, mother_name, birth_date, specialty_id, application_status, ranking_position, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CONCAT(?, '-01-01 00:00:00'))",
+                                "isssisidi",
+                                [$userId, $fatherName, $motherName, $birthDate, $specialtyId, $applicationStatus, $rankingPositionValue, $pointsValue, $loadYear]
+                            );
+                        }
+                    }
+
+                    $conn->commit();
+                    $successMessage = u('\u0397 \u03bb\u03af\u03c3\u03c4\u03b1 \u03c6\u03bf\u03c1\u03c4\u03ce\u03b8\u03b7\u03ba\u03b5 \u03bc\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03af\u03b1.') . " Inserted: " . $inserted . ", updated: " . $updated . ", skipped: " . $skipped . ".";
+                } catch (Throwable $exception) {
+                    $conn->rollback();
+                    $errorMessage = u('\u03a0\u03b1\u03c1\u03bf\u03c5\u03c3\u03b9\u03ac\u03c3\u03c4\u03b7\u03ba\u03b5 \u03c0\u03c1\u03cc\u03b2\u03bb\u03b7\u03bc\u03b1 \u03ba\u03b1\u03c4\u03ac \u03c4\u03b7\u03bd \u03b5\u03b9\u03c3\u03b1\u03b3\u03c9\u03b3\u03ae \u03c4\u03bf\u03c5 CSV. \u0394\u03bf\u03ba\u03af\u03bc\u03b1\u03c3\u03b5 \u03be\u03b1\u03bd\u03ac.');
                 }
-
-                foreach ($demoCandidates as $candidate) {
-                    $firstName = $candidate[0];
-                    $lastName = $candidate[1];
-                    $fatherName = $candidate[2];
-                    $motherName = $candidate[3];
-                    $birthDate = $candidate[4];
-                    $points = $candidate[5];
-                    $applicationStatus = $candidate["application_status"] . " (" . $loadYear . ")";
-                    $email = $candidate["email"];
-                    $phone = randomGreekPhone();
-                    $username = generate_unique_username($conn, username_from_email($email));
-
-                    $userStmt->bind_param("sss", $username, $email, $defaultPassword);
-
-                    if (!$userStmt->execute()) {
-                    throw new RuntimeException("Αποτυχία δημιουργίας demo υποψηφίου.");
-                    }
-
-                    $userId = (int) $conn->insert_id;
-
-                    $userProfileStmt = $conn->prepare("INSERT INTO user_profiles (user_id, first_name, last_name, identity_number, phone) VALUES (?, ?, ?, NULL, ?)");
-                    if (!$userProfileStmt) {
-                    throw new RuntimeException("???????? ??????????? ?????? demo ?????????.");
-                    }
-                    $userProfileStmt->bind_param("isss", $userId, $firstName, $lastName, $phone);
-                    if (!$userProfileStmt->execute()) {
-                    throw new RuntimeException("???????? ??????????? demo ????????? ?????????.");
-                    }
-                    $userProfileStmt->close();
-
-                    $currentRank = $nextRank++;
-
-                    $profileStmt->bind_param(
-                        "isssisid",
-                        $userId,
-                        $fatherName,
-                        $motherName,
-                        $birthDate,
-                        $specialtyId,
-                        $applicationStatus,
-                        $currentRank,
-                        $points
-                    );
-
-                    if (!$profileStmt->execute()) {
-                    throw new RuntimeException("Αποτυχία καταχώρισης στοιχείων υποψηφίου.");
-                    }
-                }
-
-                $userStmt->close();
-                $profileStmt->close();
-                $conn->commit();
-            $successMessage = "Φορτώθηκαν 4 demo υποψήφιοι για την ειδικότητα " . $selectedSpecialty["title"] . " για το έτος " . $loadYear . ".";
-            } catch (Throwable $exception) {
-                $conn->rollback();
-                $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
             }
         }
     } elseif ($action === "update_profile") {
@@ -884,7 +1087,7 @@ require_once __DIR__ . "/../../includes/functions.php";
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">2</div>
     <h2>Λίστες</h2>
-    <p>Προβολή στατιστικών ανά ειδικότητα και φόρτωση demo υποψηφίων για δοκιμές.</p>
+    <p>Προβολή στατιστικών ανά ειδικότητα και φόρτωση πινάκων από CSV.</p>
     <div class="card-actions"><a class="btn" href="#manage-lists">&#902;&#957;&#959;&#953;&#947;&#956;&#945;</a> <a class="btn btn-secondary" href="list.php">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a></div>
             </article>
             <article class="card card-action">
@@ -988,7 +1191,7 @@ require_once __DIR__ . "/../../includes/functions.php";
                         </div>
                         <div class="card-actions">
             <button class="btn btn-primary" type="submit">Αποθήκευση Αλλαγών</button>
-            <a class="btn btn-secondary" href="dashboard.php#manage-users">Ακύρωση</a>
+            <a class="btn btn-secondary" href="admindashboard.php#manage-users">Ακύρωση</a>
                         </div>
                     <?php else: ?>
         <div class="empty-state">Επίλεξε έναν χρήστη από τον παρακάτω πίνακα για να φορτωθούν τα στοιχεία του προς επεξεργασία.</div>
@@ -1050,11 +1253,11 @@ require_once __DIR__ . "/../../includes/functions.php";
         <section class="panel" id="manage-lists" aria-labelledby="listsTitle">
             <div class="panel-head">
         <h2 id="listsTitle">Διαχείριση Λιστών</h2>
-        <p class="muted">Φόρτωσε demo υποψηφίους για μια ειδικότητα και δες συνοπτικά στατιστικά ανά λίστα.</p>
+        <p class="muted">Φόρτωσε CSV πίνακα από την ΕΕΥ για μια ειδικότητα και δες συνοπτικά στατιστικά ανά λίστα.</p>
             </div>
 
-            <form class="form-grid" method="post" action="#manage-lists">
-                <input type="hidden" name="action" value="load_list">
+            <form class="form-grid" method="post" action="#manage-lists" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="import_list_csv">
                 <div class="form-group">
             <label for="specialty_id">Ειδικότητα</label>
                     <select id="specialty_id" name="specialty_id" required>
@@ -1073,8 +1276,12 @@ require_once __DIR__ . "/../../includes/functions.php";
                         <?php endfor; ?>
                     </select>
                 </div>
+                <div class="form-group">
+            <label for="list_file">CSV πίνακα ΕΕΥ</label>
+                    <input id="list_file" name="list_file" type="file" accept=".csv,text/csv" required>
+                </div>
                 <div class="form-group form-actions">
-        <button class="btn btn-primary" type="submit">Φόρτωση Demo Υποψηφίων</button>
+        <button class="btn btn-primary" type="submit">Φόρτωση Πίνακα</button>
                 </div>
             </form>
 
