@@ -1,4 +1,3 @@
 <?php
-
-header('Location: candidatedashboard.php#profile');
-exit;
+$candidatePage = 'profile';
+require __DIR__ . '/candidatedashboard.php';

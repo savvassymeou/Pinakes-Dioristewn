@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 
@@ -12,22 +14,61 @@ function respondJson(array $payload, int $status = 200): never
 
 $endpoint = trim((string) ($_GET['endpoint'] ?? ''));
 
+if ($endpoint === '') {
+    respondJson([
+        'module' => 'api',
+        'description' => 'Technical JSON endpoints for third-party systems.',
+        'endpoints' => [
+            [
+                'name' => 'specialties',
+                'method' => 'GET',
+                'url' => 'api/api.php?endpoint=specialties',
+                'description' => 'Returns all available specialties.',
+            ],
+            [
+                'name' => 'candidates',
+                'method' => 'GET',
+                'url' => 'api/api.php?endpoint=candidates&name=&specialty_id=0&year=0&order=rank_asc',
+                'description' => 'Returns candidates with optional filters.',
+                'filters' => [
+                    'name' => 'Optional full-name search term.',
+                    'specialty_id' => 'Optional specialty id.',
+                    'year' => 'Optional registration year.',
+                    'order' => 'rank_asc, name_asc, points_desc, recent_desc.',
+                ],
+            ],
+            [
+                'name' => 'stats',
+                'method' => 'GET',
+                'url' => 'api/api.php?endpoint=stats&specialty_id=1',
+                'description' => 'Returns summary, yearly and period statistics for one specialty.',
+                'required' => ['specialty_id'],
+            ],
+        ],
+    ]);
+}
+
 if ($endpoint === 'specialties') {
     $items = [];
     $stmt = $conn->prepare('SELECT id, title, description FROM specialties ORDER BY title ASC');
 
-    if ($stmt) {
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $items[] = $row;
-            }
-        }
-
-        $stmt->close();
+    if (!$stmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare specialties query.',
+        ], 500);
     }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $row;
+        }
+    }
+
+    $stmt->close();
 
     respondJson([
         'endpoint' => 'specialties',
@@ -38,10 +79,14 @@ if ($endpoint === 'specialties') {
 
 if ($endpoint === 'candidates') {
     $name = trim((string) ($_GET['name'] ?? ''));
-    $specialtyId = (int) ($_GET['specialty_id'] ?? 0);
-    $year = (int) ($_GET['year'] ?? 0);
+    $specialtyId = max(0, (int) ($_GET['specialty_id'] ?? 0));
+    $year = max(0, (int) ($_GET['year'] ?? 0));
     $order = (string) ($_GET['order'] ?? 'rank_asc');
-    $nameTerm = '%' . $name . '%';
+    $allowedOrders = ['rank_asc', 'name_asc', 'points_desc', 'recent_desc'];
+
+    if (!in_array($order, $allowedOrders, true)) {
+        $order = 'rank_asc';
+    }
 
     $orderSql = match ($order) {
         'name_asc' => 'up.last_name ASC, up.first_name ASC',
@@ -60,33 +105,49 @@ if ($endpoint === 'candidates') {
             cp.points,
             cp.application_status,
             YEAR(cp.created_at) AS list_year,
-            CASE WHEN MONTH(cp.created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END AS list_period
+            CASE WHEN MONTH(cp.created_at) BETWEEN 1 AND 6 THEN "A" ELSE "B" END AS list_period
          FROM candidate_profiles cp
          INNER JOIN users u ON u.id = cp.user_id
          INNER JOIN user_profiles up ON up.user_id = u.id
          LEFT JOIN specialties s ON s.id = cp.specialty_id
-         WHERE (? = "" OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)
+         WHERE (? = "" OR up.first_name LIKE ? OR up.last_name LIKE ? OR CONCAT(up.first_name, " ", up.last_name) LIKE ? OR CONCAT(up.last_name, " ", up.first_name) LIKE ?)
            AND (? = 0 OR cp.specialty_id = ?)
            AND (? = 0 OR YEAR(cp.created_at) = ?)
          ORDER BY ' . $orderSql . '
          LIMIT 50'
     );
 
-    $items = [];
-
-    if ($stmt) {
-        $stmt->bind_param('ssiiii', $name, $nameTerm, $specialtyId, $specialtyId, $year, $year);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $items[] = $row;
-            }
-        }
-
-        $stmt->close();
+    if (!$stmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare candidates query.',
+        ], 500);
     }
+
+    $items = [];
+    $nameTerm = '%' . $name . '%';
+    $stmt->bind_param(
+        'sssssiiii',
+        $name,
+        $nameTerm,
+        $nameTerm,
+        $nameTerm,
+        $nameTerm,
+        $specialtyId,
+        $specialtyId,
+        $year,
+        $year
+    );
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $row;
+        }
+    }
+
+    $stmt->close();
 
     respondJson([
         'endpoint' => 'candidates',
@@ -106,24 +167,29 @@ if ($endpoint === 'stats') {
 
     if ($specialtyId <= 0) {
         respondJson([
-            'error' => 'Δώσε specialty_id για το endpoint stats.',
+            'error' => 'missing_specialty_id',
+            'message' => 'Provide specialty_id for the stats endpoint.',
         ], 400);
     }
 
     $specialtyStmt = $conn->prepare('SELECT id, title, description FROM specialties WHERE id = ? LIMIT 1');
-    $specialty = null;
-
-    if ($specialtyStmt) {
-        $specialtyStmt->bind_param('i', $specialtyId);
-        $specialtyStmt->execute();
-        $specialtyResult = $specialtyStmt->get_result();
-        $specialty = $specialtyResult ? $specialtyResult->fetch_assoc() : null;
-        $specialtyStmt->close();
+    if (!$specialtyStmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare specialty query.',
+        ], 500);
     }
+
+    $specialtyStmt->bind_param('i', $specialtyId);
+    $specialtyStmt->execute();
+    $specialtyResult = $specialtyStmt->get_result();
+    $specialty = $specialtyResult ? $specialtyResult->fetch_assoc() : null;
+    $specialtyStmt->close();
 
     if (!$specialty) {
         respondJson([
-            'error' => 'Η ειδικότητα δεν βρέθηκε.',
+            'error' => 'specialty_not_found',
+            'message' => 'The requested specialty was not found.',
         ], 404);
     }
 
@@ -142,18 +208,23 @@ if ($endpoint === 'stats') {
          WHERE specialty_id = ?'
     );
 
-    if ($summaryStmt) {
-        $summaryStmt->bind_param('i', $specialtyId);
-        $summaryStmt->execute();
-        $summaryResult = $summaryStmt->get_result();
-        $summaryRow = $summaryResult ? $summaryResult->fetch_assoc() : null;
-
-        if ($summaryRow) {
-            $summary = $summaryRow;
-        }
-
-        $summaryStmt->close();
+    if (!$summaryStmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare stats summary query.',
+        ], 500);
     }
+
+    $summaryStmt->bind_param('i', $specialtyId);
+    $summaryStmt->execute();
+    $summaryResult = $summaryStmt->get_result();
+    $summaryRow = $summaryResult ? $summaryResult->fetch_assoc() : null;
+
+    if ($summaryRow) {
+        $summary = $summaryRow;
+    }
+
+    $summaryStmt->close();
 
     $yearly = [];
     $yearlyStmt = $conn->prepare(
@@ -167,46 +238,56 @@ if ($endpoint === 'stats') {
          ORDER BY report_year ASC'
     );
 
-    if ($yearlyStmt) {
-        $yearlyStmt->bind_param('i', $specialtyId);
-        $yearlyStmt->execute();
-        $yearlyResult = $yearlyStmt->get_result();
-
-        if ($yearlyResult) {
-            while ($row = $yearlyResult->fetch_assoc()) {
-                $yearly[] = $row;
-            }
-        }
-
-        $yearlyStmt->close();
+    if (!$yearlyStmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare yearly stats query.',
+        ], 500);
     }
+
+    $yearlyStmt->bind_param('i', $specialtyId);
+    $yearlyStmt->execute();
+    $yearlyResult = $yearlyStmt->get_result();
+
+    if ($yearlyResult) {
+        while ($row = $yearlyResult->fetch_assoc()) {
+            $yearly[] = $row;
+        }
+    }
+
+    $yearlyStmt->close();
 
     $periods = [];
     $periodStmt = $conn->prepare(
         'SELECT
             YEAR(created_at) AS report_year,
-            CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END AS report_period,
+            CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "A" ELSE "B" END AS report_period,
             COUNT(*) AS candidate_count,
             AVG(points) AS average_points
          FROM candidate_profiles
          WHERE specialty_id = ?
-         GROUP BY YEAR(created_at), CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END
+         GROUP BY YEAR(created_at), CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "A" ELSE "B" END
          ORDER BY report_year ASC, report_period ASC'
     );
 
-    if ($periodStmt) {
-        $periodStmt->bind_param('i', $specialtyId);
-        $periodStmt->execute();
-        $periodResult = $periodStmt->get_result();
-
-        if ($periodResult) {
-            while ($row = $periodResult->fetch_assoc()) {
-                $periods[] = $row;
-            }
-        }
-
-        $periodStmt->close();
+    if (!$periodStmt) {
+        respondJson([
+            'error' => 'database_error',
+            'message' => 'Could not prepare period stats query.',
+        ], 500);
     }
+
+    $periodStmt->bind_param('i', $specialtyId);
+    $periodStmt->execute();
+    $periodResult = $periodStmt->get_result();
+
+    if ($periodResult) {
+        while ($row = $periodResult->fetch_assoc()) {
+            $periods[] = $row;
+        }
+    }
+
+    $periodStmt->close();
 
     respondJson([
         'endpoint' => 'stats',
@@ -217,57 +298,8 @@ if ($endpoint === 'stats') {
     ]);
 }
 
-$pageTitle = APP_NAME . ' | API Module';
-$bodyClass = 'theme-api';
-$currentPage = 'api';
-$navBase = '../';
-$headerActionLabel = 'Endpoints';
-$headerActionHref = '#endpoints';
-
-require __DIR__ . '/../includes/header.php';
-?>
-<main class="container">
-    <section class="page-hero" aria-labelledby="apiTitle">
-        <div class="hero-text">
-            <h1 id="apiTitle">API Module</h1>
-            <p class="muted">
-                Το API προσφέρει JSON endpoints για ειδικότητες, υποψηφίους και στατιστικά ανά ειδικότητα.
-                Έτσι ένα τρίτο σύστημα μπορεί να αντλεί δεδομένα από την ίδια βάση χωρίς να χρησιμοποιεί το γραφικό περιβάλλον.
-            </p>
-        </div>
-    </section>
-
-    <section class="panel" id="endpoints" aria-labelledby="endpointsTitle">
-        <div class="panel-head">
-            <h2 id="endpointsTitle">Διαθέσιμα Endpoints</h2>
-            <p class="muted">Τα endpoints επιστρέφουν UTF-8 JSON και υποστηρίζουν βασικά φίλτρα αναζήτησης.</p>
-        </div>
-
-        <div class="code-card">
-            <h3>GET /api/api.php?endpoint=specialties</h3>
-            <pre><code>Επιστρέφει όλες τις ειδικότητες.</code></pre>
-        </div>
-
-        <div class="code-card">
-            <h3>GET /api/api.php?endpoint=candidates&amp;name=...&amp;specialty_id=...&amp;year=...&amp;order=...</h3>
-            <pre><code>Επιστρέφει υποψηφίους με φίλτρα ονόματος, ειδικότητας, έτους και ταξινόμησης.</code></pre>
-        </div>
-
-        <div class="code-card">
-            <h3>GET /api/api.php?endpoint=stats&amp;specialty_id=1</h3>
-            <pre><code>Επιστρέφει σύνοψη, μέσους όρους, στατιστικά ανά έτος και ανά περίοδο.</code></pre>
-        </div>
-    </section>
-
-    <section class="panel" aria-labelledby="notesTitle">
-        <div class="panel-head">
-            <h2 id="notesTitle">Παραδείγματα Χρήσης</h2>
-        </div>
-        <div class="year-list">
-            <div class="year-item"><span>Specialties</span><strong><a href="./api.php?endpoint=specialties">Άνοιγμα JSON</a></strong></div>
-            <div class="year-item"><span>Candidates</span><strong><a href="./api.php?endpoint=candidates&amp;order=points_desc">Άνοιγμα JSON</a></strong></div>
-            <div class="year-item"><span>Stats</span><strong><a href="./api.php?endpoint=stats&amp;specialty_id=1">Άνοιγμα JSON</a></strong></div>
-        </div>
-    </section>
-</main>
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+respondJson([
+    'error' => 'unknown_endpoint',
+    'message' => 'Unknown endpoint. Call api/api.php without endpoint to see available endpoints.',
+    'available_endpoints' => ['specialties', 'candidates', 'stats'],
+], 404);

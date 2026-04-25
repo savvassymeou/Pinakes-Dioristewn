@@ -325,6 +325,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($action === 'remove_tracked_candidate') {
+        $trackedId = (int) ($_POST['tracked_id'] ?? 0);
+
+        if ($trackedId <= 0) {
+            $errorMessage = 'Δεν ήταν δυνατή η επιλογή εγγραφής παρακολούθησης.';
+        } else {
+            $deleteTrackStmt = $conn->prepare('DELETE FROM tracked_candidates WHERE id = ? AND user_id = ?');
+            if ($deleteTrackStmt) {
+                $deleteTrackStmt->bind_param('ii', $trackedId, $userId);
+                if ($deleteTrackStmt->execute() && $deleteTrackStmt->affected_rows > 0) {
+                    $successMessage = 'Ο υποψήφιος αφαιρέθηκε από τη λίστα παρακολούθησής σου.';
+                } else {
+                    $errorMessage = 'Δεν βρέθηκε η εγγραφή παρακολούθησης που ζήτησες.';
+                }
+                $deleteTrackStmt->close();
+            } else {
+                $errorMessage = 'Δεν ήταν δυνατή η αφαίρεση από τη λίστα παρακολούθησης.';
+            }
+        }
+    }
+
     $candidate = load_candidate($conn, $userId) ?: $candidate;
 }
 
@@ -345,6 +366,29 @@ if ($candidate['ranking_position'] !== null) {
     $applicationStage = 'Έχει εντοπιστεί θέση στον πίνακα και η παρακολούθηση της αίτησής σου είναι ενεργή.';
     $applicationProgress = 82;
 }
+
+$applicationTimeline = [
+    [
+        'label' => 'Στοιχεία προφίλ',
+        'text' => 'Βασικά προσωπικά στοιχεία και αριθμός ταυτότητας.',
+        'done' => !empty($candidate['first_name']) && !empty($candidate['last_name']) && !empty($candidate['identity_number']),
+    ],
+    [
+        'label' => 'Σύνδεση ειδικότητας',
+        'text' => 'Το προφίλ έχει συνδεθεί με ειδικότητα πίνακα.',
+        'done' => !empty($candidate['profile_id']) && !empty($candidate['specialty_title']),
+    ],
+    [
+        'label' => 'Κατάσταση αίτησης',
+        'text' => 'Υπάρχει διαθέσιμη κατάσταση για την τρέχουσα εγγραφή.',
+        'done' => !empty($candidate['application_status']),
+    ],
+    [
+        'label' => 'Θέση και μόρια',
+        'text' => 'Έχουν καταχωριστεί θέση πίνακα ή μόρια.',
+        'done' => $candidate['ranking_position'] !== null || $candidate['points'] !== null,
+    ],
+];
 
 $myTrackCount = 0;
 $trackCountStmt = $conn->prepare('SELECT COUNT(*) AS total FROM tracked_candidates WHERE user_id = ?');
@@ -375,7 +419,9 @@ $searchStmt = $conn->prepare(
      INNER JOIN users u ON u.id = cp.user_id
      INNER JOIN user_profiles up ON up.user_id = u.id
      LEFT JOIN specialties s ON s.id = cp.specialty_id
+     LEFT JOIN tracked_candidates tc ON tc.candidate_profile_id = cp.id AND tc.user_id = ?
      WHERE u.id <> ?
+       AND tc.id IS NULL
        AND (? = "" OR up.first_name LIKE ? OR up.last_name LIKE ? OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)
        AND (? = 0 OR cp.specialty_id = ?)
      ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC
@@ -384,7 +430,8 @@ $searchStmt = $conn->prepare(
 
 if ($searchStmt) {
     $searchStmt->bind_param(
-        'issssii',
+        'iissssii',
+        $userId,
         $userId,
         $searchName,
         $searchWildcard,
@@ -405,12 +452,14 @@ if ($searchStmt) {
 $trackedRows = [];
 $trackedStmt = $conn->prepare(
     'SELECT
+        tc.id AS tracked_id,
         tc.created_at,
         up.first_name,
         up.last_name,
         s.title AS specialty_title,
         cp.ranking_position,
-        cp.points
+        cp.points,
+        cp.application_status
      FROM tracked_candidates tc
      INNER JOIN candidate_profiles cp ON cp.id = tc.candidate_profile_id
      INNER JOIN users u ON u.id = cp.user_id
@@ -433,34 +482,34 @@ if ($trackedStmt) {
 }
 
 $candidatePageTitles = [
-    'dashboard' => APP_NAME . ' | Candidate Dashboard',
-    'profile' => APP_NAME . ' | My Profile',
-    'applications' => APP_NAME . ' | Track My Applications',
-    'others' => APP_NAME . ' | Track Others',
+    'dashboard' => APP_NAME . ' | Πίνακας Υποψηφίου',
+    'profile' => APP_NAME . ' | Το προφίλ μου',
+    'applications' => APP_NAME . ' | Η πορεία της αίτησής μου',
+    'others' => APP_NAME . ' | Παρακολούθηση υποψηφίων',
 ];
 
 $pageTitle = $candidatePageTitles[$candidatePage] ?? $candidatePageTitles['dashboard'];
 
 $candidateHeroMeta = [
     'dashboard' => [
-        'eyebrow' => 'Candidate Workspace',
+        'eyebrow' => 'Προσωπικός χώρος',
         'title' => u('\u039A\u03B1\u03BB\u03CE\u03C2 \u03AE\u03C1\u03B8\u03B5\u03C2, ') . ($candidate['first_name'] ?? ''),
-        'description' => u('\u03A4\u03BF Candidate Dashboard \u03B5\u03AF\u03BD\u03B1\u03B9 \u03BF \u03B9\u03B4\u03B9\u03C9\u03C4\u03B9\u03BA\u03CC\u03C2 \u03C7\u03CE\u03C1\u03BF\u03C2 \u03C4\u03BF\u03C5 \u03C5\u03C0\u03BF\u03C8\u03B7\u03C6\u03AF\u03BF\u03C5. \u0391\u03C0\u03CC \u03B5\u03B4\u03CE \u03BF\u03B4\u03B7\u03B3\u03B5\u03AF\u03C3\u03B1\u03B9 \u03C3\u03C4\u03B9\u03C2 3 \u03B2\u03B1\u03C3\u03B9\u03BA\u03AD\u03C2 \u03B5\u03BD\u03CC\u03C4\u03B7\u03C4\u03B5\u03C2 \u03C4\u03BF\u03C5 module: My Profile, Track My Applications \u03BA\u03B1\u03B9 Track Others.'),
+        'description' => 'Εδώ συγκεντρώνονται τα προσωπικά σου στοιχεία, η πορεία της αίτησής σου και οι υποψήφιοι που έχεις επιλέξει να παρακολουθείς.',
     ],
     'profile' => [
-        'eyebrow' => 'Candidate Module',
-        'title' => 'My Profile',
-        'description' => u('\u0394\u03B9\u03B1\u03C7\u03B5\u03AF\u03C1\u03B9\u03C3\u03B7 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03CE\u03BD \u03C3\u03C4\u03BF\u03B9\u03C7\u03B5\u03AF\u03C9\u03BD, \u03B5\u03B9\u03B4\u03BF\u03C0\u03BF\u03B9\u03AE\u03C3\u03B5\u03C9\u03BD \u03BA\u03B1\u03B9 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD \u03C0\u03C1\u03CC\u03C3\u03B2\u03B1\u03C3\u03B7\u03C2.'),
+        'eyebrow' => 'Στοιχεία λογαριασμού',
+        'title' => 'Το προφίλ μου',
+        'description' => 'Έλεγξε και ενημέρωσε τα προσωπικά σου στοιχεία, τις προτιμήσεις ειδοποιήσεων και τον κωδικό πρόσβασης.',
     ],
     'applications' => [
-        'eyebrow' => 'Candidate Module',
-        'title' => 'Track My Applications',
-        'description' => u('\u03A0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7 \u03C4\u03B7\u03C2 \u03BA\u03B1\u03C4\u03AC\u03C3\u03C4\u03B1\u03C3\u03B7\u03C2, \u03C4\u03B7\u03C2 \u03B8\u03AD\u03C3\u03B7\u03C2, \u03C4\u03C9\u03BD \u03BC\u03BF\u03C1\u03AF\u03C9\u03BD \u03BA\u03B1\u03B9 \u03C4\u03B7\u03C2 \u03C0\u03BF\u03C1\u03B5\u03AF\u03B1\u03C2 \u03C4\u03B7\u03C2 \u03B1\u03AF\u03C4\u03B7\u03C3\u03AE\u03C2 \u03C3\u03BF\u03C5.'),
+        'eyebrow' => 'Πορεία αίτησης',
+        'title' => 'Η πορεία της αίτησής μου',
+        'description' => 'Παρακολούθησε την κατάσταση, τη θέση, τα μόρια και τα βασικά στάδια της εγγραφής σου.',
     ],
     'others' => [
-        'eyebrow' => 'Candidate Module',
-        'title' => 'Track Others',
-        'description' => u('\u0391\u03BD\u03B1\u03B6\u03AE\u03C4\u03B7\u03C3\u03B7 \u03AC\u03BB\u03BB\u03C9\u03BD \u03C5\u03C0\u03BF\u03C8\u03B7\u03C6\u03AF\u03C9\u03BD \u03BA\u03B1\u03B9 \u03B4\u03B9\u03B1\u03C7\u03B5\u03AF\u03C1\u03B9\u03C3\u03B7 \u03C4\u03B7\u03C2 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03AE\u03C2 \u03BB\u03AF\u03C3\u03C4\u03B1\u03C2 \u03C0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7\u03C2.'),
+        'eyebrow' => 'Παρακολούθηση',
+        'title' => 'Υποψήφιοι που παρακολουθώ',
+        'description' => 'Αναζήτησε υποψηφίους, σύγκρινε βασικά στοιχεία και κράτησε τη δική σου λίστα παρακολούθησης.',
     ],
 ];
 
@@ -476,7 +525,7 @@ require __DIR__ . '/../../includes/header.php';
 <main class="container">
     <?php if ($candidatePage !== 'dashboard'): ?>
         <div class="candidate-page-bar">
-            <a class="back-link" href="candidatedashboard.php">&larr; Candidate Dashboard</a>
+            <a class="back-link" href="candidatedashboard.php">&larr; Πίσω στον πίνακα μου</a>
             <span><?php echo h($candidateHero['title']); ?></span>
         </div>
     <?php endif; ?>
@@ -491,8 +540,8 @@ require __DIR__ . '/../../includes/header.php';
         <?php if ($candidatePage === 'dashboard'): ?>
         <div class="hero-badges">
             <div class="badge">
-                <span class="badge-label">Ρόλος</span>
-                <span class="badge-value">Υποψήφιος</span>
+                <span class="badge-label">Λογαριασμός</span>
+                <span class="badge-value">Ενεργός</span>
             </div>
             <div class="badge">
                 <span class="badge-label">Ειδικότητα</span>
@@ -531,29 +580,29 @@ require __DIR__ . '/../../includes/header.php';
     <?php endif; ?>
 
     <?php if ($candidatePage === 'dashboard'): ?>
-    <section class="section-head" aria-label="Candidate dashboard intro">
-        <h2>Dashboard Υποψηφίου</h2>
-        <p>Οι 3 βασικές ενότητες του Candidate Module είναι οι παρακάτω. Από εδώ ο υποψήφιος μεταβαίνει στο προφίλ του, στην πορεία της αίτησής του και στην παρακολούθηση άλλων υποψηφίων.</p>
+    <section class="section-head" aria-label="Εισαγωγή πίνακα υποψηφίου">
+        <h2>Ο προσωπικός μου πίνακας</h2>
+        <p>Διαχειρίσου τα στοιχεία σου, δες την πορεία της αίτησής σου και κράτησε συγκεντρωμένους τους υποψηφίους που θέλεις να παρακολουθείς.</p>
     </section>
 
     <section class="grid grid-admin" aria-label="Γρήγορες ενότητες υποψηφίου">
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">1</div>
-            <h2>My Profile</h2>
-            <p>Δες και ενημέρωσε όνομα, επώνυμο και τηλέφωνο, ενώ το email παραμένει σταθερό ως στοιχείο επικοινωνίας.</p>
-            <div class="card-actions"><a class="btn" href="myprofile.php">Άνοιγμα</a></div>
+            <h2>Το προφίλ μου</h2>
+            <p>Έλεγξε τα προσωπικά σου στοιχεία, ενημέρωσε τηλέφωνο και ειδικότητα και κράτησε σταθερό το email επικοινωνίας.</p>
+            <div class="card-actions"><a class="btn" href="myprofile.php">Προβολή προφίλ</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">2</div>
-            <h2>Track My Applications</h2>
-            <p>Παρακολούθησε την κατάσταση της αίτησής σου, τα μόρια, τη θέση σου στον πίνακα και τη συνολική πρόοδο.</p>
-            <div class="card-actions"><a class="btn" href="track_applications.php">Άνοιγμα</a></div>
+            <h2>Η πορεία της αίτησής μου</h2>
+            <p>Δες συγκεντρωμένα την κατάσταση, τα μόρια, τη θέση στον πίνακα και τα στάδια που έχουν ολοκληρωθεί.</p>
+            <div class="card-actions"><a class="btn" href="track_applications.php">Προβολή πορείας</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">3</div>
-            <h2>Track Others</h2>
-            <p>Επίλεξε άλλους υποψηφίους για παρακολούθηση και κράτησέ τους στη δική σου λίστα σύγκρισης.</p>
-            <div class="card-actions"><a class="btn" href="track_others.php">Άνοιγμα</a></div>
+            <h2>Παρακολούθηση άλλων</h2>
+            <p>Βρες υποψηφίους που σε ενδιαφέρουν και κράτησέ τους σε προσωπική λίστα για εύκολη σύγκριση.</p>
+            <div class="card-actions"><a class="btn" href="track_others.php">Διαχείριση λίστας</a></div>
         </article>
     </section>
 
@@ -562,8 +611,8 @@ require __DIR__ . '/../../includes/header.php';
     <?php if ($candidatePage === 'profile'): ?>
     <section class="panel" id="profile" aria-labelledby="profileTitle">
         <div class="panel-head">
-            <h2 id="profileTitle">My Profile</h2>
-            <p class="muted">Συμπλήρωσε και ενημέρωσε το προσωπικό σου προφίλ όπως πρέπει να εμφανίζεται στην εφαρμογή.</p>
+            <h2 id="profileTitle">Το προφίλ μου</h2>
+            <p class="muted">Τα στοιχεία αυτά χρησιμοποιούνται για την ταυτοποίηση και την παρακολούθηση της εγγραφής σου στους πίνακες.</p>
         </div>
 
         <form class="form-grid candidate-form" method="post" action="myprofile.php#profile">
@@ -655,7 +704,7 @@ require __DIR__ . '/../../includes/header.php';
         <div class="panel panel-nested" id="candidate-password">
             <div class="panel-head">
                 <h3>Αλλαγή Κωδικού</h3>
-                <p class="muted">Στο τέλος του candidate module μπορείς να αλλάξεις τον κωδικό πρόσβασής σου, όπως ζητά η εκφώνηση.</p>
+                <p class="muted">Χρησιμοποίησε ισχυρό κωδικό και άλλαξέ τον όταν θέλεις να ανανεώσεις την ασφάλεια του λογαριασμού σου.</p>
             </div>
             <form method="post" action="myprofile.php#candidate-password">
                 <input type="hidden" name="action" value="change_password">
@@ -683,13 +732,13 @@ require __DIR__ . '/../../includes/header.php';
     <?php if ($candidatePage === 'applications'): ?>
     <section class="panel" id="track-my-applications" aria-labelledby="statusTitle">
         <div class="panel-head">
-            <h2 id="statusTitle">Track My Applications</h2>
-            <p class="muted">Συγκεντρωτική εικόνα της πορείας σου με πρόοδο, βασικά στοιχεία και τελευταία ενημέρωση.</p>
+            <h2 id="statusTitle">Η πορεία της αίτησής μου</h2>
+            <p class="muted">Συγκεντρωτική εικόνα της εγγραφής σου, με πρόοδο, βασικά στοιχεία και τελευταία διαθέσιμη ενημέρωση.</p>
         </div>
 
         <div class="dashboard-columns">
             <div class="chart-card">
-                <h3>Στάδιο Υποψηφιότητας</h3>
+                <h3>Στάδιο αίτησης</h3>
                 <p class="muted"><?php echo h($applicationStage); ?></p>
                 <div class="progress-track" aria-label="Πρόοδος αίτησης">
                     <div class="progress-value" style="width: <?php echo $applicationProgress; ?>%"></div>
@@ -699,11 +748,22 @@ require __DIR__ . '/../../includes/header.php';
                     <div class="year-item"><span>Ειδικότητα</span><strong><?php echo !empty($candidate['specialty_title']) ? 'Συνδεδεμένη' : 'Εκκρεμεί'; ?></strong></div>
                     <div class="year-item"><span>Θέση πίνακα</span><strong><?php echo $candidate['ranking_position'] !== null ? 'Διαθέσιμη' : 'Σε αναμονή'; ?></strong></div>
                 </div>
+                <div class="application-timeline" aria-label="Χρονογραμμή αίτησης">
+                    <?php foreach ($applicationTimeline as $step): ?>
+                        <div class="timeline-step <?php echo $step['done'] ? 'is-done' : ''; ?>">
+                            <span class="timeline-dot" aria-hidden="true"></span>
+                            <div>
+                                <strong><?php echo h($step['label']); ?></strong>
+                                <p><?php echo h($step['text']); ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
 
             <div class="section-stack">
                 <div class="chart-card">
-                    <h3>Βασικά Στοιχεία</h3>
+                    <h3>Βασικά στοιχεία</h3>
                     <div class="info-list">
                         <div class="info-row"><span>Ονοματεπώνυμο</span><strong><?php echo h($candidate['first_name'] . ' ' . $candidate['last_name']); ?></strong></div>
                         <div class="info-row"><span>Email</span><strong><?php echo h($candidate['email']); ?></strong></div>
@@ -714,10 +774,10 @@ require __DIR__ . '/../../includes/header.php';
                 </div>
 
                 <div class="chart-card">
-                    <h3>Τελευταία Ενημέρωση</h3>
+                    <h3>Τελευταία ενημέρωση</h3>
                     <div class="info-list">
                         <div class="info-row"><span>Κατάσταση</span><strong><?php echo h(candidate_value($candidate['application_status'] ?? null, 'Δεν υπάρχει ακόμη ενημέρωση')); ?></strong></div>
-                        <div class="info-row"><span>Ημερομηνία προφίλ</span><strong><?php echo !empty($candidate['profile_created_at']) ? h(date('d/m/Y H:i', strtotime($candidate['profile_created_at']))) : 'Δεν υπάρχει'; ?></strong></div>
+                        <div class="info-row"><span>Ημερομηνία εγγραφής</span><strong><?php echo !empty($candidate['profile_created_at']) ? h(date('d/m/Y H:i', strtotime($candidate['profile_created_at']))) : 'Δεν υπάρχει'; ?></strong></div>
                         <div class="info-row"><span>Παρακολουθήσεις</span><strong><?php echo $myTrackCount; ?></strong></div>
                     </div>
                 </div>
@@ -730,8 +790,8 @@ require __DIR__ . '/../../includes/header.php';
     <?php if ($candidatePage === 'others'): ?>
     <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
         <div class="panel-head">
-            <h2 id="trackOthersTitle">Track Others</h2>
-            <p class="muted">Αναζήτησε άλλους υποψηφίους, σύγκρινε βασικά στοιχεία και πρόσθεσέ τους στη λίστα παρακολούθησής σου.</p>
+            <h2 id="trackOthersTitle">Υποψήφιοι που παρακολουθώ</h2>
+            <p class="muted">Αναζήτησε υποψηφίους με βάση ονοματεπώνυμο ή ειδικότητα και πρόσθεσε όσους θέλεις στη λίστα σου.</p>
         </div>
 
         <form class="form-grid" method="get" action="track_others.php#track-others">
@@ -798,7 +858,7 @@ require __DIR__ . '/../../includes/header.php';
         </div>
 
         <div class="table-titlebar">
-            <h3>Η Λίστα Παρακολούθησής Μου</h3>
+            <h3>Η λίστα παρακολούθησής μου</h3>
             <p class="panel-subtitle">Σύνολο: <?php echo count($trackedRows); ?></p>
         </div>
         <div class="table-wrap" role="region" aria-label="Λίστα παρακολούθησης">
@@ -809,12 +869,14 @@ require __DIR__ . '/../../includes/header.php';
                         <th>Ειδικότητα</th>
                         <th>Θέση</th>
                         <th>Μόρια</th>
+                        <th>Κατάσταση</th>
                         <th>Ημερομηνία προσθήκης</th>
+                        <th class="right">Ενέργεια</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($trackedRows === []): ?>
-                        <tr><td colspan="5" class="empty-cell">Δεν έχεις προσθέσει ακόμη κανέναν υποψήφιο στη λίστα παρακολούθησης.</td></tr>
+                        <tr><td colspan="7" class="empty-cell">Δεν έχεις προσθέσει ακόμη κανέναν υποψήφιο στη λίστα παρακολούθησης.</td></tr>
                     <?php else: ?>
                         <?php foreach ($trackedRows as $row): ?>
                             <tr>
@@ -822,7 +884,15 @@ require __DIR__ . '/../../includes/header.php';
                                 <td><?php echo h(candidate_value($row['specialty_title'] ?? null)); ?></td>
                                 <td><?php echo $row['ranking_position'] !== null ? (int) $row['ranking_position'] : '—'; ?></td>
                                 <td><?php echo $row['points'] !== null ? number_format((float) $row['points'], 2) : '—'; ?></td>
+                                <td><?php echo h(candidate_value($row['application_status'] ?? null)); ?></td>
                                 <td><?php echo h(date('d/m/Y H:i', strtotime($row['created_at']))); ?></td>
+                                <td class="right">
+                                    <form method="post" action="track_others.php#track-others">
+                                        <input type="hidden" name="action" value="remove_tracked_candidate">
+                                        <input type="hidden" name="tracked_id" value="<?php echo (int) $row['tracked_id']; ?>">
+                                        <button class="btn btn-small btn-danger" type="submit">Αφαίρεση</button>
+                                    </form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>

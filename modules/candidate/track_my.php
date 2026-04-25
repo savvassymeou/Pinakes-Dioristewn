@@ -1,4 +1,3 @@
 <?php
-
-header('Location: candidatedashboard.php#track-my-applications');
-exit;
+$candidatePage = 'applications';
+require __DIR__ . '/candidatedashboard.php';
