@@ -9,6 +9,8 @@ require_once __DIR__ . '/../../includes/functions.php';
 
 ensure_user_profiles_table($conn);
 
+$candidatePage = $candidatePage ?? 'dashboard';
+
 function candidate_value(?string $value, string $fallback = '—'): string
 {
     $value = trim((string) $value);
@@ -430,7 +432,39 @@ if ($trackedStmt) {
     $trackedStmt->close();
 }
 
-$pageTitle = APP_NAME . ' | Candidate Dashboard';
+$candidatePageTitles = [
+    'dashboard' => APP_NAME . ' | Candidate Dashboard',
+    'profile' => APP_NAME . ' | My Profile',
+    'applications' => APP_NAME . ' | Track My Applications',
+    'others' => APP_NAME . ' | Track Others',
+];
+
+$pageTitle = $candidatePageTitles[$candidatePage] ?? $candidatePageTitles['dashboard'];
+
+$candidateHeroMeta = [
+    'dashboard' => [
+        'eyebrow' => 'Candidate Workspace',
+        'title' => u('\u039A\u03B1\u03BB\u03CE\u03C2 \u03AE\u03C1\u03B8\u03B5\u03C2, ') . ($candidate['first_name'] ?? ''),
+        'description' => u('\u03A4\u03BF Candidate Dashboard \u03B5\u03AF\u03BD\u03B1\u03B9 \u03BF \u03B9\u03B4\u03B9\u03C9\u03C4\u03B9\u03BA\u03CC\u03C2 \u03C7\u03CE\u03C1\u03BF\u03C2 \u03C4\u03BF\u03C5 \u03C5\u03C0\u03BF\u03C8\u03B7\u03C6\u03AF\u03BF\u03C5. \u0391\u03C0\u03CC \u03B5\u03B4\u03CE \u03BF\u03B4\u03B7\u03B3\u03B5\u03AF\u03C3\u03B1\u03B9 \u03C3\u03C4\u03B9\u03C2 3 \u03B2\u03B1\u03C3\u03B9\u03BA\u03AD\u03C2 \u03B5\u03BD\u03CC\u03C4\u03B7\u03C4\u03B5\u03C2 \u03C4\u03BF\u03C5 module: My Profile, Track My Applications \u03BA\u03B1\u03B9 Track Others.'),
+    ],
+    'profile' => [
+        'eyebrow' => 'Candidate Module',
+        'title' => 'My Profile',
+        'description' => u('\u0394\u03B9\u03B1\u03C7\u03B5\u03AF\u03C1\u03B9\u03C3\u03B7 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03CE\u03BD \u03C3\u03C4\u03BF\u03B9\u03C7\u03B5\u03AF\u03C9\u03BD, \u03B5\u03B9\u03B4\u03BF\u03C0\u03BF\u03B9\u03AE\u03C3\u03B5\u03C9\u03BD \u03BA\u03B1\u03B9 \u03BA\u03C9\u03B4\u03B9\u03BA\u03BF\u03CD \u03C0\u03C1\u03CC\u03C3\u03B2\u03B1\u03C3\u03B7\u03C2.'),
+    ],
+    'applications' => [
+        'eyebrow' => 'Candidate Module',
+        'title' => 'Track My Applications',
+        'description' => u('\u03A0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7 \u03C4\u03B7\u03C2 \u03BA\u03B1\u03C4\u03AC\u03C3\u03C4\u03B1\u03C3\u03B7\u03C2, \u03C4\u03B7\u03C2 \u03B8\u03AD\u03C3\u03B7\u03C2, \u03C4\u03C9\u03BD \u03BC\u03BF\u03C1\u03AF\u03C9\u03BD \u03BA\u03B1\u03B9 \u03C4\u03B7\u03C2 \u03C0\u03BF\u03C1\u03B5\u03AF\u03B1\u03C2 \u03C4\u03B7\u03C2 \u03B1\u03AF\u03C4\u03B7\u03C3\u03AE\u03C2 \u03C3\u03BF\u03C5.'),
+    ],
+    'others' => [
+        'eyebrow' => 'Candidate Module',
+        'title' => 'Track Others',
+        'description' => u('\u0391\u03BD\u03B1\u03B6\u03AE\u03C4\u03B7\u03C3\u03B7 \u03AC\u03BB\u03BB\u03C9\u03BD \u03C5\u03C0\u03BF\u03C8\u03B7\u03C6\u03AF\u03C9\u03BD \u03BA\u03B1\u03B9 \u03B4\u03B9\u03B1\u03C7\u03B5\u03AF\u03C1\u03B9\u03C3\u03B7 \u03C4\u03B7\u03C2 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03AE\u03C2 \u03BB\u03AF\u03C3\u03C4\u03B1\u03C2 \u03C0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7\u03C2.'),
+    ],
+];
+
+$candidateHero = $candidateHeroMeta[$candidatePage] ?? $candidateHeroMeta['dashboard'];
 $bodyClass = 'theme-candidate';
 $currentPage = 'candidate';
 $navBase = '../';
@@ -440,13 +474,21 @@ $headerActionHref = '#profile';
 require __DIR__ . '/../../includes/header.php';
 ?>
 <main class="container">
-    <section class="page-hero" aria-labelledby="candTitle">
+    <?php if ($candidatePage !== 'dashboard'): ?>
+        <div class="candidate-page-bar">
+            <a class="back-link" href="candidatedashboard.php">&larr; Candidate Dashboard</a>
+            <span><?php echo h($candidateHero['title']); ?></span>
+        </div>
+    <?php endif; ?>
+
+    <section class="page-hero <?php echo $candidatePage !== 'dashboard' ? 'page-hero-compact' : ''; ?>" aria-labelledby="candTitle">
         <div class="hero-text">
-            <span class="eyebrow-home">Candidate Workspace</span>
-            <h1 id="candTitle">Καλώς ήρθες, <?php echo h($candidate['first_name']); ?></h1>
-            <p class="muted">Το Candidate Dashboard είναι ο ιδιωτικός χώρος του υποψηφίου. Από εδώ οδηγείσαι στις 3 βασικές ενότητες του module: My Profile, Track My Applications και Track Others.</p>
+            <span class="eyebrow-home"><?php echo h($candidateHero['eyebrow']); ?></span>
+            <h1 id="candTitle"><?php echo h($candidateHero['title']); ?></h1>
+            <p class="muted"><?php echo h($candidateHero['description']); ?></p>
         </div>
 
+        <?php if ($candidatePage === 'dashboard'): ?>
         <div class="hero-badges">
             <div class="badge">
                 <span class="badge-label">Ρόλος</span>
@@ -457,8 +499,10 @@ require __DIR__ . '/../../includes/header.php';
                 <span class="badge-value"><?php echo h(candidate_value($candidate['specialty_title'] ?? null, 'Δεν έχει οριστεί')); ?></span>
             </div>
         </div>
+        <?php endif; ?>
     </section>
 
+    <?php if ($candidatePage === 'dashboard'): ?>
     <section class="hero-metrics" aria-label="Σύνοψη υποψηφίου">
         <article class="metric-card">
             <span class="metric-label">Κατάσταση αίτησης</span>
@@ -476,6 +520,7 @@ require __DIR__ . '/../../includes/header.php';
             <p class="metric-note">Υποψήφιοι που έχεις προσθέσει στη λίστα σύγκρισης.</p>
         </article>
     </section>
+    <?php endif; ?>
 
     <?php if ($successMessage !== ''): ?>
         <div class="alert alert-success"><?php echo h($successMessage); ?></div>
@@ -485,6 +530,7 @@ require __DIR__ . '/../../includes/header.php';
         <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
     <?php endif; ?>
 
+    <?php if ($candidatePage === 'dashboard'): ?>
     <section class="section-head" aria-label="Candidate dashboard intro">
         <h2>Dashboard Υποψηφίου</h2>
         <p>Οι 3 βασικές ενότητες του Candidate Module είναι οι παρακάτω. Από εδώ ο υποψήφιος μεταβαίνει στο προφίλ του, στην πορεία της αίτησής του και στην παρακολούθηση άλλων υποψηφίων.</p>
@@ -495,29 +541,32 @@ require __DIR__ . '/../../includes/header.php';
             <div class="card-icon" aria-hidden="true">1</div>
             <h2>My Profile</h2>
             <p>Δες και ενημέρωσε όνομα, επώνυμο και τηλέφωνο, ενώ το email παραμένει σταθερό ως στοιχείο επικοινωνίας.</p>
-            <div class="card-actions"><a class="btn" href="#profile">Άνοιγμα</a></div>
+            <div class="card-actions"><a class="btn" href="myprofile.php">Άνοιγμα</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">2</div>
             <h2>Track My Applications</h2>
             <p>Παρακολούθησε την κατάσταση της αίτησής σου, τα μόρια, τη θέση σου στον πίνακα και τη συνολική πρόοδο.</p>
-            <div class="card-actions"><a class="btn" href="#track-my-applications">Άνοιγμα</a></div>
+            <div class="card-actions"><a class="btn" href="track_applications.php">Άνοιγμα</a></div>
         </article>
         <article class="card card-action">
             <div class="card-icon" aria-hidden="true">3</div>
             <h2>Track Others</h2>
             <p>Επίλεξε άλλους υποψηφίους για παρακολούθηση και κράτησέ τους στη δική σου λίστα σύγκρισης.</p>
-            <div class="card-actions"><a class="btn" href="#track-others">Άνοιγμα</a></div>
+            <div class="card-actions"><a class="btn" href="track_others.php">Άνοιγμα</a></div>
         </article>
     </section>
 
+    <?php endif; ?>
+
+    <?php if ($candidatePage === 'profile'): ?>
     <section class="panel" id="profile" aria-labelledby="profileTitle">
         <div class="panel-head">
             <h2 id="profileTitle">My Profile</h2>
             <p class="muted">Συμπλήρωσε και ενημέρωσε το προσωπικό σου προφίλ όπως πρέπει να εμφανίζεται στην εφαρμογή.</p>
         </div>
 
-        <form class="form-grid candidate-form" method="post" action="#profile">
+        <form class="form-grid candidate-form" method="post" action="myprofile.php#profile">
             <input type="hidden" name="action" value="update_profile">
 
             <div class="form-group">
@@ -583,7 +632,7 @@ require __DIR__ . '/../../includes/header.php';
                 <h3>Ειδοποιήσεις</h3>
                 <p class="muted">Επίλεξε ποιες ειδοποιήσεις θέλεις να λαμβάνεις, όπως νέα λίστα ή αλλαγή θέσης.</p>
             </div>
-            <form method="post" action="#notifications">
+            <form method="post" action="myprofile.php#notifications">
                 <input type="hidden" name="action" value="save_notifications">
                 <div class="check-list">
                     <label class="check-item">
@@ -608,7 +657,7 @@ require __DIR__ . '/../../includes/header.php';
                 <h3>Αλλαγή Κωδικού</h3>
                 <p class="muted">Στο τέλος του candidate module μπορείς να αλλάξεις τον κωδικό πρόσβασής σου, όπως ζητά η εκφώνηση.</p>
             </div>
-            <form method="post" action="#candidate-password">
+            <form method="post" action="myprofile.php#candidate-password">
                 <input type="hidden" name="action" value="change_password">
                 <div class="form-stack">
                     <div class="form-group">
@@ -629,6 +678,9 @@ require __DIR__ . '/../../includes/header.php';
         </div>
     </section>
 
+    <?php endif; ?>
+
+    <?php if ($candidatePage === 'applications'): ?>
     <section class="panel" id="track-my-applications" aria-labelledby="statusTitle">
         <div class="panel-head">
             <h2 id="statusTitle">Track My Applications</h2>
@@ -673,13 +725,16 @@ require __DIR__ . '/../../includes/header.php';
         </div>
     </section>
 
+    <?php endif; ?>
+
+    <?php if ($candidatePage === 'others'): ?>
     <section class="panel" id="track-others" aria-labelledby="trackOthersTitle">
         <div class="panel-head">
             <h2 id="trackOthersTitle">Track Others</h2>
             <p class="muted">Αναζήτησε άλλους υποψηφίους, σύγκρινε βασικά στοιχεία και πρόσθεσέ τους στη λίστα παρακολούθησής σου.</p>
         </div>
 
-        <form class="form-grid" method="get" action="#track-others">
+        <form class="form-grid" method="get" action="track_others.php#track-others">
             <div class="form-group">
                 <label for="search_name">Ονοματεπώνυμο</label>
                 <input id="search_name" name="search_name" type="text" value="<?php echo h($searchName); ?>" placeholder="π.χ. Μαρία Παπαδοπούλου">
@@ -697,7 +752,7 @@ require __DIR__ . '/../../includes/header.php';
             </div>
             <div class="form-group form-actions">
                 <button class="btn btn-primary" type="submit">Αναζήτηση</button>
-                <a class="btn btn-secondary" href="candidatedashboard.php#track-others">Καθαρισμός</a>
+                <a class="btn btn-secondary" href="track_others.php#track-others">Καθαρισμός</a>
             </div>
         </form>
 
@@ -729,7 +784,7 @@ require __DIR__ . '/../../includes/header.php';
                                 <td><?php echo $row['points'] !== null ? number_format((float) $row['points'], 2) : '—'; ?></td>
                                 <td><?php echo h(candidate_value($row['application_status'] ?? null)); ?></td>
                                 <td class="right">
-                                    <form method="post" action="#track-others">
+                                    <form method="post" action="track_others.php#track-others">
                                         <input type="hidden" name="action" value="track_candidate">
                                         <input type="hidden" name="candidate_profile_id" value="<?php echo (int) $row['profile_id']; ?>">
                                         <button class="btn btn-small" type="submit">Παρακολούθηση</button>
@@ -775,8 +830,6 @@ require __DIR__ . '/../../includes/header.php';
             </table>
         </div>
     </section>
+    <?php endif; ?>
 </main>
 <?php require __DIR__ . '/../../includes/footer.php'; ?>
-
-
-

@@ -811,7 +811,7 @@ $pageTitle = APP_NAME . " | Admin Dashboard";
 $bodyClass = "theme-admin";
 $currentPage = "admin";
 $navBase = "../";
-$headerActionLabel = "Î¡Ï…Î¸Î¼Î¯ÏƒÎµÎ¹Ï‚ Î›Î¿Î³Î±ÏÎ¹Î±ÏƒÎ¼Î¿Ï";
+$headerActionLabel = "Ρυθμίσεις Λογαριασμού";
 $headerActionHref = "#account";
 
 function admin_text(?string $value, string $fallback = "—"): string
@@ -1234,7 +1234,7 @@ require_once __DIR__ . "/../../includes/functions.php";
                                         <div class="inline-actions">
                                             <a class="btn btn-small" href="?edit_user=<?php echo (int) $row["id"]; ?>#manage-users">Edit</a>
                                             <?php if ((int) $row["id"] !== (int) $_SESSION["user_id"]): ?>
-                                                <form method="post" action="#manage-users" onsubmit="return confirm('ÎÎ± Î´Î¹Î±Î³ÏÎ±Ï†ÎµÎ¯ Î¿ Ï‡ÏÎ®ÏƒÏ„Î·Ï‚;');">
+                                                <form method="post" action="#manage-users" onsubmit="return confirm('Να διαγραφεί ο χρήστης;');">
                                                     <input type="hidden" name="action" value="delete_user">
                                                     <input type="hidden" name="delete_user_id" value="<?php echo (int) $row["id"]; ?>">
                                                     <button class="btn btn-small" type="submit">Delete</button>
@@ -1338,7 +1338,7 @@ require_once __DIR__ . "/../../includes/functions.php";
                 </div>
                 <div class="stat">
                     <div class="stat-kpi"><?php echo (int) $overview["tracked_total"]; ?></div>
-                    <div class="stat-label">Î£Ï…Î½Î¿Î»Î¹ÎºÎ¬ tracked relationships</div>
+                    <div class="stat-label">Συνολικά tracked relationships</div>
                 </div>
             </div>
 

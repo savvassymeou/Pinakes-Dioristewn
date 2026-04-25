@@ -1,3 +1,3 @@
 <?php
-$candidatePage = 'others';
+$candidatePage = 'profile';
 require __DIR__ . '/candidatedashboard.php';

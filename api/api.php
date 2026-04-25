@@ -10,7 +10,7 @@ function respondJson(array $payload, int $status = 200): never
     exit;
 }
 
-$endpoint = $_GET['endpoint'] ?? '';
+$endpoint = trim((string) ($_GET['endpoint'] ?? ''));
 
 if ($endpoint === 'specialties') {
     $items = [];
@@ -37,9 +37,19 @@ if ($endpoint === 'specialties') {
 }
 
 if ($endpoint === 'candidates') {
-    $name = trim($_GET['name'] ?? '');
+    $name = trim((string) ($_GET['name'] ?? ''));
     $specialtyId = (int) ($_GET['specialty_id'] ?? 0);
+    $year = (int) ($_GET['year'] ?? 0);
+    $order = (string) ($_GET['order'] ?? 'rank_asc');
     $nameTerm = '%' . $name . '%';
+
+    $orderSql = match ($order) {
+        'name_asc' => 'up.last_name ASC, up.first_name ASC',
+        'points_desc' => 'cp.points IS NULL, cp.points DESC, up.last_name ASC',
+        'recent_desc' => 'cp.created_at DESC, up.last_name ASC',
+        default => 'cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC',
+    };
+
     $stmt = $conn->prepare(
         'SELECT
             cp.id,
@@ -48,20 +58,24 @@ if ($endpoint === 'candidates') {
             s.title AS specialty,
             cp.ranking_position,
             cp.points,
-            cp.application_status
+            cp.application_status,
+            YEAR(cp.created_at) AS list_year,
+            CASE WHEN MONTH(cp.created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END AS list_period
          FROM candidate_profiles cp
          INNER JOIN users u ON u.id = cp.user_id
          INNER JOIN user_profiles up ON up.user_id = u.id
          LEFT JOIN specialties s ON s.id = cp.specialty_id
          WHERE (? = "" OR CONCAT(up.first_name, " ", up.last_name) LIKE ?)
            AND (? = 0 OR cp.specialty_id = ?)
-         ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC
+           AND (? = 0 OR YEAR(cp.created_at) = ?)
+         ORDER BY ' . $orderSql . '
          LIMIT 50'
     );
+
     $items = [];
 
     if ($stmt) {
-        $stmt->bind_param('ssii', $name, $nameTerm, $specialtyId, $specialtyId);
+        $stmt->bind_param('ssiiii', $name, $nameTerm, $specialtyId, $specialtyId, $year, $year);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -79,6 +93,8 @@ if ($endpoint === 'candidates') {
         'filters' => [
             'name' => $name,
             'specialty_id' => $specialtyId,
+            'year' => $year,
+            'order' => $order,
         ],
         'count' => count($items),
         'data' => $items,
@@ -90,7 +106,7 @@ if ($endpoint === 'stats') {
 
     if ($specialtyId <= 0) {
         respondJson([
-            'error' => 'Δώσε `specialty_id` για το endpoint `stats`.',
+            'error' => 'Δώσε specialty_id για το endpoint stats.',
         ], 400);
     }
 
@@ -117,14 +133,14 @@ if ($endpoint === 'stats') {
         'average_points' => null,
     ];
 
-    $summaryStmt = $conn->prepare('
-        SELECT
+    $summaryStmt = $conn->prepare(
+        'SELECT
             COUNT(*) AS candidate_count,
             AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) AS average_age,
             AVG(points) AS average_points
-        FROM candidate_profiles
-        WHERE specialty_id = ?
-    ');
+         FROM candidate_profiles
+         WHERE specialty_id = ?'
+    );
 
     if ($summaryStmt) {
         $summaryStmt->bind_param('i', $specialtyId);
@@ -140,15 +156,16 @@ if ($endpoint === 'stats') {
     }
 
     $yearly = [];
-    $yearlyStmt = $conn->prepare('
-        SELECT
+    $yearlyStmt = $conn->prepare(
+        'SELECT
             YEAR(created_at) AS report_year,
-            COUNT(*) AS candidate_count
-        FROM candidate_profiles
-        WHERE specialty_id = ?
-        GROUP BY YEAR(created_at)
-        ORDER BY report_year ASC
-    ');
+            COUNT(*) AS candidate_count,
+            AVG(points) AS average_points
+         FROM candidate_profiles
+         WHERE specialty_id = ?
+         GROUP BY YEAR(created_at)
+         ORDER BY report_year ASC'
+    );
 
     if ($yearlyStmt) {
         $yearlyStmt->bind_param('i', $specialtyId);
@@ -164,11 +181,39 @@ if ($endpoint === 'stats') {
         $yearlyStmt->close();
     }
 
+    $periods = [];
+    $periodStmt = $conn->prepare(
+        'SELECT
+            YEAR(created_at) AS report_year,
+            CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END AS report_period,
+            COUNT(*) AS candidate_count,
+            AVG(points) AS average_points
+         FROM candidate_profiles
+         WHERE specialty_id = ?
+         GROUP BY YEAR(created_at), CASE WHEN MONTH(created_at) BETWEEN 1 AND 6 THEN "Α" ELSE "Β" END
+         ORDER BY report_year ASC, report_period ASC'
+    );
+
+    if ($periodStmt) {
+        $periodStmt->bind_param('i', $specialtyId);
+        $periodStmt->execute();
+        $periodResult = $periodStmt->get_result();
+
+        if ($periodResult) {
+            while ($row = $periodResult->fetch_assoc()) {
+                $periods[] = $row;
+            }
+        }
+
+        $periodStmt->close();
+    }
+
     respondJson([
         'endpoint' => 'stats',
         'specialty' => $specialty,
         'summary' => $summary,
         'yearly' => $yearly,
+        'periods' => $periods,
     ]);
 }
 
@@ -186,12 +231,8 @@ require __DIR__ . '/../includes/header.php';
         <div class="hero-text">
             <h1 id="apiTitle">API Module</h1>
             <p class="muted">
-                Το API προσφέρει βασικά JSON endpoints για specialties,
-                candidates και στατιστικά ανά ειδικότητα.
-            </p>
-            <p class="muted">
-                Στόχος του module είναι να επιτρέπει σε τρίτα συστήματα να αντλούν πληροφορίες από την ίδια βάση,
-                χωρίς να χρειάζεται να μπουν από το γραφικό περιβάλλον της εφαρμογής.
+                Το API προσφέρει JSON endpoints για ειδικότητες, υποψηφίους και στατιστικά ανά ειδικότητα.
+                Έτσι ένα τρίτο σύστημα μπορεί να αντλεί δεδομένα από την ίδια βάση χωρίς να χρησιμοποιεί το γραφικό περιβάλλον.
             </p>
         </div>
     </section>
@@ -199,22 +240,22 @@ require __DIR__ . '/../includes/header.php';
     <section class="panel" id="endpoints" aria-labelledby="endpointsTitle">
         <div class="panel-head">
             <h2 id="endpointsTitle">Διαθέσιμα Endpoints</h2>
-            <p class="muted">Άνοιξέ τα από browser ή κάλεσέ τα από άλλη εφαρμογή με query parameter `endpoint`.</p>
+            <p class="muted">Τα endpoints επιστρέφουν UTF-8 JSON και υποστηρίζουν βασικά φίλτρα αναζήτησης.</p>
         </div>
 
         <div class="code-card">
-            <h3>`GET /API/api.php?endpoint=specialties`</h3>
+            <h3>GET /api/api.php?endpoint=specialties</h3>
             <pre><code>Επιστρέφει όλες τις ειδικότητες.</code></pre>
         </div>
 
         <div class="code-card">
-            <h3>`GET /API/api.php?endpoint=candidates&amp;name=...&amp;specialty_id=...`</h3>
-            <pre><code>Επιστρέφει αποτελέσματα υποψηφίων με φίλτρα.</code></pre>
+            <h3>GET /api/api.php?endpoint=candidates&amp;name=...&amp;specialty_id=...&amp;year=...&amp;order=...</h3>
+            <pre><code>Επιστρέφει υποψηφίους με φίλτρα ονόματος, ειδικότητας, έτους και ταξινόμησης.</code></pre>
         </div>
 
         <div class="code-card">
-            <h3>`GET /API/api.php?endpoint=stats&amp;specialty_id=1`</h3>
-            <pre><code>Επιστρέφει σύνοψη και ετήσια στατιστικά για μία ειδικότητα.</code></pre>
+            <h3>GET /api/api.php?endpoint=stats&amp;specialty_id=1</h3>
+            <pre><code>Επιστρέφει σύνοψη, μέσους όρους, στατιστικά ανά έτος και ανά περίοδο.</code></pre>
         </div>
     </section>
 
@@ -224,7 +265,7 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="year-list">
             <div class="year-item"><span>Specialties</span><strong><a href="./api.php?endpoint=specialties">Άνοιγμα JSON</a></strong></div>
-            <div class="year-item"><span>Candidates</span><strong><a href="./api.php?endpoint=candidates">Άνοιγμα JSON</a></strong></div>
+            <div class="year-item"><span>Candidates</span><strong><a href="./api.php?endpoint=candidates&amp;order=points_desc">Άνοιγμα JSON</a></strong></div>
             <div class="year-item"><span>Stats</span><strong><a href="./api.php?endpoint=stats&amp;specialty_id=1">Άνοιγμα JSON</a></strong></div>
         </div>
     </section>

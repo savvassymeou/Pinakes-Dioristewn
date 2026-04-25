@@ -10,22 +10,18 @@ $loginLabel = u('\u03A3\u03CD\u03BD\u03B4\u03B5\u03C3\u03B7');
 $navAria = u('\u039A\u03CD\u03C1\u03B9\u03B1 \u03C0\u03BB\u03BF\u03AE\u03B3\u03B7\u03C3\u03B7');
 $fallbackUser = u('\u03A3\u03C5\u03BD\u03B4\u03B5\u03B4\u03B5\u03BC\u03AD\u03BD\u03BF\u03C2 \u03C7\u03C1\u03AE\u03C3\u03C4\u03B7\u03C2');
 ?>
-<nav class="top-nav" aria-label="<?php echo e($navAria); ?>">
-    <ul class="nav-list">
+<nav class="nav" aria-label="<?php echo e($navAria); ?>">
+    <div class="nav-group main">
         <?php foreach ($items as $item): ?>
-            <li>
-                <a class="nav-link <?php echo $item["active"] ? "is-active" : ""; ?>" href="<?php echo e(path_from_root($item["href"])); ?>">
-                    <?php echo e($item["label"]); ?>
-                </a>
-            </li>
+            <a class="<?php echo $item["active"] ? "active" : ""; ?>" href="<?php echo e(path_from_root($item["href"])); ?>">
+                <?php echo e($item["label"]); ?>
+            </a>
         <?php endforeach; ?>
-    </ul>
-</nav>
 
-<div class="header-actions <?php echo $isLoggedIn ? "header-actions-authenticated" : ""; ?>">
+    <div class="nav-group auth">
     <?php if (!$isLoggedIn): ?>
-        <a class="btn btn-primary" href="<?php echo e(path_from_root("auth/register.php")); ?>"><?php echo e($registerLabel); ?></a>
-        <a class="btn btn-secondary" href="<?php echo e(path_from_root("auth/login.php")); ?>"><?php echo e($loginLabel); ?></a>
+        <a class="auth-link primary" href="<?php echo e(path_from_root("auth/register.php")); ?>"><?php echo e($registerLabel); ?></a>
+        <a class="auth-link" href="<?php echo e(path_from_root("auth/login.php")); ?>"><?php echo e($loginLabel); ?></a>
     <?php else: ?>
         <div class="profile-menu">
             <button type="button" class="profile-trigger" aria-haspopup="menu">
@@ -51,4 +47,5 @@ $fallbackUser = u('\u03A3\u03C5\u03BD\u03B4\u03B5\u03B4\u03B5\u03BC\u03AD\u03BD\
             </div>
         </div>
     <?php endif; ?>
-</div>
+    </div>
+</nav>
