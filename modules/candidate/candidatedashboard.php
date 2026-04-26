@@ -63,6 +63,13 @@ $userId = (int) ($_SESSION['user_id'] ?? 0);
 $successMessage = '';
 $errorMessage = '';
 
+if (!empty($_SESSION['candidate_success_message'])) {
+    $successMessage = (string) $_SESSION['candidate_success_message'];
+    unset($_SESSION['candidate_success_message']);
+} elseif (($_GET['profile_saved'] ?? '') === '1') {
+    $successMessage = 'Τα στοιχεία σου αποθηκεύτηκαν επιτυχώς.';
+}
+
 $specialties = fetch_all_prepared(
     $conn,
     'SELECT id, title FROM specialties ORDER BY title ASC'
@@ -214,7 +221,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->commit();
                 $_SESSION['first_name'] = $firstName;
                 $_SESSION['last_name'] = $lastName;
-                $successMessage = 'Το προφίλ σου ενημερώθηκε επιτυχώς.';
+                $_SESSION['candidate_success_message'] = u('\\u03A4\\u03B1 \\u03C3\\u03C4\\u03BF\\u03B9\\u03C7\\u03B5\\u03AF\\u03B1 \\u03C3\\u03BF\\u03C5 \\u03B1\\u03C0\\u03BF\\u03B8\\u03B7\\u03BA\\u03B5\\u03CD\\u03C4\\u03B7\\u03BA\\u03B1\\u03BD \\u03B5\\u03C0\\u03B9\\u03C4\\u03C5\\u03C7\\u03CE\\u03C2.');
+                header('Location: myprofile.php?profile_saved=1');
+                exit;
             } catch (Throwable $exception) {
                 $conn->rollback();
                 $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03B5\\u03BD\\u03B7\\u03BC\\u03AD\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03BF\\u03C5 \\u03C0\\u03C1\\u03BF\\u03C6\\u03AF\\u03BB \\u03C3\\u03BF\\u03C5. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
@@ -523,6 +532,14 @@ $headerActionHref = '#profile';
 require __DIR__ . '/../../includes/header.php';
 ?>
 <main class="container">
+    <?php if ($successMessage !== ''): ?>
+        <div class="alert alert-success"><?php echo h($successMessage); ?></div>
+    <?php endif; ?>
+
+    <?php if ($errorMessage !== ''): ?>
+        <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
+    <?php endif; ?>
+
     <?php if ($candidatePage !== 'dashboard'): ?>
         <div class="candidate-page-bar">
             <a class="back-link" href="candidatedashboard.php">&larr; Πίσω στον πίνακα μου</a>
@@ -571,14 +588,6 @@ require __DIR__ . '/../../includes/header.php';
     </section>
     <?php endif; ?>
 
-    <?php if ($successMessage !== ''): ?>
-        <div class="alert alert-success"><?php echo h($successMessage); ?></div>
-    <?php endif; ?>
-
-    <?php if ($errorMessage !== ''): ?>
-        <div class="alert alert-error"><?php echo h($errorMessage); ?></div>
-    <?php endif; ?>
-
     <?php if ($candidatePage === 'dashboard'): ?>
     <section class="section-head" aria-label="Εισαγωγή πίνακα υποψηφίου">
         <h2>Ο προσωπικός μου πίνακας</h2>
@@ -615,7 +624,7 @@ require __DIR__ . '/../../includes/header.php';
             <p class="muted">Τα στοιχεία αυτά χρησιμοποιούνται για την ταυτοποίηση και την παρακολούθηση της εγγραφής σου στους πίνακες.</p>
         </div>
 
-        <form class="form-grid candidate-form" method="post" action="myprofile.php#profile">
+        <form class="form-grid candidate-form" method="post" action="myprofile.php">
             <input type="hidden" name="action" value="update_profile">
 
             <div class="form-group">
@@ -902,4 +911,14 @@ require __DIR__ . '/../../includes/header.php';
     </section>
     <?php endif; ?>
 </main>
+<?php if (($_GET['profile_saved'] ?? '') === '1'): ?>
+<script>
+    window.addEventListener('load', function () {
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+</script>
+<?php endif; ?>
 <?php require __DIR__ . '/../../includes/footer.php'; ?>

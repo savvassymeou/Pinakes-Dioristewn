@@ -209,6 +209,15 @@ function load_candidates_from_csv(string $filePath): array
 
 $successMessage = "";
 $errorMessage = "";
+$createUserForm = [
+    "first_name" => "",
+    "last_name" => "",
+    "email" => "",
+    "identity_number" => "",
+    "phone" => "",
+    "role" => "candidate",
+    "specialty_id" => 0,
+];
 
 $specialties = fetch_all_prepared(
     $conn,
@@ -243,7 +252,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $phone = trim($_POST["new_phone"] ?? "");
         $username = generate_unique_username($conn, username_from_email($email));
         $role = $_POST["new_role"] ?? "candidate";
+        $newSpecialtyId = (int) ($_POST["new_specialty_id"] ?? 0);
         $password = $_POST["new_password"] ?? "";
+        $validSpecialtyIds = array_map(static fn ($specialty) => (int) $specialty["id"], $specialties);
+        $createUserForm = [
+            "first_name" => $firstName,
+            "last_name" => $lastName,
+            "email" => $email,
+            "identity_number" => $identityNumber,
+            "phone" => $phone,
+            "role" => in_array($role, ["admin", "candidate"], true) ? $role : "candidate",
+            "specialty_id" => in_array($newSpecialtyId, $validSpecialtyIds, true) ? $newSpecialtyId : 0,
+        ];
 
         if ($firstName === "" || $lastName === "" || $email === "" || $identityNumber === "" || $password === "") {
             $errorMessage = "Συμπλήρωσε όλα τα υποχρεωτικά πεδία για νέο χρήστη.";
@@ -253,6 +273,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $errorMessage = identity_number_validation_message();
         } elseif (!in_array($role, ["admin", "candidate"], true)) {
             $errorMessage = "Ο ρόλος που επιλέχθηκε δεν είναι έγκυρος.";
+        } elseif ($role === "candidate" && $newSpecialtyId > 0 && !in_array($newSpecialtyId, $validSpecialtyIds, true)) {
+            $errorMessage = u('\u0395\u03c0\u03af\u03bb\u03b5\u03be\u03b5 \u03ad\u03b3\u03ba\u03c5\u03c1\u03b7 \u03b5\u03b9\u03b4\u03b9\u03ba\u03cc\u03c4\u03b7\u03c4\u03b1 \u03b3\u03b9\u03b1 \u03c4\u03bf\u03bd \u03c5\u03c0\u03bf\u03c8\u03ae\u03c6\u03b9\u03bf.');
         } elseif (strlen($password) < 8) {
             $errorMessage = "Ο κωδικός του νέου χρήστη πρέπει να έχει τουλάχιστον 8 χαρακτήρες.";
         } else {
@@ -296,8 +318,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         }
 
                         $profileStmt->close();
+
+                        if ($role === "candidate") {
+                            $candidateSpecialtyId = $newSpecialtyId > 0 ? $newSpecialtyId : null;
+                            $candidateStatus = u('\u039d\u03ad\u03b1 \u03b5\u03b3\u03b3\u03c1\u03b1\u03c6\u03ae');
+                            $candidateStmt = $conn->prepare("INSERT INTO candidate_profiles (user_id, specialty_id, application_status) VALUES (?, ?, ?)");
+
+                            if (!$candidateStmt) {
+                                throw new RuntimeException("Could not prepare candidate profile.");
+                            }
+
+                            $candidateStmt->bind_param("iis", $newUserId, $candidateSpecialtyId, $candidateStatus);
+                            if (!$candidateStmt->execute()) {
+                                throw new RuntimeException("Could not create candidate profile.");
+                            }
+
+                            $candidateStmt->close();
+                        }
+
                         $conn->commit();
-                        $successMessage = "? ??????? ????????????? ????????.";
+                        $successMessage = u('\u039f \u03c7\u03c1\u03ae\u03c3\u03c4\u03b7\u03c2 \u03b4\u03b7\u03bc\u03b9\u03bf\u03c5\u03c1\u03b3\u03ae\u03b8\u03b7\u03ba\u03b5 \u03bc\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03af\u03b1.');
                     } catch (Throwable $exception) {
                         $conn->rollback();
                         $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
@@ -366,7 +406,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 $profileStmt->close();
 
                                 $conn->commit();
-                                $successMessage = "? ??????? ??????????? ????????.";
+                                $successMessage = u('\u039f \u03c7\u03c1\u03ae\u03c3\u03c4\u03b7\u03c2 \u03b5\u03bd\u03b7\u03bc\u03b5\u03c1\u03ce\u03b8\u03b7\u03ba\u03b5 \u03bc\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03af\u03b1.');
                             } catch (Throwable $exception) {
                                 $conn->rollback();
                                 $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
@@ -396,7 +436,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $profileStmt->close();
 
                             $conn->commit();
-                            $successMessage = "? ??????? ??????????? ????????.";
+                            $successMessage = u('\u039f \u03c7\u03c1\u03ae\u03c3\u03c4\u03b7\u03c2 \u03b5\u03bd\u03b7\u03bc\u03b5\u03c1\u03ce\u03b8\u03b7\u03ba\u03b5 \u03bc\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03af\u03b1.');
                         } catch (Throwable $exception) {
                             $conn->rollback();
                             $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
@@ -670,7 +710,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["first_name"] = $firstName;
                         $_SESSION["last_name"] = $lastName;
                         $_SESSION["email"] = $email;
-                        $successMessage = "?? ?????? ???????? ??? admin ????????????.";
+                        $successMessage = u('\u03a4\u03b1 \u03c3\u03c4\u03bf\u03b9\u03c7\u03b5\u03af\u03b1 \u03c4\u03bf\u03c5 admin \u03b5\u03bd\u03b7\u03bc\u03b5\u03c1\u03ce\u03b8\u03b7\u03ba\u03b1\u03bd \u03bc\u03b5 \u03b5\u03c0\u03b9\u03c4\u03c5\u03c7\u03af\u03b1.');
                     } catch (Throwable $exception) {
                         $conn->rollback();
                         $errorMessage = u('\\u03A0\\u03B1\\u03C1\\u03BF\\u03C5\\u03C3\\u03B9\\u03AC\\u03C3\\u03C4\\u03B7\\u03BA\\u03B5 \\u03C0\\u03C1\\u03CC\\u03B2\\u03BB\\u03B7\\u03BC\\u03B1 \\u03BA\\u03B1\\u03C4\\u03AC \\u03C4\\u03B7\\u03BD \\u03BF\\u03BB\\u03BF\\u03BA\\u03BB\\u03AE\\u03C1\\u03C9\\u03C3\\u03B7 \\u03C4\\u03B7\\u03C2 \\u03B5\\u03BD\\u03AD\\u03C1\\u03B3\\u03B5\\u03B9\\u03B1\\u03C2. \\u0394\\u03BF\\u03BA\\u03AF\\u03BC\\u03B1\\u03C3\\u03B5 \\u03BE\\u03B1\\u03BD\\u03AC.');
@@ -756,6 +796,58 @@ foreach ($users as $row) {
     }
 }
 
+$candidateListKeyword = trim((string) ($_GET["candidate_keyword"] ?? $_GET["keyword"] ?? ""));
+$candidateListSpecialtyId = (int) ($_GET["candidate_specialty_id"] ?? $_GET["specialty_id"] ?? 0);
+$candidateListSpecialtyLabel = u('\u038c\u03bb\u03b5\u03c2');
+
+foreach ($specialties as $specialty) {
+    if ((int) $specialty["id"] === $candidateListSpecialtyId) {
+        $candidateListSpecialtyLabel = $specialty["title"];
+        break;
+    }
+}
+
+$candidateListSearchTerm = "%" . $candidateListKeyword . "%";
+$candidateListRows = fetch_all_prepared(
+    $conn,
+    "SELECT
+        up.first_name,
+        up.last_name,
+        u.email,
+        up.phone,
+        s.title AS specialty_title,
+        cp.application_status,
+        cp.ranking_position,
+        cp.points
+     FROM candidate_profiles cp
+     INNER JOIN users u ON u.id = cp.user_id
+     INNER JOIN user_profiles up ON up.user_id = u.id
+     LEFT JOIN specialties s ON s.id = cp.specialty_id
+     WHERE (? = '' OR (
+            CONCAT(up.first_name, ' ', up.last_name) LIKE ?
+            OR u.email LIKE ?
+            OR COALESCE(up.phone, '') LIKE ?
+            OR COALESCE(s.title, '') LIKE ?
+            OR COALESCE(cp.application_status, '') LIKE ?
+        ))
+       AND (? = 0 OR cp.specialty_id = ?)
+     ORDER BY cp.ranking_position IS NULL, cp.ranking_position ASC, up.last_name ASC, up.first_name ASC
+     LIMIT 50",
+    "ssssssii",
+    [
+        $candidateListKeyword,
+        $candidateListSearchTerm,
+        $candidateListSearchTerm,
+        $candidateListSearchTerm,
+        $candidateListSearchTerm,
+        $candidateListSearchTerm,
+        $candidateListSpecialtyId,
+        $candidateListSpecialtyId,
+    ]
+);
+$candidateListTotal = count($candidateListRows);
+$candidateListHasFilters = $candidateListKeyword !== "" || $candidateListSpecialtyId > 0;
+
 $overview = [
     "total_candidates" => 0,
     "average_age" => null,
@@ -808,7 +900,7 @@ foreach ($specialtyStats as $row) {
 $selectedSpecialtyId = (int) ($_POST["specialty_id"] ?? ($specialties[0]["id"] ?? 0));
 $selectedLoadYear = (int) ($_POST["load_year"] ?? date("Y"));
 $requestedSection = (string) ($_GET["section"] ?? "overview");
-$allowedAdminSections = ["overview", "users", "lists", "reports", "account"];
+$allowedAdminSections = ["overview", "users", "lists", "candidate-list", "reports", "account"];
 
 if (!in_array($requestedSection, $allowedAdminSections, true)) {
     $requestedSection = "overview";
@@ -875,7 +967,7 @@ require_once __DIR__ . "/../../includes/functions.php";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo e($pageTitle ?? APP_NAME); ?></title>
-    <link rel="stylesheet" href="<?php echo e(path_from_root("assets/css/style.css")); ?>">
+    <link rel="stylesheet" href="<?php echo e(path_from_root("assets/css/style.css") . "?v=20260426-2"); ?>">
     <style>
         body.theme-admin {
             margin: 0;
@@ -952,7 +1044,7 @@ require_once __DIR__ . "/../../includes/functions.php";
         }
 
         .theme-admin .admin-back-link {
-            margin-top: auto !important;
+            margin-top: 0 !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -963,6 +1055,10 @@ require_once __DIR__ . "/../../includes/functions.php";
             background: #fff !important;
             color: #10243f !important;
             font-weight: 800 !important;
+        }
+
+        .theme-admin .admin-sidebar-card-compact {
+            margin-top: auto !important;
         }
 
         .theme-admin .admin-content {
@@ -1009,6 +1105,40 @@ require_once __DIR__ . "/../../includes/functions.php";
             max-width: 62ch !important;
         }
 
+        .theme-admin .alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 18px !important;
+            border-radius: 16px !important;
+            font-weight: 800;
+            box-shadow: 0 14px 28px rgba(22, 101, 52, 0.10);
+        }
+
+        .theme-admin .alert-success {
+            border: 1px solid #86efac !important;
+            background: #dcfce7 !important;
+            color: #14532d !important;
+        }
+
+        .theme-admin .alert-success::before {
+            content: "✓";
+            display: inline-grid;
+            place-items: center;
+            width: 24px;
+            height: 24px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: #16a34a;
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 900;
+        }
+
+        .theme-admin .alert-error {
+            color: #7f1d1d !important;
+        }
+
         .theme-admin .hero-badges {
             display: none !important;
         }
@@ -1039,9 +1169,150 @@ require_once __DIR__ . "/../../includes/functions.php";
 
         .theme-admin[data-admin-section="users"] .content-panel.section-users,
         .theme-admin[data-admin-section="lists"] .content-panel.section-lists,
+        .theme-admin[data-admin-section="candidate-list"] .content-panel.section-candidate-list,
         .theme-admin[data-admin-section="reports"] .content-panel.section-reports,
         .theme-admin[data-admin-section="account"] .content-panel.section-account {
             display: block !important;
+        }
+
+        .theme-admin .candidate-list-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin: 0 0 20px;
+        }
+
+        .theme-admin .summary-chip {
+            min-height: 82px;
+            padding: 14px 16px;
+            border: 1px solid rgba(21, 55, 92, 0.08);
+            border-radius: 18px;
+            background: #f7f9fc;
+        }
+
+        .theme-admin .summary-chip span,
+        .theme-admin .filters-title {
+            color: #5d7088;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .theme-admin .summary-chip strong {
+            display: block;
+            margin-top: 8px;
+            color: #14263d;
+            font-family: "Space Grotesk", "Manrope", sans-serif;
+            font-size: clamp(1.25rem, 2vw, 1.8rem);
+            line-height: 1.08;
+            word-break: break-word;
+        }
+
+        .theme-admin .filters-title {
+            margin: 2px 0 14px;
+        }
+
+        .theme-admin .section-candidate-list .form-grid {
+            grid-template-columns: minmax(260px, 1.25fr) minmax(240px, 1fr) auto;
+            align-items: end;
+        }
+
+        .theme-admin .section-reports {
+            font-weight: 400;
+        }
+
+        .theme-admin .section-reports .reports-summary {
+            margin-bottom: 18px;
+        }
+
+        .theme-admin .section-reports .reports-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .theme-admin .section-reports .chart-card {
+            min-height: 360px;
+            padding: 18px;
+            border-radius: 20px;
+            background: #ffffff !important;
+        }
+
+        .theme-admin .section-reports .chart-card h3 {
+            margin: 0 0 14px;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .theme-admin .section-reports .chart-mock {
+            display: grid;
+            gap: 12px;
+        }
+
+        .theme-admin .section-reports .report-bar-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .theme-admin .section-reports .report-bar-info,
+        .theme-admin .section-reports .report-year-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .theme-admin .section-reports .report-bar-info span,
+        .theme-admin .section-reports .report-year-row span {
+            min-width: 0;
+            color: #10243f;
+            font-size: 1rem;
+            font-weight: 500 !important;
+            line-height: 1.35;
+        }
+
+        .theme-admin .section-reports .report-bar-info strong,
+        .theme-admin .section-reports .report-year-row strong {
+            flex: 0 0 auto;
+            color: #10243f;
+            font-size: 1rem;
+            font-weight: 600 !important;
+            line-height: 1.35;
+        }
+
+        .theme-admin .section-reports .report-bar-track {
+            height: 11px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #eef3f8;
+        }
+
+        .theme-admin .section-reports .report-bar-fill {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #c59335, #e0ad49);
+        }
+
+        .theme-admin .section-reports .year-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .theme-admin .section-reports .year-item {
+            padding: 12px;
+            border-radius: 16px;
+            background: #f8fafc !important;
+        }
+
+        .theme-admin .section-reports .pill {
+            font-weight: 700;
+        }
+
+        .theme-admin .section-reports .report-note {
+            margin-top: 14px;
         }
 
         .theme-admin .metric-card,
@@ -1055,8 +1326,8 @@ require_once __DIR__ . "/../../includes/functions.php";
 
         @media (max-width: 980px) {
             .theme-admin .admin-shell {
-                grid-template-columns: 1fr !important;
-            }
+            grid-template-columns: 1fr !important;
+        }
 
             .theme-admin .admin-sidebar {
                 position: static !important;
@@ -1070,7 +1341,11 @@ require_once __DIR__ . "/../../includes/functions.php";
             }
 
             .theme-admin .hero-metrics,
-            .theme-admin .grid-admin {
+            .theme-admin .grid-admin,
+            .theme-admin .candidate-list-summary,
+            .theme-admin .section-candidate-list .form-grid,
+            .theme-admin .section-reports .stats,
+            .theme-admin .section-reports .reports-layout {
                 grid-template-columns: 1fr !important;
             }
         }
@@ -1085,14 +1360,13 @@ require_once __DIR__ . "/../../includes/functions.php";
             <div class="admin-sidebar-card">
                 <span class="eyebrow-home">Ichnos Admin</span>
                 <h2 class="admin-sidebar-title">&#916;&#953;&#945;&#967;&#949;&#943;&#961;&#953;&#963;&#951;</h2>
-                <p class="muted admin-sidebar-copy">&#927;&#953; &#946;&#945;&#963;&#953;&#954;&#941;&#962; &#955;&#949;&#953;&#964;&#959;&#965;&#961;&#947;&#943;&#949;&#962; &#964;&#959;&#965; admin &#963;&#949; &#941;&#957;&#945; &#958;&#949;&#967;&#969;&#961;&#953;&#963;&#964;&#972; control panel.</p>
             </div>
 
             <nav class="admin-sidebar-nav">
                 <a class="admin-side-link<?php echo $currentAdminSection === "overview" ? " is-active" : ""; ?>" href="?section=overview">&#917;&#960;&#953;&#963;&#954;&#972;&#960;&#951;&#963;&#951;</a>
                 <a class="admin-side-link<?php echo $currentAdminSection === "users" ? " is-active" : ""; ?>" href="?section=users">&#935;&#961;&#942;&#963;&#964;&#949;&#962;</a>
                 <a class="admin-side-link<?php echo $currentAdminSection === "lists" ? " is-active" : ""; ?>" href="?section=lists">&#923;&#943;&#963;&#964;&#949;&#962;</a>
-                <a class="admin-side-link" href="list.php">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "candidate-list" ? " is-active" : ""; ?>" href="?section=candidate-list">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a>
                 <a class="admin-side-link<?php echo $currentAdminSection === "reports" ? " is-active" : ""; ?>" href="?section=reports">Reports</a>
                 <a class="admin-side-link<?php echo $currentAdminSection === "account" ? " is-active" : ""; ?>" href="?section=account">&#923;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962;</a>
             </nav>
@@ -1110,7 +1384,7 @@ require_once __DIR__ . "/../../includes/functions.php";
             <div class="hero-text">
                 <span class="eyebrow-home">Admin Control Center</span>
     <h1 id="pageTitle">Πίνακας Διαχείρισης</h1>
-    <p class="muted">Από εδώ διαχειρίζεσαι χρήστες, λίστες, βασικά reports και τα προσωπικά στοιχεία του admin λογαριασμού μέσα από ένα ενιαίο περιβάλλον.</p>
+    <p class="muted">Η επισκόπηση παρουσιάζει συνοπτικά τις βασικές δυνατότητες του admin module: διαχείριση χρηστών, λίστες, reports και στοιχεία λογαριασμού.</p>
             </div>
 
             <div class="hero-badges">
@@ -1187,34 +1461,45 @@ require_once __DIR__ . "/../../includes/functions.php";
                     <div class="form-stack">
                         <div class="form-group">
                 <label for="new_first_name">Όνομα</label>
-                            <input id="new_first_name" name="new_first_name" type="text" required>
+                            <input id="new_first_name" name="new_first_name" type="text" value="<?php echo h($createUserForm["first_name"]); ?>" required>
                         </div>
                         <div class="form-group">
                 <label for="new_last_name">Επώνυμο</label>
-                            <input id="new_last_name" name="new_last_name" type="text" required>
+                            <input id="new_last_name" name="new_last_name" type="text" value="<?php echo h($createUserForm["last_name"]); ?>" required>
                         </div>
                         <div class="form-group">
                             <label for="new_email">Email</label>
-                            <input id="new_email" name="new_email" type="email" required>
+                            <input id="new_email" name="new_email" type="email" value="<?php echo h($createUserForm["email"]); ?>" required>
                         </div>
                         <div class="form-group">
                 <label for="new_identity_number">Αριθμός ταυτότητας</label>
-                            <input id="new_identity_number" name="new_identity_number" type="text" required>
+                            <input id="new_identity_number" name="new_identity_number" type="text" value="<?php echo h($createUserForm["identity_number"]); ?>" required>
                         </div>
                         <div class="form-group">
                 <label for="new_phone">Τηλέφωνο</label>
-                            <input id="new_phone" name="new_phone" type="text">
+                            <input id="new_phone" name="new_phone" type="text" value="<?php echo h($createUserForm["phone"]); ?>">
                         </div>
                         <div class="form-group">
                 <label for="new_role">Ρόλος</label>
                             <select id="new_role" name="new_role" required>
-                                <option value="candidate">candidate</option>
-                                <option value="admin">admin</option>
+                                <option value="candidate" <?php echo $createUserForm["role"] === "candidate" ? "selected" : ""; ?>>candidate</option>
+                                <option value="admin" <?php echo $createUserForm["role"] === "admin" ? "selected" : ""; ?>>admin</option>
                             </select>
                         </div>
                         <div class="form-group">
                 <label for="new_password">Κωδικός πρόσβασης</label>
                             <input id="new_password" name="new_password" type="password" required>
+                        </div>
+                        <div class="form-group">
+                <label for="new_specialty_id">Ειδικότητα candidate</label>
+                            <select id="new_specialty_id" name="new_specialty_id">
+                                <option value="0">Χωρίς ειδικότητα</option>
+                                <?php foreach ($specialties as $specialty): ?>
+                                    <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo (int) $createUserForm["specialty_id"] === (int) $specialty["id"] ? "selected" : ""; ?>>
+                                        <?php echo h(admin_text($specialty["title"])); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
         <button class="btn btn-primary" type="submit">Δημιουργία Χρήστη</button>
@@ -1391,24 +1676,118 @@ require_once __DIR__ . "/../../includes/functions.php";
             </div>
         </section>
 
+        <section class="panel content-panel section-candidate-list section-shell" id="candidate-list" aria-labelledby="candidateListTitle">
+            <div class="panel-head">
+        <h2 id="candidateListTitle">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</h2>
+        <p class="muted">&#916;&#953;&#945;&#967;&#949;&#953;&#961;&#953;&#963;&#964;&#953;&#954;&#942; &#949;&#953;&#954;&#972;&#957;&#945; &#964;&#969;&#957; &#965;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957; &#956;&#949; &#966;&#943;&#955;&#964;&#961;&#945; &#945;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;&#962; &#954;&#945;&#953; &#963;&#965;&#957;&#959;&#960;&#964;&#953;&#954;&#940; &#963;&#964;&#959;&#953;&#967;&#949;&#943;&#945;.</p>
+            </div>
+
+            <div class="candidate-list-summary" aria-label="&#931;&#973;&#957;&#959;&#968;&#951; &#955;&#943;&#963;&#964;&#945;&#962;">
+                <div class="summary-chip">
+                    <span>&#917;&#947;&#947;&#961;&#945;&#966;&#941;&#962;</span>
+                    <strong><?php echo $candidateListTotal; ?></strong>
+                </div>
+                <div class="summary-chip">
+                    <span>&#923;&#941;&#958;&#951;-&#954;&#955;&#949;&#953;&#948;&#943;</span>
+                    <strong><?php echo $candidateListKeyword !== "" ? h($candidateListKeyword) : "—"; ?></strong>
+                </div>
+                <div class="summary-chip">
+                    <span>&#917;&#953;&#948;&#953;&#954;&#972;&#964;&#951;&#964;&#945;</span>
+                    <strong><?php echo h(admin_text($candidateListSpecialtyLabel)); ?></strong>
+                </div>
+            </div>
+
+            <h3 class="filters-title">&#934;&#943;&#955;&#964;&#961;&#945; &#945;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;&#962;</h3>
+            <form class="form-grid" method="get" action="admindashboard.php#candidate-list">
+                <input type="hidden" name="section" value="candidate-list">
+                <div class="form-group">
+                    <label for="candidate_keyword">&#923;&#941;&#958;&#951;-&#954;&#955;&#949;&#953;&#948;&#943;</label>
+                    <input id="candidate_keyword" name="candidate_keyword" type="text" value="<?php echo h($candidateListKeyword); ?>" placeholder="&#960;.&#967;. &#928;&#945;&#960;&#945;&#948;&#959;&#960;&#959;&#973;&#955;&#959;&#965;, email, &#964;&#951;&#955;&#941;&#966;&#969;&#957;&#959;">
+                </div>
+
+                <div class="form-group">
+                    <label for="candidate_specialty_id">&#917;&#953;&#948;&#953;&#954;&#972;&#964;&#951;&#964;&#945;</label>
+                    <select id="candidate_specialty_id" name="candidate_specialty_id">
+                        <option value="0">&#908;&#955;&#949;&#962; &#959;&#953; &#949;&#953;&#948;&#953;&#954;&#972;&#964;&#951;&#964;&#949;&#962;</option>
+                        <?php foreach ($specialties as $specialty): ?>
+                            <option value="<?php echo (int) $specialty["id"]; ?>" <?php echo $candidateListSpecialtyId === (int) $specialty["id"] ? "selected" : ""; ?>>
+                                <?php echo h(admin_text($specialty["title"])); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group form-actions">
+                    <button class="btn btn-primary" type="submit">&#913;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;</button>
+                    <a class="btn btn-secondary" href="admindashboard.php?section=candidate-list#candidate-list">&#922;&#945;&#952;&#945;&#961;&#953;&#963;&#956;&#972;&#962;</a>
+                </div>
+            </form>
+
+            <div class="table-titlebar">
+                <h3>&#913;&#960;&#959;&#964;&#949;&#955;&#941;&#963;&#956;&#945;&#964;&#945; &#955;&#943;&#963;&#964;&#945;&#962;</h3>
+                <p class="panel-subtitle">
+                    <?php if ($candidateListHasFilters): ?>
+                        &#917;&#956;&#966;&#945;&#957;&#943;&#950;&#959;&#957;&#964;&#945;&#953; &#959;&#953; &#949;&#947;&#947;&#961;&#945;&#966;&#941;&#962; &#960;&#959;&#965; &#964;&#945;&#953;&#961;&#953;&#940;&#950;&#959;&#965;&#957; &#963;&#964;&#945; &#966;&#943;&#955;&#964;&#961;&#945;.
+                    <?php else: ?>
+                        &#917;&#956;&#966;&#945;&#957;&#943;&#950;&#959;&#957;&#964;&#945;&#953; &#941;&#969;&#962; 50 &#949;&#947;&#947;&#961;&#945;&#966;&#941;&#962; &#945;&#960;&#972; &#964;&#951; &#955;&#943;&#963;&#964;&#945; &#965;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;.
+                    <?php endif; ?>
+                </p>
+            </div>
+
+            <div class="table-wrap" role="region" aria-label="&#923;&#943;&#963;&#964;&#945; &#965;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>&#933;&#960;&#959;&#968;&#942;&#966;&#953;&#959;&#962;</th>
+                            <th>Email</th>
+                            <th>&#932;&#951;&#955;&#941;&#966;&#969;&#957;&#959;</th>
+                            <th>&#917;&#953;&#948;&#953;&#954;&#972;&#964;&#951;&#964;&#945;</th>
+                            <th>&#922;&#945;&#964;&#940;&#963;&#964;&#945;&#963;&#951;</th>
+                            <th>&#920;&#941;&#963;&#951;</th>
+                            <th>&#924;&#959;&#957;&#940;&#948;&#949;&#962;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($candidateListRows === []): ?>
+                            <tr>
+                                <td colspan="7" class="empty-cell">&#916;&#949;&#957; &#946;&#961;&#941;&#952;&#951;&#954;&#945;&#957; &#945;&#960;&#959;&#964;&#949;&#955;&#941;&#963;&#956;&#945;&#964;&#945; &#947;&#953;&#945; &#964;&#945; &#963;&#965;&#947;&#954;&#949;&#954;&#961;&#953;&#956;&#941;&#957;&#945; &#954;&#961;&#953;&#964;&#942;&#961;&#953;&#945;.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($candidateListRows as $row): ?>
+                                <tr>
+                                    <td><?php echo h(admin_text(($row["first_name"] ?? "") . " " . ($row["last_name"] ?? ""))); ?></td>
+                                    <td><?php echo h($row["email"]); ?></td>
+                                    <td><?php echo h(admin_text($row["phone"] ?? null)); ?></td>
+                                    <td><?php echo h(admin_text($row["specialty_title"] ?? null)); ?></td>
+                                    <td><span class="pill"><?php echo h(admin_text($row["application_status"] ?? null)); ?></span></td>
+                                    <td><?php echo $row["ranking_position"] !== null ? (int) $row["ranking_position"] : "—"; ?></td>
+                                    <td><?php echo $row["points"] !== null ? number_format((float) $row["points"], 2) : "—"; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <section class="panel content-panel section-reports section-shell" id="reports" aria-labelledby="reportsTitle">
             <div class="panel-head">
         <h2 id="reportsTitle">Reports</h2>
         <p class="muted">Συνοπτική εικόνα της δραστηριότητας του συστήματος με βασικούς δείκτες και κατανομές.</p>
             </div>
 
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-kpi"><?php echo (int) $overview["total_candidates"]; ?></div>
-        <div class="stat-label">Σύνολο candidate profiles</div>
+            <div class="candidate-list-summary reports-summary" aria-label="Σύνοψη reports">
+                <div class="summary-chip">
+                    <span>Υποψήφιοι</span>
+                    <strong><?php echo (int) $overview["total_candidates"]; ?></strong>
                 </div>
-                <div class="stat">
-        <div class="stat-kpi"><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : '—'; ?></div>
-        <div class="stat-label">Μέσος όρος ηλικίας</div>
+                <div class="summary-chip">
+                    <span>Μέση ηλικία</span>
+                    <strong><?php echo $overview["average_age"] !== null ? number_format((float) $overview["average_age"], 1) : '—'; ?></strong>
                 </div>
-                <div class="stat">
-                    <div class="stat-kpi"><?php echo (int) $overview["tracked_total"]; ?></div>
-                    <div class="stat-label">Συνολικά tracked relationships</div>
+                <div class="summary-chip">
+                    <span>Παρακολουθήσεις</span>
+                    <strong><?php echo (int) $overview["tracked_total"]; ?></strong>
                 </div>
             </div>
 
@@ -1421,7 +1800,15 @@ require_once __DIR__ . "/../../includes/functions.php";
         <div class="chart-mock" aria-label="Γράφημα υποψηφίων ανά ειδικότητα">
                             <?php foreach ($specialtyStats as $row): ?>
                                 <?php $count = (int) $row["candidate_count"]; $width = $maxSpecialtyCount > 0 ? max(12, (int) round(($count / $maxSpecialtyCount) * 100)) : 12; ?>
-                                <div class="bar" style="width: <?php echo $width; ?>%"><span><?php echo h(admin_text($row["title"])); ?> - <?php echo $count; ?></span></div>
+                                <div class="report-bar-row">
+                                    <div class="report-bar-info">
+                                        <span><?php echo h(admin_text($row["title"])); ?></span>
+                                        <strong><?php echo $count; ?></strong>
+                                    </div>
+                                    <div class="report-bar-track" aria-hidden="true">
+                                        <span class="report-bar-fill" style="width: <?php echo $width; ?>%"></span>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
@@ -1434,7 +1821,12 @@ require_once __DIR__ . "/../../includes/functions.php";
                     <?php else: ?>
                         <div class="year-list">
                             <?php foreach ($yearlyRows as $yearRow): ?>
-            <div class="year-item"><span><?php echo h((string) $yearRow["report_year"]); ?></span><strong><?php echo (int) $yearRow["candidate_count"]; ?> υποψήφιοι</strong></div>
+            <div class="year-item">
+                <div class="report-year-row">
+                    <span><?php echo h((string) $yearRow["report_year"]); ?></span>
+                    <strong><?php echo (int) $yearRow["candidate_count"]; ?> υποψήφιοι</strong>
+                </div>
+            </div>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>

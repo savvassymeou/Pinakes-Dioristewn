@@ -327,13 +327,16 @@ $announcements = [
 
         .profile-dropdown {
             position: absolute;
-            top: calc(100% + 10px);
+            top: calc(100% + 12px);
             right: 0;
-            min-width: 176px;
-            padding: 8px 0;
+            min-width: 238px;
+            padding: 8px;
             background: #fff;
+            border: 1px solid rgba(21,55,92,0.12);
+            border-radius: 18px;
             box-shadow: 0 18px 40px rgba(17,39,68,0.16);
             display: grid;
+            gap: 4px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(8px);
@@ -351,16 +354,22 @@ $announcements = [
         .profile-dropdown-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
+            justify-content: flex-start;
+            gap: 10px;
+            min-height: 44px;
+            width: 100%;
+            padding: 10px 12px;
+            border: 0;
+            border-radius: 12px;
             color: #24364d;
-            font-weight: 600;
+            font-weight: 800;
             font-size: 0.92rem;
             background: transparent;
+            box-shadow: none;
         }
 
         .profile-dropdown-item:hover {
-            background: rgba(241,246,252,0.9);
+            background: #f3f6fb;
         }
 
         .profile-dropdown-item-logout {
@@ -384,6 +393,60 @@ $announcements = [
             fill: currentColor;
         }
 
+        .nav .profile-dropdown a.profile-dropdown-item {
+            min-height: 40px !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            justify-content: flex-start !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .nav .profile-dropdown {
+            top: calc(100% + 14px) !important;
+            right: 0 !important;
+            min-width: 310px !important;
+            padding: 20px 22px !important;
+            border-radius: 22px !important;
+            border: 1px solid rgba(21,55,92,0.08) !important;
+            background: #fff !important;
+            box-shadow: 0 26px 58px rgba(17,39,68,0.18) !important;
+            gap: 18px !important;
+        }
+
+        .nav .profile-dropdown a.profile-dropdown-item {
+            display: flex !important;
+            width: 100% !important;
+            align-items: center !important;
+            gap: 14px !important;
+            color: #24364d !important;
+            font-size: 1.02rem !important;
+            font-weight: 800 !important;
+            line-height: 1.35 !important;
+        }
+
+        .nav .profile-dropdown a.profile-dropdown-item:hover {
+            background: transparent !important;
+            color: #14263d !important;
+        }
+
+        .nav .profile-dropdown a.profile-dropdown-item-logout {
+            color: #ef5b55 !important;
+        }
+
+        .nav .profile-dropdown .profile-dropdown-icon {
+            width: 24px !important;
+            height: 24px !important;
+            flex: 0 0 24px !important;
+        }
+
+        .nav .profile-dropdown .profile-dropdown-icon svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+
         .page {
             display: grid;
             gap: 22px;
@@ -392,7 +455,7 @@ $announcements = [
 
         .hero {
             display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+            grid-template-columns: minmax(0, 1fr) minmax(340px, 0.82fr);
             gap: 22px;
             align-items: stretch;
         }
@@ -406,10 +469,10 @@ $announcements = [
         }
 
         .hero-main {
-            padding: 34px;
+            padding: 34px 40px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .eyebrow {
@@ -433,9 +496,9 @@ $announcements = [
 
         h1 {
             margin-top: 16px;
-            max-width: 13ch;
-            font-size: clamp(2.6rem, 6vw, 4.8rem);
-            line-height: 0.98;
+            max-width: 18ch;
+            font-size: clamp(2.25rem, 4.6vw, 3.8rem);
+            line-height: 1.04;
         }
 
         h2 {
@@ -453,9 +516,39 @@ $announcements = [
         }
 
         .lead {
-            margin-top: 18px;
-            max-width: 72ch;
+            margin-top: 16px;
+            max-width: 64ch;
             font-size: 1.02rem;
+        }
+
+        .hero-highlights {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .hero-highlight {
+            min-height: 84px;
+            padding: 14px 15px;
+            border: 1px solid rgba(21, 55, 92, 0.10);
+            border-radius: 8px;
+            background: var(--panel-soft);
+        }
+
+        .hero-highlight strong {
+            display: block;
+            color: var(--text);
+            font-size: 0.95rem;
+            line-height: 1.25;
+        }
+
+        .hero-highlight span {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.45;
         }
 
         .actions {
@@ -489,11 +582,17 @@ $announcements = [
         .quick-search {
             display: grid;
             gap: 16px;
+            align-content: start;
         }
 
         .quick-search form {
             display: grid;
             gap: 12px;
+            align-content: start;
+        }
+
+        .quick-search .btn {
+            min-height: 58px;
         }
 
         label {
@@ -679,6 +778,7 @@ $announcements = [
         @media (max-width: 980px) {
             .topbar { position: static; }
             .hero,
+            .hero-highlights,
             .two-column,
             .stats-grid,
             .links-grid,
@@ -795,14 +895,29 @@ $announcements = [
             <section class="hero" aria-labelledby="homeTitle">
                 <article class="panel hero-main">
                     <span class="eyebrow">Εφαρμογή παρακολούθησης</span>
-                    <h1 id="homeTitle">Πίνακες διοριστέων, καθαρά και οργανωμένα</h1>
+                    <h1 id="homeTitle">Εφαρμογή παρακολούθησης πινάκων διοριστέων</h1>
                     <p class="lead">
-                        Βρες γρήγορα πληροφορίες για υποψηφίους και ειδικότητες, παρακολούθησε τις πρόσφατες
-                        ανακοινώσεις της ΕΕΥ και δες μια καθαρή εικόνα των διαθέσιμων πινάκων. Με λογαριασμό μπορείς
-                        να αποθηκεύεις την παρακολούθησή σου και να ενημερώνεσαι πιο εύκολα για την πορεία που σε αφορά.
+                        Η εφαρμογή συγκεντρώνει τους διαθέσιμους πίνακες διοριστέων της Επιτροπής
+                        Εκπαιδευτικής Υπηρεσίας και επιτρέπει αναζήτηση υποψηφίων ανά ονοματεπώνυμο
+                        ή ειδικότητα. Με λογαριασμό μπορείς να συνδέσεις το προφίλ σου με την αίτησή σου,
+                        να παρακολουθείς άλλους υποψηφίους και να βλέπεις την πορεία των πινάκων πιο οργανωμένα.
                     </p>
+                    <div class="hero-highlights" aria-label="Βασικές λειτουργίες">
+                        <div class="hero-highlight">
+                            <strong>Αναζήτηση</strong>
+                            <span>Εντοπισμός υποψηφίων και ειδικοτήτων.</span>
+                        </div>
+                        <div class="hero-highlight">
+                            <strong>Παρακολούθηση</strong>
+                            <span>Σύνδεση προφίλ και αποθήκευση ενδιαφερόντων.</span>
+                        </div>
+                        <div class="hero-highlight">
+                            <strong>Ενημέρωση</strong>
+                            <span>Στατιστικά και πρόσφατες ανακοινώσεις ΕΕΥ.</span>
+                        </div>
+                    </div>
                     <div class="actions">
-                        <a class="btn btn-primary" href="modules/search/searchdashboard.php">Αναζήτηση Πινάκων</a>
+                        <a class="btn btn-primary" href="modules/search/searchdashboard.php">Αναζήτηση πινάκων</a>
                         <?php if ($isGuest): ?>
                             <a class="btn" href="auth/register.php">Δημιουργία λογαριασμού</a>
                         <?php else: ?>

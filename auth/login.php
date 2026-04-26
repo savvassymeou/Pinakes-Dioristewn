@@ -102,9 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .password-field input { padding-right:68px; }
         .password-toggle { position:absolute; top:50%; right:12px; transform:translateY(-50%); width:42px; height:42px; border:1px solid var(--field-border); border-radius:999px; background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--accent-dark); box-shadow:0 6px 16px rgba(20,38,61,.08); }
         .password-toggle svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-        .password-toggle .icon-hide { display:none; }
-        .password-toggle.is-visible .icon-show { display:none; }
-        .password-toggle.is-visible .icon-hide { display:block; }
+        .password-toggle .icon-show { display:none; }
+        .password-toggle .icon-hide { display:block; }
+        .password-toggle.is-visible .icon-show { display:block; }
+        .password-toggle.is-visible .icon-hide { display:none; }
         .submit-btn { width:100%; margin-top:26px; padding:15px; border:none; border-radius:16px; cursor:pointer; font-size:1rem; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 18px 32px rgba(184,134,47,.24); }
         .helper-links { margin-top:20px; text-align:center; color:var(--muted); font-size:.95rem; }
         .helper-links a { color:var(--accent-dark); font-weight:800; }
