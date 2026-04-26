@@ -450,12 +450,12 @@ $pageTitle = APP_NAME . " | " . u('\u039b\u03af\u03c3\u03c4\u03b1 \u03a5\u03c0\u
 </div>
 
             <nav class="admin-sidebar-nav">
-                <a class="admin-side-link" href="admindashboard.php#overview">&#917;&#960;&#953;&#963;&#954;&#972;&#960;&#951;&#963;&#951;</a>
-                <a class="admin-side-link" href="admindashboard.php#manage-users">&#935;&#961;&#942;&#963;&#964;&#949;&#962;</a>
-                <a class="admin-side-link" href="admindashboard.php#manage-lists">&#923;&#943;&#963;&#964;&#949;&#962;</a>
+                <a class="admin-side-link" href="admindashboard.php?section=overview">&#917;&#960;&#953;&#963;&#954;&#972;&#960;&#951;&#963;&#951;</a>
+                <a class="admin-side-link" href="admindashboard.php?section=users">&#935;&#961;&#942;&#963;&#964;&#949;&#962;</a>
+                <a class="admin-side-link" href="admindashboard.php?section=lists">&#923;&#943;&#963;&#964;&#949;&#962;</a>
                 <a class="admin-side-link is-active" href="list.php">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a>
-                <a class="admin-side-link" href="admindashboard.php#reports">Reports</a>
-                <a class="admin-side-link" href="admindashboard.php#account">&#923;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962;</a>
+                <a class="admin-side-link" href="admindashboard.php?section=reports">Reports</a>
+                <a class="admin-side-link" href="admindashboard.php?section=account">&#923;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962;</a>
             </nav>
 
             <div class="admin-identity">

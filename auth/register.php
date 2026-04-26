@@ -3,6 +3,10 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+if (is_logged_in()) {
+    redirect_to_dashboard_by_role('../modules/admin/admindashboard.php', '../modules/candidate/candidatedashboard.php', 'login.php');
+}
+
 $successMessage = '';
 $errorMessages = [];
 $specialties = [];

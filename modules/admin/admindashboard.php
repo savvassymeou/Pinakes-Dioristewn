@@ -807,12 +807,39 @@ foreach ($specialtyStats as $row) {
 
 $selectedSpecialtyId = (int) ($_POST["specialty_id"] ?? ($specialties[0]["id"] ?? 0));
 $selectedLoadYear = (int) ($_POST["load_year"] ?? date("Y"));
+$requestedSection = (string) ($_GET["section"] ?? "overview");
+$allowedAdminSections = ["overview", "users", "lists", "reports", "account"];
+
+if (!in_array($requestedSection, $allowedAdminSections, true)) {
+    $requestedSection = "overview";
+}
+
+$actionSectionMap = [
+    "create_user" => "users",
+    "update_user" => "users",
+    "delete_user" => "users",
+    "import_list_csv" => "lists",
+    "update_profile" => "account",
+    "change_password" => "account",
+];
+
+$postedAction = (string) ($_POST["action"] ?? "");
+$currentAdminSection = $requestedSection;
+
+if ($postedAction !== "" && isset($actionSectionMap[$postedAction])) {
+    $currentAdminSection = $actionSectionMap[$postedAction];
+}
+
+if ($editingUserId > 0) {
+    $currentAdminSection = "users";
+}
+
 $pageTitle = APP_NAME . " | Admin Dashboard";
 $bodyClass = "theme-admin";
 $currentPage = "admin";
 $navBase = "../";
 $headerActionLabel = "Ρυθμίσεις Λογαριασμού";
-$headerActionHref = "#account";
+$headerActionHref = "?section=account";
 
 function admin_text(?string $value, string $fallback = "—"): string
 {
@@ -952,6 +979,36 @@ require_once __DIR__ . "/../../includes/functions.php";
             margin: 0 0 6px !important;
         }
 
+        .theme-admin .section-shell {
+            background: #fff !important;
+            border: 1px solid rgba(21, 55, 92, 0.08) !important;
+            border-radius: 28px !important;
+            box-shadow: 0 10px 26px rgba(17, 39, 68, 0.06) !important;
+            padding: 24px !important;
+        }
+
+        .theme-admin .section-shell + .section-shell {
+            margin-top: 18px !important;
+        }
+
+        .theme-admin .section-shell .panel-head {
+            margin-bottom: 18px !important;
+            padding-bottom: 14px !important;
+            border-bottom: 1px solid rgba(21, 55, 92, 0.08) !important;
+        }
+
+        .theme-admin .section-shell .panel-head h2 {
+            margin: 0 0 8px !important;
+            font-size: clamp(1.8rem, 3vw, 2.4rem) !important;
+            line-height: 1.05 !important;
+            letter-spacing: -0.03em !important;
+        }
+
+        .theme-admin .section-shell .panel-head .muted {
+            margin: 0 !important;
+            max-width: 62ch !important;
+        }
+
         .theme-admin .hero-badges {
             display: none !important;
         }
@@ -969,9 +1026,26 @@ require_once __DIR__ . "/../../includes/functions.php";
             gap: 12px !important;
         }
 
+        .theme-admin .content-panel {
+            display: none !important;
+            margin-top: 22px !important;
+        }
+
+        .theme-admin:not([data-admin-section="overview"]) .page-hero,
+        .theme-admin:not([data-admin-section="overview"]) .hero-metrics,
+        .theme-admin:not([data-admin-section="overview"]) .grid-admin {
+            display: none !important;
+        }
+
+        .theme-admin[data-admin-section="users"] .content-panel.section-users,
+        .theme-admin[data-admin-section="lists"] .content-panel.section-lists,
+        .theme-admin[data-admin-section="reports"] .content-panel.section-reports,
+        .theme-admin[data-admin-section="account"] .content-panel.section-account {
+            display: block !important;
+        }
+
         .theme-admin .metric-card,
         .theme-admin .card,
-        .theme-admin .panel,
         .theme-admin .chart-card,
         .theme-admin .stat {
             background: #fff !important;
@@ -1002,7 +1076,7 @@ require_once __DIR__ . "/../../includes/functions.php";
         }
     </style>
 </head>
-<body class="<?php echo e($bodyClass ?? "theme-admin"); ?>">
+<body class="<?php echo e($bodyClass ?? "theme-admin"); ?>" data-admin-section="<?php echo h($currentAdminSection); ?>">
 <?php
 
 ?>
@@ -1015,12 +1089,12 @@ require_once __DIR__ . "/../../includes/functions.php";
             </div>
 
             <nav class="admin-sidebar-nav">
-                <a class="admin-side-link is-active" href="#overview">&#917;&#960;&#953;&#963;&#954;&#972;&#960;&#951;&#963;&#951;</a>
-                <a class="admin-side-link" href="#manage-users">&#935;&#961;&#942;&#963;&#964;&#949;&#962;</a>
-                <a class="admin-side-link" href="#manage-lists">&#923;&#943;&#963;&#964;&#949;&#962;</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "overview" ? " is-active" : ""; ?>" href="?section=overview">&#917;&#960;&#953;&#963;&#954;&#972;&#960;&#951;&#963;&#951;</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "users" ? " is-active" : ""; ?>" href="?section=users">&#935;&#961;&#942;&#963;&#964;&#949;&#962;</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "lists" ? " is-active" : ""; ?>" href="?section=lists">&#923;&#943;&#963;&#964;&#949;&#962;</a>
                 <a class="admin-side-link" href="list.php">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a>
-                <a class="admin-side-link" href="#reports">Reports</a>
-                <a class="admin-side-link" href="#account">&#923;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962;</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "reports" ? " is-active" : ""; ?>" href="?section=reports">Reports</a>
+                <a class="admin-side-link<?php echo $currentAdminSection === "account" ? " is-active" : ""; ?>" href="?section=account">&#923;&#959;&#947;&#945;&#961;&#953;&#945;&#963;&#956;&#972;&#962;</a>
             </nav>
 
             <div class="admin-sidebar-card admin-sidebar-card-compact">
@@ -1082,36 +1156,32 @@ require_once __DIR__ . "/../../includes/functions.php";
                 <div class="card-icon" aria-hidden="true">1</div>
     <h2>Χρήστες</h2>
     <p>Δημιουργία, επεξεργασία και διαγραφή χρηστών με άμεση πρόσβαση στον πλήρη πίνακα.</p>
-    <div class="card-actions"><a class="btn" href="#manage-users">Άνοιγμα</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">2</div>
     <h2>Λίστες</h2>
     <p>Προβολή στατιστικών ανά ειδικότητα και φόρτωση πινάκων από CSV.</p>
-    <div class="card-actions"><a class="btn" href="#manage-lists">&#902;&#957;&#959;&#953;&#947;&#956;&#945;</a> <a class="btn btn-secondary" href="list.php">&#923;&#943;&#963;&#964;&#945; &#933;&#960;&#959;&#968;&#951;&#966;&#943;&#969;&#957;</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">3</div>
     <h2>Reports</h2>
     <p>Συνοπτικά KPI, κατανομή υποψηφίων και χρονολογική επισκόπηση του συστήματος.</p>
-    <div class="card-actions"><a class="btn" href="#reports">Άνοιγμα</a></div>
             </article>
             <article class="card card-action">
                 <div class="card-icon" aria-hidden="true">4</div>
     <h2>Λογαριασμός</h2>
     <p>Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης για τον admin λογαριασμό.</p>
-    <div class="card-actions"><a class="btn" href="#account">Άνοιγμα</a></div>
             </article>
         </section>
 
-        <section class="panel" id="manage-users" aria-labelledby="usersTitle">
+        <section class="panel content-panel section-users section-shell" id="manage-users" aria-labelledby="usersTitle">
             <div class="panel-head">
         <h2 id="usersTitle">Διαχείριση Χρηστών</h2>
         <p class="muted">Οργάνωσε το σύνολο των χρηστών του συστήματος από ένα ενιαίο σημείο διαχείρισης.</p>
             </div>
 
             <div class="account-grid">
-                <form class="panel panel-nested" method="post" action="#manage-users">
+                <form class="panel panel-nested" method="post" action="?section=users#manage-users">
                     <input type="hidden" name="action" value="create_user">
         <h3>Νέος Χρήστης</h3>
                     <div class="form-stack">
@@ -1150,7 +1220,7 @@ require_once __DIR__ . "/../../includes/functions.php";
         <button class="btn btn-primary" type="submit">Δημιουργία Χρήστη</button>
                 </form>
 
-                <form class="panel panel-nested" method="post" action="#manage-users">
+                <form class="panel panel-nested" method="post" action="?section=users#manage-users">
                     <input type="hidden" name="action" value="update_user">
                     <input type="hidden" name="edit_user_id" value="<?php echo (int) ($editingUser["id"] ?? 0); ?>">
         <h3>Επεξεργασία Χρήστη</h3>
@@ -1191,7 +1261,7 @@ require_once __DIR__ . "/../../includes/functions.php";
                         </div>
                         <div class="card-actions">
             <button class="btn btn-primary" type="submit">Αποθήκευση Αλλαγών</button>
-            <a class="btn btn-secondary" href="admindashboard.php#manage-users">Ακύρωση</a>
+            <a class="btn btn-secondary" href="admindashboard.php?section=users#manage-users">Ακύρωση</a>
                         </div>
                     <?php else: ?>
         <div class="empty-state">Επίλεξε έναν χρήστη από τον παρακάτω πίνακα για να φορτωθούν τα στοιχεία του προς επεξεργασία.</div>
@@ -1232,9 +1302,9 @@ require_once __DIR__ . "/../../includes/functions.php";
                                     <td><?php echo h(date("d/m/Y", strtotime($row["created_at"]))); ?></td>
                                     <td class="right">
                                         <div class="inline-actions">
-                                            <a class="btn btn-small" href="?edit_user=<?php echo (int) $row["id"]; ?>#manage-users">Edit</a>
+                                            <a class="btn btn-small" href="?section=users&edit_user=<?php echo (int) $row["id"]; ?>#manage-users">Edit</a>
                                             <?php if ((int) $row["id"] !== (int) $_SESSION["user_id"]): ?>
-                                                <form method="post" action="#manage-users" onsubmit="return confirm('Να διαγραφεί ο χρήστης;');">
+                                                <form method="post" action="?section=users#manage-users" onsubmit="return confirm('Να διαγραφεί ο χρήστης;');">
                                                     <input type="hidden" name="action" value="delete_user">
                                                     <input type="hidden" name="delete_user_id" value="<?php echo (int) $row["id"]; ?>">
                                                     <button class="btn btn-small" type="submit">Delete</button>
@@ -1250,13 +1320,13 @@ require_once __DIR__ . "/../../includes/functions.php";
             </div>
         </section>
 
-        <section class="panel" id="manage-lists" aria-labelledby="listsTitle">
+        <section class="panel content-panel section-lists section-shell" id="manage-lists" aria-labelledby="listsTitle">
             <div class="panel-head">
         <h2 id="listsTitle">Διαχείριση Λιστών</h2>
         <p class="muted">Φόρτωσε CSV πίνακα από την ΕΕΥ για μια ειδικότητα και δες συνοπτικά στατιστικά ανά λίστα.</p>
             </div>
 
-            <form class="form-grid" method="post" action="#manage-lists" enctype="multipart/form-data">
+            <form class="form-grid" method="post" action="?section=lists#manage-lists" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="import_list_csv">
                 <div class="form-group">
             <label for="specialty_id">Ειδικότητα</label>
@@ -1321,7 +1391,7 @@ require_once __DIR__ . "/../../includes/functions.php";
             </div>
         </section>
 
-        <section class="panel" id="reports" aria-labelledby="reportsTitle">
+        <section class="panel content-panel section-reports section-shell" id="reports" aria-labelledby="reportsTitle">
             <div class="panel-head">
         <h2 id="reportsTitle">Reports</h2>
         <p class="muted">Συνοπτική εικόνα της δραστηριότητας του συστήματος με βασικούς δείκτες και κατανομές.</p>
@@ -1373,14 +1443,14 @@ require_once __DIR__ . "/../../includes/functions.php";
             </div>
         </section>
 
-        <section class="panel" id="account" aria-labelledby="accountTitle">
+        <section class="panel content-panel section-account section-shell" id="account" aria-labelledby="accountTitle">
             <div class="panel-head">
         <h2 id="accountTitle">Λογαριασμός Admin</h2>
         <p class="muted">Ενημέρωση βασικών στοιχείων και αλλαγή κωδικού πρόσβασης χωρίς έξοδο από το dashboard.</p>
             </div>
 
             <div class="account-grid">
-                <form class="panel panel-nested" method="post" action="#account">
+                <form class="panel panel-nested" method="post" action="?section=account#account">
                     <input type="hidden" name="action" value="update_profile">
         <h3>Βασικά Στοιχεία</h3>
                     <div class="form-stack">
@@ -1408,7 +1478,7 @@ require_once __DIR__ . "/../../includes/functions.php";
         <button class="btn btn-primary" type="submit">Αποθήκευση Στοιχείων</button>
                 </form>
 
-                <form class="panel panel-nested" method="post" action="#account">
+                <form class="panel panel-nested" method="post" action="?section=account#account">
                     <input type="hidden" name="action" value="change_password">
         <h3>Αλλαγή Κωδικού</h3>
                     <div class="form-stack">
@@ -1431,6 +1501,20 @@ require_once __DIR__ . "/../../includes/functions.php";
         </section>
         </div>
     </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var sideLinks = document.querySelectorAll(".admin-side-link[href*='?section=']");
+            sideLinks.forEach(function (link) {
+                link.addEventListener("click", function () {
+                    sideLinks.forEach(function (item) {
+                        item.classList.remove("is-active");
+                    });
+                    link.classList.add("is-active");
+                });
+            });
+        });
+    </script>
 
 </body>
 </html>

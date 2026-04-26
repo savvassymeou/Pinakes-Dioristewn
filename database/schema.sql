@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     ranking_position INT DEFAULT NULL,
     points DECIMAL(10,2) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_candidate_profiles_user (user_id),
     CONSTRAINT fk_candidate_profiles_user
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_candidate_profiles_specialty

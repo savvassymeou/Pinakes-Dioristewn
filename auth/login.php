@@ -5,6 +5,10 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+if (is_logged_in()) {
+    redirect_to_dashboard_by_role('../modules/admin/admindashboard.php', '../modules/candidate/candidatedashboard.php', 'login.php');
+}
+
 $errorMessage = '';
 $successMessage = isset($_GET['registered']) && $_GET['registered'] === '1'
     ? u('\u0397 \u03B5\u03B3\u03B3\u03C1\u03B1\u03C6\u03AE \u03BF\u03BB\u03BF\u03BA\u03BB\u03B7\u03C1\u03CE\u03B8\u03B7\u03BA\u03B5 \u03B5\u03C0\u03B9\u03C4\u03C5\u03C7\u03CE\u03C2. \u039C\u03C0\u03BF\u03C1\u03B5\u03AF\u03C2 \u03C4\u03CE\u03C1\u03B1 \u03BD\u03B1 \u03C3\u03C5\u03BD\u03B4\u03B5\u03B8\u03B5\u03AF\u03C2.')
