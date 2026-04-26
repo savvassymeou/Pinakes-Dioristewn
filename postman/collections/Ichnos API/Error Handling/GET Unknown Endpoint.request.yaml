@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=unknown"
+method: GET
+queryParams:
+  endpoint: unknown
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400 or 404", function () {
+          pm.expect(pm.response.code).to.be.oneOf([400, 404]);
+      });
+
+      pm.test("success is false", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(false);
+      });
+    language: text/javascript
+order: 1000

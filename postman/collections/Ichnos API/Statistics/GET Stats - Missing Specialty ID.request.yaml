@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=stats"
+method: GET
+queryParams:
+  endpoint: stats
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("success is false", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(false);
+      });
+
+      pm.test("Response has an error or message field", function () {
+          var jsonData = pm.response.json();
+          var hasError = jsonData.hasOwnProperty('error') || jsonData.hasOwnProperty('message');
+          pm.expect(hasError).to.be.true;
+      });
+    language: text/javascript
+order: 2000

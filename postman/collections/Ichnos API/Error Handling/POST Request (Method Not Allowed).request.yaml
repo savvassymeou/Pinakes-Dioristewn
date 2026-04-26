@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php"
+method: POST
+body:
+  type: json
+  content: ""
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 405", function () {
+          pm.response.to.have.status(405);
+      });
+
+      pm.test("success is false", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(false);
+      });
+    language: text/javascript
+order: 2000

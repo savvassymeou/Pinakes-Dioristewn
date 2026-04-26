@@ -1,0 +1,5 @@
+name: Ichnos - Local
+values:
+  - key: baseUrl
+    value: 'http://localhost/Pinakes-Dioristewn'
+    enabled: true

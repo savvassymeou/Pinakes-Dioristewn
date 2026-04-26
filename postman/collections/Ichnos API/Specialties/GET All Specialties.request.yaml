@@ -1,0 +1,47 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=specialties"
+method: GET
+queryParams:
+  endpoint: specialties
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response is valid JSON", function () {
+          pm.response.to.be.json;
+          pm.expect(pm.response.json()).to.be.an('object');
+      });
+
+      pm.test("success is true", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(true);
+      });
+
+      pm.test("data is an array", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data).to.be.an('array');
+      });
+
+      pm.test("Each specialty has id and title fields", function () {
+          var jsonData = pm.response.json();
+          jsonData.data.forEach(function(specialty) {
+              pm.expect(specialty).to.have.property('id');
+              pm.expect(specialty).to.have.property('title');
+          });
+      });
+
+      pm.test("data array is not empty (at least 1 specialty)", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data.length).to.be.above(0);
+      });
+
+      // Save first specialty ID for use in later requests
+      var jsonData = pm.response.json();
+      if (jsonData.success && jsonData.data && jsonData.data.length > 0) {
+          pm.collectionVariables.set("specialty_id", jsonData.data[0].id);
+      }
+    language: text/javascript
+order: 1000

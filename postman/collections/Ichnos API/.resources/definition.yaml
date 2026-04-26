@@ -1,0 +1,4 @@
+$kind: collection
+description: Postman collection for the Ichnos API (Pinakes Dioristewn project). Tests all endpoints including specialties, candidates, statistics, and error handling.
+variables:
+  specialty_id: ""

@@ -1,0 +1,39 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=stats&specialty_id={{specialty_id}}"
+method: GET
+queryParams:
+  endpoint: stats
+  specialty_id: "{{specialty_id}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("success is true", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(true);
+      });
+
+      pm.test("Response has data field", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('data');
+      });
+
+      pm.test("data has specialty field", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data).to.have.property('specialty');
+      });
+
+      pm.test("data has summary field", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data).to.have.property('summary');
+      });
+
+      pm.test("data.summary has candidate_count field", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data.summary).to.have.property('candidate_count');
+      });
+    language: text/javascript
+order: 1000
