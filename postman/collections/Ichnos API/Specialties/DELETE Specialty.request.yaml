@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=specialties&id={{createdSpecialtyId}}"
+method: DELETE
+queryParams:
+  endpoint: specialties
+  id: "{{createdSpecialtyId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("success is true", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(true);
+      });
+
+      pm.test("deleted id matches variable", function () {
+          var jsonData = pm.response.json();
+          pm.expect(String(jsonData.data.id)).to.eql(String(pm.collectionVariables.get("createdSpecialtyId")));
+      });
+    language: text/javascript
+order: 2300

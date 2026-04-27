@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=specialties"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  endpoint: specialties
+body:
+  type: json
+  content: |-
+    {
+      "title": "Demo Postman Specialty",
+      "description": "Created from Postman for the API demo."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("success is true", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(true);
+      });
+
+      pm.test("created specialty id exists", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data).to.have.property('id');
+          pm.collectionVariables.set("createdSpecialtyId", jsonData.data.id);
+      });
+    language: text/javascript
+order: 2100

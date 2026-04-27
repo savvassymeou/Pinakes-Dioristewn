@@ -1,0 +1,435 @@
+{
+  "info": {
+    "_postman_id": "7d8b96d1-ichnos-api-demo",
+    "name": "Ichnos API",
+    "description": "Postman collection for the Ichnos API demo. Covers JSON responses, status codes, GET, POST, PUT, DELETE and validation errors.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost/Pinakes-Dioristewn"
+    },
+    {
+      "key": "specialty_id",
+      "value": "1"
+    },
+    {
+      "key": "createdSpecialtyId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Specialties",
+      "item": [
+        {
+          "name": "GET All Specialties",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('success is true', function () { pm.expect(pm.response.json().success).to.eql(true); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) { pm.collectionVariables.set('specialty_id', jsonData.data[0].id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Specialty - Not Found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties&id=999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                },
+                {
+                  "key": "id",
+                  "value": "999999"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('success is false', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Create Specialty",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Demo Postman Specialty\",\n  \"description\": \"Created from Postman for the API demo.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('success is true', function () { pm.expect(pm.response.json().success).to.eql(true); });",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('createdSpecialtyId', jsonData.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT Update Specialty",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Demo Postman Specialty Updated\",\n  \"description\": \"Updated from Postman with PUT for the API demo.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties&id={{createdSpecialtyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                },
+                {
+                  "key": "id",
+                  "value": "{{createdSpecialtyId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('title was updated', function () { pm.expect(pm.response.json().data.title).to.eql('Demo Postman Specialty Updated'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Specialty",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties&id={{createdSpecialtyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                },
+                {
+                  "key": "id",
+                  "value": "{{createdSpecialtyId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('success is true', function () { pm.expect(pm.response.json().success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Create Specialty - Invalid Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Missing title should return 400.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "specialties"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('success is false', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Candidates",
+      "item": [
+        {
+          "name": "GET All Candidates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=candidates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "candidates"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('data is an array', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Candidates - Invalid Order Param",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=candidates&order=wrong",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "candidates"
+                },
+                {
+                  "key": "order",
+                  "value": "wrong"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('success is false', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "GET Stats - Valid Specialty",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=stats&specialty_id={{specialty_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "stats"
+                },
+                {
+                  "key": "specialty_id",
+                  "value": "{{specialty_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('summary exists', function () { pm.expect(pm.response.json().data).to.have.property('summary'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "item": [
+        {
+          "name": "GET Unknown Endpoint",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php?endpoint=unknown",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"],
+              "query": [
+                {
+                  "key": "endpoint",
+                  "value": "unknown"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('success is false', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Request - Method Not Allowed",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api.php",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api.php"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 405', function () { pm.response.to.have.status(405); });",
+                  "pm.test('success is false', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -363,6 +363,51 @@ function requireGetMethod(): void
     }
 }
 
+function requestMethod(): string
+{
+    return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+}
+
+function readJsonBody(): array
+{
+    $raw = trim((string) file_get_contents('php://input'));
+    if ($raw === '') {
+        respondApiError('invalid_json', 'Request body must be valid JSON.', 400);
+    }
+
+    $payload = json_decode($raw, true);
+    if (!is_array($payload)) {
+        respondApiError('invalid_json', 'Request body must be a JSON object.', 400);
+    }
+
+    return $payload;
+}
+
+function readRequiredText(array $payload, string $key, int $maxLength): string
+{
+    $value = trim((string) ($payload[$key] ?? ''));
+    if ($value === '') {
+        respondApiError('missing_field', 'Missing required field: ' . $key . '.', 400, ['field' => $key]);
+    }
+
+    $length = function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+    if ($length > $maxLength) {
+        respondApiError('invalid_field', 'Field ' . $key . ' must be at most ' . $maxLength . ' characters.', 400, ['field' => $key]);
+    }
+
+    return $value;
+}
+
+function readOptionalText(array $payload, string $key): ?string
+{
+    if (!array_key_exists($key, $payload)) {
+        return null;
+    }
+
+    $value = trim((string) $payload[$key]);
+    return $value === '' ? null : $value;
+}
+
 function readPositiveIntQuery(string $key, bool $required = false): int
 {
     $raw = trim((string) ($_GET[$key] ?? ''));
@@ -380,13 +425,22 @@ function readPositiveIntQuery(string $key, bool $required = false): int
     return (int) $raw;
 }
 
-requireGetMethod();
-
 $docs = apiDocs();
+$method = requestMethod();
 $endpoint = trim((string) ($_GET['endpoint'] ?? ''));
 $format = trim((string) ($_GET['format'] ?? 'html'));
 
 if ($endpoint === '') {
+    if ($method !== 'GET') {
+        respondApiError(
+            'method_not_allowed',
+            'Only GET requests are supported for the API documentation index.',
+            405,
+            ['allowed_methods' => ['GET']],
+            ['Allow' => 'GET']
+        );
+    }
+
     if ($format === 'json') {
         respondApiSuccess('index', docsIndexPayload($docs), ['documentation' => true]);
     }
@@ -394,13 +448,104 @@ if ($endpoint === '') {
 }
 
 if ($endpoint === 'specialties') {
+    $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    if (!in_array($method, $allowedMethods, true)) {
+        respondApiError(
+            'method_not_allowed',
+            'Supported methods for specialties are GET, POST, PUT, PATCH and DELETE.',
+            405,
+            ['allowed_methods' => $allowedMethods],
+            ['Allow' => implode(', ', $allowedMethods)]
+        );
+    }
+
+    if ($method === 'POST') {
+        $payload = readJsonBody();
+        $title = readRequiredText($payload, 'title', 150);
+        $description = readOptionalText($payload, 'description');
+
+        $stmt = $conn->prepare('INSERT INTO specialties (title, description) VALUES (?, ?)');
+        if (!$stmt) {
+            respondApiError('database_error', 'Could not prepare specialty insert.', 500);
+        }
+
+        $stmt->bind_param('ss', $title, $description);
+        if (!$stmt->execute()) {
+            respondApiError('database_error', 'Could not create specialty.', 500);
+        }
+
+        $newId = $conn->insert_id;
+        $stmt->close();
+
+        respondApiSuccess('specialties', [
+            'id' => $newId,
+            'title' => $title,
+            'description' => $description,
+        ], ['created' => true], 201);
+    }
+
+    if ($method === 'PUT' || $method === 'PATCH') {
+        $id = readPositiveIntQuery('id', true);
+        $payload = readJsonBody();
+        $title = readRequiredText($payload, 'title', 150);
+        $description = readOptionalText($payload, 'description');
+
+        $stmt = $conn->prepare('UPDATE specialties SET title = ?, description = ? WHERE id = ?');
+        if (!$stmt) {
+            respondApiError('database_error', 'Could not prepare specialty update.', 500);
+        }
+
+        $stmt->bind_param('ssi', $title, $description, $id);
+        if (!$stmt->execute()) {
+            respondApiError('database_error', 'Could not update specialty.', 500);
+        }
+
+        $affectedRows = $stmt->num_rows;
+        $stmt->close();
+
+        if ($affectedRows === 0) {
+            respondApiError('specialty_not_found', 'The requested specialty was not found.', 404);
+        }
+
+        respondApiSuccess('specialties', [
+            'id' => $id,
+            'title' => $title,
+            'description' => $description,
+        ], ['updated' => true]);
+    }
+
+    if ($method === 'DELETE') {
+        $id = readPositiveIntQuery('id', true);
+
+        $stmt = $conn->prepare('DELETE FROM specialties WHERE id = ?');
+        if (!$stmt) {
+            respondApiError('database_error', 'Could not prepare specialty delete.', 500);
+        }
+
+        $stmt->bind_param('i', $id);
+        if (!$stmt->execute()) {
+            respondApiError('database_error', 'Could not delete specialty. It may be used by candidate records.', 500);
+        }
+
+        $affectedRows = $stmt->num_rows;
+        $stmt->close();
+
+        if ($affectedRows === 0) {
+            respondApiError('specialty_not_found', 'The requested specialty was not found.', 404);
+        }
+
+        respondApiSuccess('specialties', ['id' => $id], ['deleted' => true]);
+    }
+
+    $specialtyId = readPositiveIntQuery('id');
     $items = [];
-    $stmt = $conn->prepare('SELECT id, title, description FROM specialties ORDER BY title ASC');
+    $stmt = $conn->prepare('SELECT id, title, description FROM specialties WHERE (? = 0 OR id = ?) ORDER BY title ASC');
 
     if (!$stmt) {
         respondApiError('database_error', 'Could not prepare specialties query.', 500);
     }
 
+    $stmt->bind_param('ii', $specialtyId, $specialtyId);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -412,10 +557,16 @@ if ($endpoint === 'specialties') {
 
     $stmt->close();
 
+    if ($specialtyId > 0 && count($items) === 0) {
+        respondApiError('specialty_not_found', 'The requested specialty was not found.', 404);
+    }
+
     respondApiSuccess('specialties', $items, ['count' => count($items)]);
 }
 
 if ($endpoint === 'candidates') {
+    requireGetMethod();
+
     $name = trim((string) ($_GET['name'] ?? ''));
     $specialtyId = readPositiveIntQuery('specialty_id');
     $year = readPositiveIntQuery('year');
@@ -501,6 +652,8 @@ if ($endpoint === 'candidates') {
 }
 
 if ($endpoint === 'stats') {
+    requireGetMethod();
+
     $specialtyId = readPositiveIntQuery('specialty_id', true);
 
     $specialtyStmt = $conn->prepare('SELECT id, title, description FROM specialties WHERE id = ? LIMIT 1');

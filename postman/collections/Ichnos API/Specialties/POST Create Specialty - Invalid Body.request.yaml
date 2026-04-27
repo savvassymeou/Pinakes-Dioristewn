@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=specialties"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  endpoint: specialties
+body:
+  type: json
+  content: |-
+    {
+      "description": "Missing title should return 400."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("success is false", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(false);
+      });
+    language: text/javascript
+order: 2400

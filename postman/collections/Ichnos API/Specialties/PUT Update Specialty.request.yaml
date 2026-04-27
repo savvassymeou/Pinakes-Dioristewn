@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/api/api.php?endpoint=specialties&id={{createdSpecialtyId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+queryParams:
+  endpoint: specialties
+  id: "{{createdSpecialtyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "title": "Demo Postman Specialty Updated",
+      "description": "Updated from Postman with PUT for the API demo."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("success is true", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.success).to.eql(true);
+      });
+
+      pm.test("title was updated", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.data.title).to.eql("Demo Postman Specialty Updated");
+      });
+    language: text/javascript
+order: 2200
